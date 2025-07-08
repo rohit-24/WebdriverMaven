@@ -1,1 +1,22 @@
 
+import json
+
+with open("karateReport.json", "r", encoding="utf-8") as f:
+    karate_json = json.load(f)
+
+failed_tests = []
+
+for feature in karate_json:
+    feature_name = feature.get("name", "")
+    for element in feature.get("elements", []):
+        scenario_name = element.get("name", "")
+        steps = element.get("steps", [])
+        failed_steps = [step for step in steps if step.get("result", {}).get("status") == "failed"]
+        if failed_steps:
+            failed_tests.append({
+                "feature": feature_name,
+                "scenario": scenario_name,
+                "failed_steps": failed_steps
+            })
+
+print(f"Found {len(failed_tests)} failed scenarios")
