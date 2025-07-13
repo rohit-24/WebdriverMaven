@@ -1,60 +1,25 @@
-import sys
-import json
-from logger import logger
-from config import config
-from utils.get_token import get_token
-from python_scripts.karate_parser import CucumberParser
-from python_scripts.test_results_parser import process_test_results
-from prompts.categorise_failures_prompt import analyse_regression_failures_prompt
-from langchain_core.messages import HumanMessage
-from models.claude_model import ClaudeModel
-from models.gemini_model import GeminiModel
+CUCUMBER_JSON_FILE_PATH = "regression_report/karate_report.json"
 
-BEARER_TOKEN = get_token()
+PROJECT_ID = "xyz-mod-adag-d4q9v"
+CLAUDE_MODEL_ID = "claude-3-5-sonnet@20240620"
+GEMINI_MODEL_ID = "gemini-2.5-pro-preview-05-06"
+REGION = "asia-southeast1"
 
-def get_model(model_type: str):
-    if model_type == "claude":
-        return ClaudeModel(model_name=config.CLAUDE_MODEL_ID, project_id=config.PROJECT_ID, api_key=BEARER_TOKEN)
-    elif model_type == "gemini":
-        return GeminiModel(model_name=config.GEMINI_MODEL_ID, project_id=config.PROJECT_ID, api_key=BEARER_TOKEN)
-    else:
-        raise ValueError(f"Unknown model: {model_type}")
 
-def call_model(prompt, model_type):
-    llm = get_model(model_type)
-    return llm.invoke([prompt])
+import os
+from pathlib import Path
 
-def get_prompt(failure):
-    prompt = analyse_regression_failures_prompt().format(
-        feature_name=failure["feature_name"],
-        scenario_name=failure["scenario_name"],
-        failed_steps=json.dumps(failure["failed_steps"], indent=2)
-    )
-    return HumanMessage(content=prompt)
-
-def read_karate_report():
+def read_file_from_root(filename):
+    project_root = Path(__file__).resolve().parent.parent
+    file_path = os.path.join(project_root, filename)
     try:
-        with open(config.CUCUMBER_JSON_FILE_PATH, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception as e:
-        logger.error(f"❌ Error reading Karate report: {e}")
-        sys.exit(1)
+        with open(file_path, 'r') as file:
+            return file.read().strip()
+    except FileNotFoundError:
+        print(f"Error: File '{filename}' not found.")
+    except IOError:
+        print(f"Error: Unable to read file '{filename}'.")
+    return None
 
-if __name__ == "__main__":
-    karate_data = read_karate_report()
-    parser = CucumberParser()
-    failures = parser.extract_failures(karate_data)
-    test_results = []
-
-    for failure in failures[:3]:
-        structured_failure = parser.structure_failure(failure)
-        prompt = get_prompt(structured_failure)
-        print(f"🧪 Processing {structured_failure['feature_name']} -> {structured_failure['scenario_name']}")
-        response = call_model(prompt, "claude")
-        result = process_test_results(response, f"{structured_failure['feature_name']} - {structured_failure['scenario_name']}")
-        test_results.append(result)
-
-    with open("failures.json", "w", encoding="utf-8") as f:
-        json.dump(test_results, f, indent=2)
-
-    print("✅ Analysis written to failures.json")
+def get_token():
+    return read_file_from_root("ai_token.txt")
