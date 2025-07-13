@@ -59,19 +59,22 @@ if __name__ == "__main__":
         print("✅ No failed scenarios found.")
         sys.exit(0)
 
+    total_failures = len(failures)
+    print(f"🚨 Found {total_failures} failed scenario(s) to analyze.")
+
     with open("karate_failure_analysis.txt", "w", encoding="utf-8") as f_out:
         for i, failure in enumerate(failures, start=1):
             structured_failure = parser.structure_failure(failure)
             prompt = get_prompt(structured_failure)
             scenario_title = f"{structured_failure['feature_name']} - {structured_failure['scenario_name']}"
 
-            print(f"🧪 Processing: {scenario_title}")
+            print(f"\n🔍 Processing Failure {i}/{total_failures}: {scenario_title}")
             try:
                 response = call_model(prompt, "claude")
                 result = process_test_results(response, scenario_title, i)
                 f_out.write(result)
-                print(f"✅ Scenario {i} processed.")
+                print(f"✅ Failure {i} processed successfully.")
             except Exception as e:
-                print(f"❌ Error processing scenario {i}: {e}")
+                print(f"❌ Error processing Failure {i}: {e}")
 
-    print("🎉 All failed scenarios analyzed and written to karate_failure_analysis.txt")
+    print(f"\n📄 Analysis completed. Summary written to karate_failure_analysis.txt")
