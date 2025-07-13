@@ -2,49 +2,43 @@ import re
 
 def process_test_results(response_text, scenario_title):
     """
-    Processes the raw response text from LLM and extracts structured insight.
-    
-    Args:
-        response_text (str): Text summary returned by the LLM.
-        scenario_title (str): Title of the test scenario for tracking.
-
-    Returns:
-        dict: Structured test analysis with metadata.
+    Parses structured LLM response into JSON format.
     """
+    cleaned_text = clean_response(response_text)
+
     return {
         "scenario": scenario_title,
-        "summary": clean_response(response_text),
+        "summary": cleaned_text,
         "analysis": {
-            "api_endpoint": extract_api_endpoint(response_text),
-            "http_method": extract_http_method(response_text),
-            "failure_reason": extract_failure_reason(response_text),
-            "suggested_fix": extract_suggestion(response_text),
-            "test_improvement": extract_test_improvement(response_text)
+            "api_endpoint": extract_endpoint_from_section(cleaned_text),
+            "http_method": extract_method_from_section(cleaned_text),
+            "failure_reason": extract_section(cleaned_text, "2. Failure"),
+            "suggested_fix": extract_section(cleaned_text, "3. Fixes"),
+            "test_improvement": extract_section(cleaned_text, "4. Suggestions")
         }
     }
 
 def clean_response(text):
-    """Cleans up newlines and formatting artifacts."""
     return text.strip()
 
-def extract_api_endpoint(text):
-    match = re.search(r"(GET|POST|PUT|DELETE|PATCH)\s+(/[^\s]+)", text, re.IGNORECASE)
-    if match:
-        return match.group(2)
-    return "Not clearly identified"
+def extract_section(text, heading_startswith):
+    """
+    Extracts the paragraph after a numbered heading like "2. Failure Reason:"
+    """
+    pattern = rf"{heading_startswith}.*?:?\s*(.*?)(?=\n\d\.|\Z)"
+    match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
+    return match.group(1).strip() if match else "Not found"
 
-def extract_http_method(text):
+def extract_endpoint_from_section(text):
+    """
+    Attempt to find endpoint path (e.g., /api/v1/something)
+    """
+    match = re.search(r"\b(/[a-zA-Z0-9_\-/]+)\b", text)
+    return match.group(1) if match else "Not clearly identified"
+
+def extract_method_from_section(text):
+    """
+    Extracts HTTP method if mentioned.
+    """
     match = re.search(r"\b(GET|POST|PUT|DELETE|PATCH)\b", text, re.IGNORECASE)
     return match.group(1).upper() if match else "Unknown"
-
-def extract_failure_reason(text):
-    match = re.search(r"(?:Cause|Reason|Failure):?\s*(.+?)(?:\n|$)", text, re.IGNORECASE)
-    return match.group(1).strip() if match else "Could not extract failure reason"
-
-def extract_suggestion(text):
-    match = re.search(r"(?:Fix|Suggestion|Solution):?\s*(.+?)(?:\n|$)", text, re.IGNORECASE)
-    return match.group(1).strip() if match else "No fix suggestion found"
-
-def extract_test_improvement(text):
-    match = re.search(r"(?:Improve|Robustness|Enhance):?\s*(.+?)(?:\n|$)", text, re.IGNORECASE)
-    return match.group(1).strip() if match else "No test improvement suggestion found"
