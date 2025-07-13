@@ -1,23 +1,72 @@
-def analyse_regression_failures_prompt():
-    return """
-You are an expert Test Analyst. Given a failed Karate API test scenario, provide a brief, structured, and crisp summary covering only the essentials.
+import os
+import json
+from main import call_model, get_prompt
+from python_scripts.karate_parser import CucumberParser
+from python_scripts.test_results_parser import process_test_results
 
-Please respond using the exact format below with short, clear bullet points (max 2-3 lines per section):
+MODULE_REPORT_FOLDER = "regressionAnalysisAgent/module_reports"
+OUTPUT_FILE = "karate_failure_analysis.txt"
 
-1. **Endpoint and Method**:
-- [short answer]
+def list_available_modules():
+    files = os.listdir(MODULE_REPORT_FOLDER)
+    modules = [f.replace(".json", "") for f in files if f.endswith(".json")]
+    return modules
 
-2. **Cause of Failure**:
-- [bullet 1]
-- [bullet 2]
+def get_module_file_path(module_name):
+    return os.path.join(MODULE_REPORT_FOLDER, f"{module_name}.json")
 
-3. **Recommended Fix/Improvement**:
-- [bullet 1]
-- [bullet 2]
+def load_karate_json(file_path):
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f"❌ File not found: {file_path}")
+        return None
+    except json.JSONDecodeError:
+        print(f"❌ Invalid JSON in file: {file_path}")
+        return None
 
-4. **Suggestions to Improve Test Robustness**:
-- [bullet 1]
-- [bullet 2]
+def analyze_module_failures(module_name):
+    file_path = get_module_file_path(module_name)
+    karate_data = load_karate_json(file_path)
+    if not karate_data:
+        return
 
-Only return the structured text — no extra comments or introductions.
-"""
+    parser = CucumberParser()
+    failures = parser.extract_failures(karate_data)
+
+    if not failures:
+        print(f"✅ No failed scenarios in module '{module_name}'")
+        return
+
+    total = len(failures)
+    print(f"🚨 Found {total} failures in module '{module_name}'")
+
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f_out:
+        for i, failure in enumerate(failures, start=1):
+            structured = parser.structure_failure(failure)
+            prompt = get_prompt(structured)
+            scenario_title = f"{structured['feature_name']} - {structured['scenario_name']}"
+
+            print(f"\n🔍 Processing Failure {i}/{total}: {scenario_title}")
+            try:
+                response = call_model(prompt, model_type="claude")
+                result = process_test_results(response, scenario_title, i)
+                f_out.write(result)
+                print(f"✅ Failure {i} processed.")
+            except Exception as e:
+                print(f"❌ Error on Failure {i}: {e}")
+
+    print(f"\n📄 Analysis saved to {OUTPUT_FILE}")
+
+if __name__ == "__main__":
+    print("📁 Available modules:")
+    modules = list_available_modules()
+    for mod in modules:
+        print(f" - {mod}")
+
+    selected = input("\n👉 Enter the module name to analyze (e.g., module1): ").strip()
+    if selected not in modules:
+        print(f"❌ Invalid module name: '{selected}'")
+    else:
+        analyze_module_failures(selected)
