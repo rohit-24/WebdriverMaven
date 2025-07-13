@@ -1,44 +1,39 @@
-import re
+def process_test_results(response_text: str, scenario_title: str, scenario_index: int) -> str:
+    """
+    Processes the raw response text and formats it into a clean failure summary block for .txt output.
 
-def process_test_results(response_text, scenario_title):
-    """
-    Parses structured LLM response into JSON format.
-    """
-    cleaned_text = clean_response(response_text)
+    Args:
+        response_text: Raw LLM response.
+        scenario_title: Feature + Scenario name.
+        scenario_index: Index of the scenario in the test list.
 
-    return {
-        "scenario": scenario_title,
-        "summary": cleaned_text,
-        "analysis": {
-            "api_endpoint": extract_endpoint_from_section(cleaned_text),
-            "http_method": extract_method_from_section(cleaned_text),
-            "failure_reason": extract_section(cleaned_text, "2. Failure"),
-            "suggested_fix": extract_section(cleaned_text, "3. Fixes"),
-            "test_improvement": extract_section(cleaned_text, "4. Suggestions")
-        }
-    }
+    Returns:
+        str: Formatted failure summary for .txt file.
+    """
+    cleaned_text = response_text.strip()
+    
+    summary_block = f"""--- Summary for Scenario {scenario_index} ---
+Scenario: {scenario_title}
+{cleaned_text}
 
-def clean_response(text):
-    return text.strip()
+"""
+    return summary_block
 
-def extract_section(text, heading_startswith):
-    """
-    Extracts the paragraph after a numbered heading like "2. Failure Reason:"
-    """
-    pattern = rf"{heading_startswith}.*?:?\s*(.*?)(?=\n\d\.|\Z)"
-    match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
-    return match.group(1).strip() if match else "Not found"
 
-def extract_endpoint_from_section(text):
-    """
-    Attempt to find endpoint path (e.g., /api/v1/something)
-    """
-    match = re.search(r"\b(/[a-zA-Z0-9_\-/]+)\b", text)
-    return match.group(1) if match else "Not clearly identified"
 
-def extract_method_from_section(text):
-    """
-    Extracts HTTP method if mentioned.
-    """
-    match = re.search(r"\b(GET|POST|PUT|DELETE|PATCH)\b", text, re.IGNORECASE)
-    return match.group(1).upper() if match else "Unknown"
+
+test_results = []
+
+with open("karate_failure_analysis.txt", "w", encoding="utf-8") as f_out:
+    for i, failure in enumerate(failures, start=1):
+        structured_failure = parser.structure_failure(failure)
+        prompt = get_prompt(structured_failure)
+        print(f"🧪 Processing: {structured_failure['feature_name']} -> {structured_failure['scenario_name']}")
+
+        response = call_model(prompt, "claude")
+        scenario_title = f"{structured_failure['feature_name']} - {structured_failure['scenario_name']}"
+        
+        result_text = process_test_results(response, scenario_title, i)
+        f_out.write(result_text)
+
+print("✅ All summaries written to karate_failure_analysis.txt")
