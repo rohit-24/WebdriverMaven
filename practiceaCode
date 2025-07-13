@@ -1,36 +1,15 @@
-Cypress.Commands.add('addScreenshotWithUrlBanner', () => {
-  if (Cypress.env("TURN_OFF_SCREENSHOTS") === undefined || Cypress.env("TURN_OFF_SCREENSHOTS") === false) {
-    const scenarioName = testState.pickle.name;
-    const stepName = testState.pickleStep.text;
-    const index = testState.pickle.steps.indexOf(testState.pickleStep);
+def analyse_regression_failures_prompt():
+    return """
+You are an AI Test Analyst. Analyze this failed Karate API scenario.
 
-    cy.url().then((url) => {
-      // Inject a banner div with URL
-      cy.document().then((doc) => {
-        const banner = doc.createElement("div");
-        banner.id = "url-banner";
-        banner.textContent = `URL: ${url}`;
-        banner.style.position = "fixed";
-        banner.style.top = "0";
-        banner.style.left = "0";
-        banner.style.width = "100%";
-        banner.style.padding = "5px";
-        banner.style.backgroundColor = "yellow";
-        banner.style.color = "black";
-        banner.style.zIndex = "9999";
-        banner.style.fontSize = "12px";
-        doc.body.appendChild(banner);
-      });
+Feature: {feature_name}
+Scenario: {scenario_name}
+Failed Steps:
+{failed_steps}
 
-      const screenshotName = `${scenarioName} ##-- ${index}`;
-      cy.wait(500); // wait a bit for banner to render
-      cy.screenshot(screenshotName);
-
-      // Remove banner after screenshot
-      cy.document().then((doc) => {
-        const banner = doc.getElementById("url-banner");
-        if (banner) banner.remove();
-      });
-    });
-  }
-});
+Tasks:
+1. Identify the API endpoint and HTTP method.
+2. Explain the cause of failure.
+3. Recommend fixes or improvements.
+4. Suggest how to improve test robustness.
+"""
