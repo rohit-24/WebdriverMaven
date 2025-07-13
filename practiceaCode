@@ -1,15 +1,29 @@
-def analyse_regression_failures_prompt():
-    return """
-You are an AI Test Analyst. Analyze this failed Karate API scenario.
+python_scripts/karate_parser.py
 
-Feature: {feature_name}
-Scenario: {scenario_name}
-Failed Steps:
-{failed_steps}
+class CucumberParser:
+    def extract_failures(self, karate_json):
+        failures = []
+        for feature in karate_json:
+            feature_name = feature.get("name", "")
+            for element in feature.get("elements", []):
+                scenario_name = element.get("name", "")
+                steps = element.get("steps", [])
+                failed_steps = [step for step in steps if step.get("result", {}).get("status") == "failed"]
+                if failed_steps:
+                    failures.append({
+                        "feature_name": feature_name,
+                        "scenario_name": scenario_name,
+                        "failed_steps": failed_steps
+                    })
+        return failures
 
-Tasks:
-1. Identify the API endpoint and HTTP method.
-2. Explain the cause of failure.
-3. Recommend fixes or improvements.
-4. Suggest how to improve test robustness.
-"""
+    def structure_failure(self, failure):
+        return failure
+
+    def _extract_screenshot(self, embeddings):
+        return None
+
+
+
+
+
