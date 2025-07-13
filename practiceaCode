@@ -1,80 +1,23 @@
-import sys
-import json
-from logger import logger
-from config import config
-from utils.get_token import get_token
-from python_scripts.karate_parser import CucumberParser
-from python_scripts.test_results_parser import process_test_results
-from prompts.categorise_failures_prompt import analyse_regression_failures_prompt
-from langchain_core.messages import HumanMessage
-from models.claude_model import ClaudeModel
-from models.gemini_model import GeminiModel
+def analyse_regression_failures_prompt():
+    return """
+You are an expert Test Analyst. Given a failed Karate API test scenario, provide a brief, structured, and crisp summary covering only the essentials.
 
-# --- Load Token ---
-BEARER_TOKEN = get_token()
+Please respond using the exact format below with short, clear bullet points (max 2-3 lines per section):
 
-# --- Get model instance ---
-def get_model(model_type: str):
-    if model_type == "claude":
-        return ClaudeModel(model_name=config.CLAUDE_MODEL_ID, project_id=config.PROJECT_ID, api_key=BEARER_TOKEN)
-    elif model_type == "gemini":
-        return GeminiModel(model_name=config.GEMINI_MODEL_ID, project_id=config.PROJECT_ID, api_key=BEARER_TOKEN)
-    else:
-        raise ValueError(f"Unknown model type: {model_type}")
+1. **Endpoint and Method**:
+- [short answer]
 
-# --- Invoke model ---
-def call_model(prompt, model_type="claude"):
-    llm = get_model(model_type)
-    return llm.invoke([prompt])
+2. **Cause of Failure**:
+- [bullet 1]
+- [bullet 2]
 
-# --- Generate prompt ---
-def get_prompt(failure):
-    prompt_template = analyse_regression_failures_prompt()
-    prompt_text = prompt_template.format(
-        feature_name=failure["feature_name"],
-        scenario_name=failure["scenario_name"],
-        failed_steps=json.dumps(failure["failed_steps"], indent=2)
-    )
-    return HumanMessage(content=prompt_text)
+3. **Recommended Fix/Improvement**:
+- [bullet 1]
+- [bullet 2]
 
-# --- Load karate report ---
-def read_karate_report():
-    try:
-        with open(config.CUCUMBER_JSON_FILE_PATH, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        logger.error(f"❌ Karate JSON file not found: {config.CUCUMBER_JSON_FILE_PATH}")
-        sys.exit(1)
-    except json.JSONDecodeError:
-        logger.error(f"❌ Invalid JSON format: {config.CUCUMBER_JSON_FILE_PATH}")
-        sys.exit(1)
+4. **Suggestions to Improve Test Robustness**:
+- [bullet 1]
+- [bullet 2]
 
-# --- Main execution ---
-if __name__ == "__main__":
-    karate_data = read_karate_report()
-    parser = CucumberParser()
-    failures = parser.extract_failures(karate_data)
-
-    if not failures:
-        print("✅ No failed scenarios found.")
-        sys.exit(0)
-
-    total_failures = len(failures)
-    print(f"🚨 Found {total_failures} failed scenario(s) to analyze.")
-
-    with open("karate_failure_analysis.txt", "w", encoding="utf-8") as f_out:
-        for i, failure in enumerate(failures, start=1):
-            structured_failure = parser.structure_failure(failure)
-            prompt = get_prompt(structured_failure)
-            scenario_title = f"{structured_failure['feature_name']} - {structured_failure['scenario_name']}"
-
-            print(f"\n🔍 Processing Failure {i}/{total_failures}: {scenario_title}")
-            try:
-                response = call_model(prompt, "claude")
-                result = process_test_results(response, scenario_title, i)
-                f_out.write(result)
-                print(f"✅ Failure {i} processed successfully.")
-            except Exception as e:
-                print(f"❌ Error processing Failure {i}: {e}")
-
-    print(f"\n📄 Analysis completed. Summary written to karate_failure_analysis.txt")
+Only return the structured text — no extra comments or introductions.
+"""
