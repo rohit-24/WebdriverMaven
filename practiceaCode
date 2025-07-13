@@ -4,16 +4,22 @@ from main import call_model, get_prompt
 from python_scripts.karate_parser import CucumberParser
 from python_scripts.test_results_parser import process_test_results
 
+# Folder where all module JSONs live
 MODULE_REPORT_FOLDER = "regressionAnalysisAgent/module_reports"
 OUTPUT_FILE = "karate_failure_analysis.txt"
 
 def list_available_modules():
+    """Lists modules whose files end with _karate.json"""
     files = os.listdir(MODULE_REPORT_FOLDER)
-    modules = [f.replace(".json", "") for f in files if f.endswith(".json")]
+    modules = [
+        f.replace("_karate.json", "")
+        for f in files
+        if f.endswith("_karate.json")
+    ]
     return modules
 
 def get_module_file_path(module_name):
-    return os.path.join(MODULE_REPORT_FOLDER, f"{module_name}.json")
+    return os.path.join(MODULE_REPORT_FOLDER, f"{module_name}_karate.json")
 
 def load_karate_json(file_path):
     try:
@@ -62,6 +68,10 @@ def analyze_module_failures(module_name):
 if __name__ == "__main__":
     print("📁 Available modules:")
     modules = list_available_modules()
+    if not modules:
+        print("⚠️ No *_karate.json files found in the module_reports folder.")
+        exit(1)
+
     for mod in modules:
         print(f" - {mod}")
 
