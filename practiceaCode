@@ -1,29 +1,66 @@
-function scrollToBottomUntilNoMoreContent(waitTime = 1000) {
-  let previousHeight = 0;
+run_query_on_report.py
 
-  function scroll() {
-    cy.document().then((doc) => {
-      const el = doc.documentElement;
-      const currentHeight = el.scrollHeight;
-      const clientHeight = el.clientHeight;
+import os
+import json
+from utils.get_token import get_token
+from langchain_core.messages import HumanMessage
+from models.claude_model import ClaudeModel
+from models.gemini_model import GeminiModel
 
-      // 🚫 Not scrollable
-      if (currentHeight <= clientHeight) {
-        cy.log('Page is not scrollable — exiting scroll.');
-        return;
-      }
+# Configs
+BEARER_TOKEN = get_token()
+REPORT_PATH = "regressionAnalysisAgent/regression_report/karate_report.json"
+DEFAULT_MODEL = "claude"  # or "gemini"
 
-      // ✅ Continue if content height increased
-      if (currentHeight > previousHeight) {
-        previousHeight = currentHeight;
-        cy.scrollTo('bottom');
-        cy.wait(waitTime).then(() => scroll());
-      } else {
-        cy.log('No more content to scroll — exiting.');
-      }
-    });
-  }
+def get_model(model_type: str):
+    from config import config
+    if model_type == "claude":
+        return ClaudeModel(model_name=config.CLAUDE_MODEL_ID, project_id=config.PROJECT_ID, api_key=BEARER_TOKEN)
+    elif model_type == "gemini":
+        return GeminiModel(model_name=config.GEMINI_MODEL_ID, project_id=config.PROJECT_ID, api_key=BEARER_TOKEN)
+    else:
+        raise ValueError("Unsupported model type")
 
-  scroll();
-}
+def load_json_report(file_path):
+    if not os.path.exists(file_path):
+        print(f"❌ JSON file not found: {file_path}")
+        return None
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        print(f"❌ Invalid JSON format in: {file_path}")
+        return None
 
+def build_prompt(user_question, json_data):
+    return f"""
+You are an AI assistant helping analyze Karate API test report JSON data.
+Here is the full JSON content from the test report:
+
+```json
+{json.dumps(json_data, indent=2)}
+Answer the following user question based on the JSON content above:
+Question: {user_question}
+
+Please provide a clear, short, structured answer.
+"""
+
+def run_query_agent():
+json_data = load_json_report(REPORT_PATH)
+if not json_data:
+return
+
+print("\n💬 Ask any question about the Karate test report (type 'exit' to quit)")
+while True:
+    question = input("\n❓ Your question: ").strip()
+    if question.lower() in {"exit", "quit"}:
+        break
+
+    prompt = build_prompt(question, json_data)
+    llm = get_model(DEFAULT_MODEL)
+    try:
+        response = llm.invoke([HumanMessage(content=prompt)])
+        print("\n🤖 Answer:")
+        print(response)
+    except Exception as e:
+        print(f"❌ Error generating response: {e}")
