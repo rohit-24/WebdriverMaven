@@ -1,18 +1,29 @@
-function scrollToBottomUntilNoMoreContent() {
+function scrollToBottomUntilNoMoreContent(waitTime = 1000) {
   let previousHeight = 0;
 
   function scroll() {
     cy.document().then((doc) => {
-      const currentHeight = doc.body.scrollHeight;
+      const el = doc.documentElement;
+      const currentHeight = el.scrollHeight;
+      const clientHeight = el.clientHeight;
 
+      // 🚫 Not scrollable
+      if (currentHeight <= clientHeight) {
+        cy.log('Page is not scrollable — exiting scroll.');
+        return;
+      }
+
+      // ✅ Continue if content height increased
       if (currentHeight > previousHeight) {
         previousHeight = currentHeight;
         cy.scrollTo('bottom');
-        cy.wait(1000); // wait for new content to load
-        scroll(); // recurse
+        cy.wait(waitTime).then(() => scroll());
+      } else {
+        cy.log('No more content to scroll — exiting.');
       }
     });
   }
 
   scroll();
 }
+
