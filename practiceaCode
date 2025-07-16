@@ -1,28 +1,32 @@
+from collections import defaultdict
+import re
+from utils.logger import logger
+
 def extract_endpoints_by_context(report, filter_context=None):
     context_map = defaultdict(set)
 
     for feature in report:
-        for element in feature.get('elements', []):
-            for step in element.get('steps', []):
-                doc_string = step.get('doc_string', {})
-                content = doc_string.get('value', '')
+        for element in feature.get("elements", []):
+            for step in element.get("steps", []):
+                doc_string = step.get("doc_string", {})
+                content = doc_string.get("value", "")
 
-                if 'request:' not in content:
-                    logger.debug("No 'request:' in doc_string — skipping.")
-                    continue
-
-                for line in content.split('\n'):
-                    if re.match(r'^1>\s*(POST|GET|PUT|PATCH|DELETE)', line):
-                        parts = line.split()
-                        if len(parts) >= 3:
-                            url = parts[2]
-                            context = extract_context_from_url(url)
+                if "request:" in content:
+                    lines = content.split('\n')
+                    for line in lines:
+                        # Match: 1 > POST /some/path
+                        match = re.match(r'1\s*>\s*(POST|GET|PUT|PATCH|DELETE)\s+(https?://[^\s]+)', line.strip())
+                        if match:
+                            method = match.group(1)
+                            full_url = match.group(2)
+                            path = extract_path_from_url(full_url)
+                            context = extract_context_from_url(path)
 
                             if filter_context and context != filter_context:
                                 continue
 
-                            context_map[context].add(url)
-                            logger.debug(f"✅ Found endpoint: {url} (context: {context})")
+                            context_map[context].add(path)
+                            logger.debug(f"✅ Found endpoint: {path} (context: {context})")
 
     for ctx, urls in context_map.items():
         logger.info(f"[Karate] Context: {ctx} — Total Endpoints: {len(urls)}")
@@ -30,3 +34,26 @@ def extract_endpoints_by_context(report, filter_context=None):
             logger.debug(f"[Karate]   {url}")
 
     return context_map
+
+
+def extract_path_from_url(full_url):
+    """
+    Extract just the path from the full URL (e.g., https://abc.com/cc/api -> /cc/api)
+    """
+    match = re.match(r'https?://[^/]+(/[^?\s]*)', full_url)
+    return match.group(1) if match else full_url
+
+
+def extract_context_from_url(url_path):
+    """
+    Extract context based on rules:
+    - if 'cc' in path: context is part after 'cc/'
+    - else: context is second part of the path
+    """
+    try:
+        parts = url_path.strip("/").split("/")
+        if parts[0] == "cc":
+            return parts[1]
+        return parts[0]
+    except IndexError:
+        return "unknown"
