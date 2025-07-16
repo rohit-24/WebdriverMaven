@@ -1,23 +1,23 @@
-openapi_spec_parser.py
+code_coverage_prompt.py
 
-import requests
-from collections import defaultdict
+def build_llm_prompt(context, tested_endpoints, openapi_endpoints):
+    return f"""
+You are an expert API testing assistant.
 
-def get_openapi_spec_map(openapi_url):
-    response = requests.get(openapi_url)
-    response.raise_for_status()
-    spec = response.json()
+Below are two lists for the context: **{context}**
 
-    context_map = defaultdict(set)
+🟢 **Tested API Endpoints** (from Karate tests):
+{sorted(tested_endpoints)}
 
-    for path, methods in spec.get("paths", {}).items():
-        context = extract_context_from_path(path)
-        context_map[context].add(path)
+🔵 **Expected API Endpoints** (from OpenAPI spec):
+{sorted(openapi_endpoints)}
 
-    return context_map
+---
 
-def extract_context_from_path(path):
-    parts = path.strip("/").split("/")
-    if parts[0] == "cc":
-        return parts[1]
-    return parts[0]
+🔍 Please:
+1. Identify which endpoints are tested vs missing
+2. Compute code coverage percentage
+3. List missing endpoints
+4. Provide recommendations
+5. Give a final summary in bullet points
+"""
