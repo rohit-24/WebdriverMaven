@@ -1,68 +1,10 @@
-from collections import defaultdict
-import re
-from utils.logger import logger
+# utils/logger.py
 
-def extract_endpoints_by_context(report):
-    context_map = defaultdict(set)
+import logging
 
-    for feature in report:
-        for element in feature.get('elements', []):
-            for step in element.get('steps', []):
-                doc_string = step.get('doc_string', {})
-                content = doc_string.get('value', '')
-                if 'request:' in content:
-                    for line in content.split('\n'):
-                        if re.match(r'^1>\s*(POST|GET|PUT|PATCH|DELETE)', line):
-                            parts = line.split()
-                            if len(parts) >= 3:
-                                url = parts[2]
-                                context = extract_context_from_url(url)
-                                context_map[context].add(url)
+logging.basicConfig(
+    level=logging.DEBUG,  # 🔁 Change to DEBUG to see all URL logs
+    format="%(asctime)s — %(levelname)s — %(message)s"
+)
 
-    # ✅ Print all endpoints extracted
-    for context, urls in context_map.items():
-        logger.info(f"[Karate] Context: {context} — Total: {len(urls)}")
-        for url in sorted(urls):
-            logger.debug(f"[Karate]   {url}")
-    return context_map
-
-def extract_context_from_url(url):
-    try:
-        if 'cc/' in url:
-            return url.split('cc/')[1].split('/')[0]
-        return url.split('/')[3]
-    except IndexError:
-        return "unknown"
-
-
-
-
-
-import requests
-from collections import defaultdict
-from utils.logger import logger
-
-def get_openapi_spec_map(openapi_url):
-    response = requests.get(openapi_url)
-    response.raise_for_status()
-    spec = response.json()
-
-    context_map = defaultdict(set)
-
-    for path, methods in spec.get("paths", {}).items():
-        context = extract_context_from_path(path)
-        context_map[context].add(path)
-
-    # ✅ Log extracted paths
-    for context, paths in context_map.items():
-        logger.info(f"[OpenAPI] Context: {context} — Total: {len(paths)}")
-        for path in sorted(paths):
-            logger.debug(f"[OpenAPI]   {path}")
-
-    return context_map
-
-def extract_context_from_path(path):
-    parts = path.strip("/").split("/")
-    if parts[0] == "cc":
-        return parts[1]
-    return parts[0]
+logger = logging.getLogger(__name__)
