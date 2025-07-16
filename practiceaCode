@@ -1,23 +1,56 @@
-code_coverage_prompt.py
+import os
+import json
+from python_scripts.merge_json_reports import merge_reports
+from python_scripts.coverage_parser import extract_endpoints_by_context
+from python_scripts.openapi_spec_parser import get_openapi_spec_map
+from models.base_llm import get_model, call_model
+from prompts.code_coverage_prompt import build_llm_prompt
+from utils.logger import logger
 
-def build_llm_prompt(context, tested_endpoints, openapi_endpoints):
-    return f"""
-You are an expert API testing assistant.
+REPORTS_DIR = "Reports/target"
+OUTPUT_DIR = "outputs"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-Below are two lists for the context: **{context}**
+def run():
+    model_choice = input("Choose model (claude/gemini): ").strip()
+    openapi_url = input("Enter OpenAPI Spec URL: ").strip()
 
-🟢 **Tested API Endpoints** (from Karate tests):
-{sorted(tested_endpoints)}
+    logger.info("Merging report files...")
+    report_data = merge_reports(REPORTS_DIR)
 
-🔵 **Expected API Endpoints** (from OpenAPI spec):
-{sorted(openapi_endpoints)}
+    logger.info("Extracting Karate endpoints by context...")
+    karate_map = extract_endpoints_by_context(report_data)
 
----
+    logger.info("Fetching OpenAPI spec...")
+    openapi_map = get_openapi_spec_map(openapi_url)
 
-🔍 Please:
-1. Identify which endpoints are tested vs missing
-2. Compute code coverage percentage
-3. List missing endpoints
-4. Provide recommendations
-5. Give a final summary in bullet points
-"""
+    model_fn = get_model(model_choice)
+
+    for context in karate_map:
+        karate_endpoints = karate_map[context]
+        openapi_endpoints = openapi_map.get(context, set())
+
+        if not openapi_endpoints:
+            logger.warning(f"No OpenAPI endpoints found for context: {context}")
+            continue
+
+        prompt = build_llm_prompt(context, karate_endpoints, openapi_endpoints)
+        response = call_model(model_fn, prompt)
+
+        # Save report
+        out_txt = os.path.join(OUTPUT_DIR, f"{context}_coverage.txt")
+        with open(out_txt, "w", encoding="utf-8") as f:
+            f.write(response)
+
+        out_json = os.path.join(OUTPUT_DIR, f"{context}_coverage.json")
+        with open(out_json, "w", encoding="utf-8") as f:
+            json.dump({
+                "context": context,
+                "prompt": prompt,
+                "response": response
+            }, f, indent=2)
+
+        logger.info(f"Coverage report generated for context: {context}")
+
+if __name__ == "__main__":
+    run()
