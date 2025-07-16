@@ -1,50 +1,23 @@
-merge_json_reports.py
+openapi_spec_parser.py
 
-import os
-import json
-
-def merge_reports(folder):
-    all_data = []
-    for file in os.listdir(folder):
-        if file.endswith(".json"):
-            path = os.path.join(folder, file)
-            with open(path, "r") as f:
-                try:
-                    all_data.extend(json.load(f))
-                except Exception as e:
-                    print(f"Error reading {file}: {e}")
-    return all_data
-
-
-coverage_parser.py
-
+import requests
 from collections import defaultdict
-import re
 
-def extract_endpoints_by_context(report):
+def get_openapi_spec_map(openapi_url):
+    response = requests.get(openapi_url)
+    response.raise_for_status()
+    spec = response.json()
+
     context_map = defaultdict(set)
 
-    for feature in report:
-        for element in feature.get('elements', []):
-            for step in element.get('steps', []):
-                doc_string = step.get('doc_string', {})
-                content = doc_string.get('value', '')
-                if 'request:' in content:
-                    for line in content.split('\n'):
-                        if re.match(r'^1>\s*(POST|GET|PUT|PATCH|DELETE)', line):
-                            parts = line.split()
-                            if len(parts) >= 3:
-                                url = parts[2]
-                                context = extract_context_from_url(url)
-                                context_map[context].add(url)
+    for path, methods in spec.get("paths", {}).items():
+        context = extract_context_from_path(path)
+        context_map[context].add(path)
+
     return context_map
 
-def extract_context_from_url(url):
-    try:
-        if 'cc/' in url:
-            return url.split('cc/')[1].split('/')[0]
-        return url.split('/')[3]
-    except IndexError:
-        return "unknown"
-
-
+def extract_context_from_path(path):
+    parts = path.strip("/").split("/")
+    if parts[0] == "cc":
+        return parts[1]
+    return parts[0]
