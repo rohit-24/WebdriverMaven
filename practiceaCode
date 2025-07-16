@@ -1,10 +1,33 @@
-# utils/logger.py
+from collections import defaultdict
+import re
+from utils.logger import logger
 
-import logging
+def extract_endpoints_by_context(report, filter_context=None):
+    context_map = defaultdict(set)
 
-logging.basicConfig(
-    level=logging.DEBUG,  # 🔁 Change to DEBUG to see all URL logs
-    format="%(asctime)s — %(levelname)s — %(message)s"
-)
+    for feature in report:
+        for element in feature.get('elements', []):
+            for step in element.get('steps', []):
+                doc_string = step.get('doc_string', {})
+                content = doc_string.get('value', '')
+                if 'request:' in content:
+                    for line in content.split('\n'):
+                        if re.match(r'^1>\s*(POST|GET|PUT|PATCH|DELETE)', line):
+                            parts = line.split()
+                            if len(parts) >= 3:
+                                url = parts[2]
+                                context = extract_context_from_url(url)
 
-logger = logging.getLogger(__name__)
+                                # Filter if needed
+                                if filter_context and context != filter_context:
+                                    continue
+
+                                context_map[context].add(url)
+
+    # Log the result
+    for ctx, urls in context_map.items():
+        logger.info(f"[Karate] Context: {ctx} — Total: {len(urls)}")
+        for url in sorted(urls):
+            logger.debug(f"[Karate]   {url}")
+
+    return context_map
