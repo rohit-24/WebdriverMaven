@@ -1,59 +1,29 @@
-from collections import defaultdict
-import re
+import requests
 from utils.logger import logger
 
-def extract_endpoints_by_context(report, filter_context=None):
-    context_map = defaultdict(set)
-
-    for feature in report:
-        for element in feature.get("elements", []):
-            for step in element.get("steps", []):
-                doc_string = step.get("doc_string", {})
-                content = doc_string.get("value", "")
-
-                if "request:" in content:
-                    lines = content.split('\n')
-                    for line in lines:
-                        # Match: 1 > POST /some/path
-                        match = re.match(r'1\s*>\s*(POST|GET|PUT|PATCH|DELETE)\s+(https?://[^\s]+)', line.strip())
-                        if match:
-                            method = match.group(1)
-                            full_url = match.group(2)
-                            path = extract_path_from_url(full_url)
-                            context = extract_context_from_url(path)
-
-                            if filter_context and context != filter_context:
-                                continue
-
-                            context_map[context].add(path)
-                            logger.debug(f"✅ Found endpoint: {path} (context: {context})")
-
-    for ctx, urls in context_map.items():
-        logger.info(f"[Karate] Context: {ctx} — Total Endpoints: {len(urls)}")
-        for url in sorted(urls):
-            logger.debug(f"[Karate]   {url}")
-
-    return context_map
-
-
-def extract_path_from_url(full_url):
-    """
-    Extract just the path from the full URL (e.g., https://abc.com/cc/api -> /cc/api)
-    """
-    match = re.match(r'https?://[^/]+(/[^?\s]*)', full_url)
-    return match.group(1) if match else full_url
-
-
-def extract_context_from_url(url_path):
-    """
-    Extract context based on rules:
-    - if 'cc' in path: context is part after 'cc/'
-    - else: context is second part of the path
-    """
+def get_all_openapi_endpoints(openapi_url):
     try:
-        parts = url_path.strip("/").split("/")
-        if parts[0] == "cc":
-            return parts[1]
-        return parts[0]
-    except IndexError:
-        return "unknown"
+        response = requests.get(openapi_url)
+        response.raise_for_status()
+        spec = response.json()
+    except Exception as e:
+        logger.error(f"Failed to fetch OpenAPI spec: {e}")
+        return set()
+
+    paths = spec.get("paths", {}).keys()
+    endpoints = set(paths)
+
+    logger.info(f"[OpenAPI] Total endpoints found: {len(endpoints)}")
+    for path in sorted(endpoints):
+        logger.debug(f"[OpenAPI]   {path}")
+
+    return endpoints
+
+
+
+logger.info("Fetching all OpenAPI endpoints (no context slicing)...")
+openapi_endpoints = get_all_openapi_endpoints(openapi_url)
+
+if not openapi_endpoints:
+    logger.warning("No OpenAPI endpoints found in the provided spec.")
+    return
