@@ -1,26 +1,13 @@
-from collections import defaultdict
-import re
-from utils.logger import logger
-
 def extract_endpoints_by_context(report, filter_context=None):
     context_map = defaultdict(set)
 
     for feature in report:
-        elements = feature.get('elements', [])
-        if not elements:
-            logger.warning(f"⚠️ No 'elements' in feature: {feature.get('name', 'Unnamed')}")
-            continue
-
-        for element in elements:
-            steps = element.get('steps', [])
-            for step in steps:
-                doc_string = step.get('doc_string')
-                if not doc_string:
-                    logger.debug("No doc_string found in step — skipping.")
-                    continue
-
+        for element in feature.get('elements', []):
+            for step in element.get('steps', []):
+                doc_string = step.get('doc_string', {})
                 content = doc_string.get('value', '')
-                if not content or 'request:' not in content:
+
+                if 'request:' not in content:
                     logger.debug("No 'request:' in doc_string — skipping.")
                     continue
 
@@ -31,25 +18,15 @@ def extract_endpoints_by_context(report, filter_context=None):
                             url = parts[2]
                             context = extract_context_from_url(url)
 
-                            # Filter if user specified a context
                             if filter_context and context != filter_context:
                                 continue
 
                             context_map[context].add(url)
                             logger.debug(f"✅ Found endpoint: {url} (context: {context})")
 
-    # Final log summary
     for ctx, urls in context_map.items():
         logger.info(f"[Karate] Context: {ctx} — Total Endpoints: {len(urls)}")
         for url in sorted(urls):
             logger.debug(f"[Karate]   {url}")
 
     return context_map
-
-def extract_context_from_url(url):
-    try:
-        if 'cc/' in url:
-            return url.split('cc/')[1].split('/')[0]
-        return url.split('/')[3]
-    except IndexError:
-        return "unknown"
