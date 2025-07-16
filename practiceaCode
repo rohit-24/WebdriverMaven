@@ -1,33 +1,59 @@
-from collections import defaultdict
-import re
+import os
+import json
+from python_scripts.merge_json_reports import merge_reports
+from python_scripts.coverage_parser import extract_endpoints_by_context
+from python_scripts.openapi_spec_parser import get_openapi_spec_map
+from models.base_llm import get_model, call_model
+from prompts.code_coverage_prompt import build_llm_prompt
 from utils.logger import logger
 
-def extract_endpoints_by_context(report, filter_context=None):
-    context_map = defaultdict(set)
+REPORTS_DIR = "Reports/target"
+OUTPUT_DIR = "outputs"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    for feature in report:
-        for element in feature.get('elements', []):
-            for step in element.get('steps', []):
-                doc_string = step.get('doc_string', {})
-                content = doc_string.get('value', '')
-                if 'request:' in content:
-                    for line in content.split('\n'):
-                        if re.match(r'^1>\s*(POST|GET|PUT|PATCH|DELETE)', line):
-                            parts = line.split()
-                            if len(parts) >= 3:
-                                url = parts[2]
-                                context = extract_context_from_url(url)
+def run():
+    model_choice = input("Choose model (claude/gemini): ").strip().lower()
+    openapi_url = input("Enter OpenAPI Spec URL: ").strip()
+    context = input("Enter context (e.g. abac, service-requests): ").strip()
 
-                                # Filter if needed
-                                if filter_context and context != filter_context:
-                                    continue
+    logger.info("Merging Karate report files...")
+    report_data = merge_reports(REPORTS_DIR)
 
-                                context_map[context].add(url)
+    logger.info(f"Extracting Karate endpoints for context: {context}")
+    karate_map = extract_endpoints_by_context(report_data)
+    karate_endpoints = karate_map.get(context, set())
 
-    # Log the result
-    for ctx, urls in context_map.items():
-        logger.info(f"[Karate] Context: {ctx} — Total: {len(urls)}")
-        for url in sorted(urls):
-            logger.debug(f"[Karate]   {url}")
+    if not karate_endpoints:
+        logger.warning(f"No Karate endpoints found for context: {context}")
+        return
 
-    return context_map
+    logger.info(f"Fetching OpenAPI spec for context: {context}")
+    openapi_map = get_openapi_spec_map(openapi_url)
+    openapi_endpoints = openapi_map.get(context, set())
+
+    if not openapi_endpoints:
+        logger.warning(f"No OpenAPI endpoints found for context: {context}")
+        return
+
+    model_fn = get_model(model_choice)
+
+    prompt = build_llm_prompt(context, karate_endpoints, openapi_endpoints)
+    response = call_model(model_fn, prompt)
+
+    # Save report
+    out_txt = os.path.join(OUTPUT_DIR, f"{context}_coverage.txt")
+    with open(out_txt, "w", encoding="utf-8") as f:
+        f.write(response)
+
+    out_json = os.path.join(OUTPUT_DIR, f"{context}_coverage.json")
+    with open(out_json, "w", encoding="utf-8") as f:
+        json.dump({
+            "context": context,
+            "prompt": prompt,
+            "response": response
+        }, f, indent=2)
+
+    logger.info(f"✅ Coverage report generated for context: {context}")
+
+if __name__ == "__main__":
+    run()
