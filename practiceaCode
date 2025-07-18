@@ -1,37 +1,40 @@
-Act as a Karate API test automation expert.
-Please analyze the given failed test scenario and provide a structured and detailed failure analysis.
+# karate_analysis_prompt.py
 
-Failure Details: {failure_details}
+def analyse_karate_regression_failures_prompt():
+    return """
+Act as a Karate API automation expert.
+
+Please analyze the given Karate test failure and provide a structured failure analysis.
+
+Test Failure Details: {failure_details}
 
 Please provide a structured analysis of this failure, including:
+- A clear explanation of the failure.
+- Detailed technical potential root causes.
+- Recommended debugging steps to identify the issue.
+- Suggestions to improve the test to handle dynamic or flaky behavior more reliably.
 
-1. A clear explanation of what caused the failure.
-2. Detailed potential technical root causes.
-3. Recommended debugging steps.
-4. Technical suggestions for improving the test (e.g., handling dynamic values, better assertions).
-5. Extract squad_name and feature_name from the feature details:
-   - squad_name is the keyword after "@squad_"
-   - feature_name is the value of the "description" field
+Return the response as a JSON object with the following fields:
+- error_type: A short category name of the error.
+- assertion_method: The validation method or keyword that failed (e.g., match, assert, etc.).
+- error_category: One of these ONLY — "Environment Issue", "Test Data Issue", "Script Issue".
+- detailed_error_message: Technical error message as seen in logs or failure summary.
+- file_path: Full path of the feature file that failed.
+- line_number: If known, the line number in the feature where the failure occurred.
+- possible_causes: List of possible technical causes based on the failure.
+- recommendations: Suggestions to fix and improve test resiliency.
+- feature_name: Extracted from the "description" field in the feature metadata.
+- squad_name: Extracted from tag containing "@squad_" (e.g., @squad_Jatayu => Jatayu).
+- scenario_name: Exact name of the scenario that failed.
 
-Format the response strictly as a JSON object with the following fields:
-- "error_type"
-- "assertion_method"
-- "error_category" (must be one of "Environment Issue", "Test Data Issue", or "Script Issue")
-- "detailed_error_message"
-- "file_path"
-- "line_number"
-- "possible_causes"
-- "recommendations"
-- "feature_name"
-- "squad_name"
-- "scenario_name"
+Rules:
+- If detailed_error_message contains phrases like "The assertion failed because the specified customer" or "the specified customer could not be found", mark error_category as "Test Data Issue"
+- If it includes phrases like "could not be found within the specified timeout", mark error_category as "Script Issue"
+- If it includes phrases like "timeout while waiting for response", mark error_category as "Environment Issue"
 
-Categorization Rules:
-- If 'detailed_error_message' contains "The assertion failed because the specified customer" OR "the specified customer could not be found", set "error_category" = "Test Data Issue".
-- If 'detailed_error_message' contains "could not be found within the specified timeout", set "error_category" = "Script Issue".
-- If 'detailed_error_message' contains "timeout exceeded while waiting for event response", set "error_category" = "Environment Issue".
+DO NOT use any error_category other than the three mentioned.
 
-STRICT RULES:
-- Only return a clean and valid JSON dictionary object (no extra output or explanation).
-- Do not include anything other than the dictionary object in your response.
-- Trim any leading/trailing characters outside the dictionary structure.
+IMPORTANT:
+- Return only a dictionary/JSON object. DO NOT print any additional text.
+- Trim any unnecessary characters or explanation before/after the JSON output.
+"""
