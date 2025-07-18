@@ -1,40 +1,32 @@
-# karate_analysis_prompt.py
+import json
 
-def analyse_karate_regression_failures_prompt():
-    return """
-Act as a Karate API automation expert.
+def process_test_results(response_text: str, scenario_title: str, scenario_index: int):
+    """
+    Processes the raw response text and returns a clean failure summary for .txt
+    and a structured JSON object for .json output.
 
-Please analyze the given Karate test failure and provide a structured failure analysis.
+    Args:
+        response_text (str): Raw LLM response.
+        scenario_title (str): Feature + Scenario name.
+        scenario_index (int): Index of the scenario in the test list.
 
-Test Failure Details: {failure_details}
+    Returns:
+        tuple: (summary_text_block, structured_json_object)
+    """
+    cleaned_text = response_text.strip()
 
-Please provide a structured analysis of this failure, including:
-- A clear explanation of the failure.
-- Detailed technical potential root causes.
-- Recommended debugging steps to identify the issue.
-- Suggestions to improve the test to handle dynamic or flaky behavior more reliably.
+    try:
+        json_obj = json.loads(cleaned_text)
+    except json.JSONDecodeError:
+        json_obj = {
+            "error": "Failed to parse response JSON",
+            "raw_text": cleaned_text
+        }
 
-Return the response as a JSON object with the following fields:
-- error_type: A short category name of the error.
-- assertion_method: The validation method or keyword that failed (e.g., match, assert, etc.).
-- error_category: One of these ONLY — "Environment Issue", "Test Data Issue", "Script Issue".
-- detailed_error_message: Technical error message as seen in logs or failure summary.
-- file_path: Full path of the feature file that failed.
-- line_number: If known, the line number in the feature where the failure occurred.
-- possible_causes: List of possible technical causes based on the failure.
-- recommendations: Suggestions to fix and improve test resiliency.
-- feature_name: Extracted from the "description" field in the feature metadata.
-- squad_name: Extracted from tag containing "@squad_" (e.g., @squad_Jatayu => Jatayu).
-- scenario_name: Exact name of the scenario that failed.
+    summary_block = f"""--- Summary for Failure {scenario_index} ---
+Scenario: {scenario_title}
+{json.dumps(json_obj, indent=2)}
 
-Rules:
-- If detailed_error_message contains phrases like "The assertion failed because the specified customer" or "the specified customer could not be found", mark error_category as "Test Data Issue"
-- If it includes phrases like "could not be found within the specified timeout", mark error_category as "Script Issue"
-- If it includes phrases like "timeout while waiting for response", mark error_category as "Environment Issue"
-
-DO NOT use any error_category other than the three mentioned.
-
-IMPORTANT:
-- Return only a dictionary/JSON object. DO NOT print any additional text.
-- Trim any unnecessary characters or explanation before/after the JSON output.
 """
+
+    return summary_block, json_obj
