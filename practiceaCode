@@ -1,16 +1,96 @@
-# --- Generate prompt ---
-def get_prompt(failure):
-    prompt_template = analyse_regression_failures_prompt()
+📌 LV Automation – Simplifying Sanity Checks in Production
+🔍 Problem Statement (Before Automation)
+In the current setup, RMs perform LV sanity checks manually in production.
 
-    failure_details = f"""
-Feature Name: {failure["feature_name"]}
-Scenario Name: {failure["scenario_name"]}
-File Path: {failure.get("file_path", "N/A")}
-Line Number: {failure.get("line_number", "N/A")}
-Tags: {', '.join(failure.get("tags", []))}
-Failed Steps:
-{json.dumps(failure["failed_steps"], indent=2)}
-"""
+This involves navigating the application, validating major screens, and capturing screenshots.
 
-    prompt_text = prompt_template.format(failure_details=failure_details.strip())
-    return HumanMessage(content=prompt_text)
+The process is time-consuming and error-prone, taking 30–40 minutes per CR per market.
+
+Screens are verified manually, and there’s no structured report or audit trail.
+
+✅ Our Solution: LV Automation
+We have implemented a secure, fully automated LV verification pipeline triggered via Jenkins in production:
+
+Automation is triggered by providing a username and test data file.
+
+The pipeline is reviewed and approved by EASRE to ensure:
+
+No sensitive data is printed to the console
+
+Full security compliance
+
+Reports are audit-ready
+
+🔐 Secure & Actionable Output
+On execution, the respective RM receives:
+
+An email notification
+
+A password-protected ZIP file containing:
+
+HTML screenshots
+
+A detailed execution report
+
+A video recording of the entire automation
+
+The video allows RM to review the run visually without re-executing anything manually.
+
+⏱️ Results & Efficiency Gains
+For SG market: 95 test steps executed in just 5 minutes.
+
+Manual time: ~30–40 mins ➝ Now: 5 mins
+
+Time saved per run: ~25–35 minutes
+
+🌍 Scalability Impact – 6 Market Rollout
+Assuming 1 CR/month per market:
+
+Metric	Manual	Automated	Savings
+Time per CR	30–40 mins	5 mins	25–35 mins saved/CR
+Monthly (6 markets)	6 CRs × 30 mins = 3 hrs	6 CRs × 5 mins = 0.5 hr	~2.5 hours saved
+Yearly (6 markets)	3 hrs × 12 = 36 hrs	0.5 hr × 12 = 6 hrs	~30 hours saved/year
+
+📉 Equivalent to saving ~4 full working days annually, just with 6 markets and 1 CR/month.
+📈 As the number of CRs increase, savings multiply exponentially.
+
+🧠 Business Benefits
+✅ Time & cost savings: Fewer manual hours = more time for strategic work
+
+✅ Consistency: Same flow executed across all markets
+
+✅ Security: Reports protected, no sensitive data exposure
+
+✅ Transparency: HTML reports and video playback for audits
+
+✅ Scalability: Ready to roll out to other markets (CN, ID, etc.)
+
+📌 Future Roadmap
+Roll out LV Automation to other regional markets (CN, ID)
+
+Integrate with CI/CD for on-demand regression
+
+Enable central dashboarding to monitor runs across regions
+
+🏁 Summary
+“We’ve reduced a 40-minute manual task to just 5 minutes.
+Across 6 markets, that means saving 30 hours per year,
+improving security, auditability, and scalability —
+all with a single automated flow.”
+
+
+Results & Time Saved
+For the SG Market:
+
+95 test steps executed in just 5 minutes.
+
+Earlier, the same task took 30+ minutes manually.
+
+Over 90 steps automated, with near-zero human intervention.
+
+RMs now just review the video instead of doing the task manually.
+
+📉 Time saved: 30 minutes per run
+🔄 Effort reduced: No more manual verification
+🔒 Security improved: Protected reports & no console leaks
+📈 Scalability: One-click execution for any market
