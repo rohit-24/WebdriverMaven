@@ -1,1 +1,22 @@
-🤝 Cross-Team Collaboration: Worked closely with EASRE, business users, and QA teams to ensure seamless integration, dry runs, and feedback across UAT and Prod.
+# --- Generate prompt ---
+def get_prompt(failure):
+    prompt_template = analyse_regression_failures_prompt()
+
+    # Extract squad name from tags like "@squad_Jatayu"
+    tags = failure.get("tags", [])
+    squad_tag = next((tag for tag in tags if "@squad_" in tag), None)
+    squad_name = squad_tag.split("_")[1] if squad_tag else "Unknown"
+
+    failure_details = f"""
+Feature Name: {failure["feature_name"]}
+Scenario Name: {failure["scenario_name"]}
+Squad Name: {squad_name}
+File Path: {failure.get("file_path", "N/A")}
+Line Number: {failure.get("line_number", "N/A")}
+Tags: {', '.join(tags)}
+Failed Steps:
+{json.dumps(failure["failed_steps"], indent=2)}
+"""
+
+    prompt_text = prompt_template.format(failure_details=failure_details.strip())
+    return HumanMessage(content=prompt_text)
