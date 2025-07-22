@@ -1,47 +1,93 @@
-class CucumberParser:
+import sys
+import json
+from logger import logger
+from config import config
+from utils.get_token import get_token
+from python_scripts.karate_parser import CucumberParser
+from python_scripts.test_results_parser import process_test_results
+from prompts.categorise_failures_prompt import analyse_regression_failures_prompt
+from langchain_core.messages import HumanMessage
+from models.claude_model import ClaudeModel
+from models.gemini_model import GeminiModel
 
-    @staticmethod
-    def extract_squad_name(tags):
-        """Extract squad name from tags like '@squad_Jatayu'."""
-        for tag in tags:
-            if "@squad_" in tag:
-                return tag.split("_", 1)[1]
-        return "Unknown"
+# --- Load Token ---
+BEARER_TOKEN = get_token()
 
-    @staticmethod
-    def extract_failures(karate_json):
-        failures = []
-        for feature in karate_json:
-            feature_name = feature.get("name", "")
-            tags = [tag.get("name", "") for tag in feature.get("tags", [])]
-            for element in feature.get("elements", []):
-                scenario_name = element.get("name", "")
-                steps = element.get("steps", [])
-                failed_steps = [step for step in steps if step.get("result", {}).get("status") == "failed"]
-                if failed_steps:
-                    failures.append({
-                        "feature_name": feature_name,
-                        "scenario_name": scenario_name,
-                        "failed_steps": failed_steps,
-                        "tags": tags
-                    })
-        return failures
+# --- Get model instance ---
+def get_model(model_type: str):
+    if model_type == "claude":
+        return ClaudeModel(model_name=config.CLAUDE_MODEL_ID, project_id=config.PROJECT_ID, api_key=BEARER_TOKEN)
+    elif model_type == "gemini":
+        return GeminiModel(model_name=config.GEMINI_MODEL_ID, project_id=config.PROJECT_ID, api_key=BEARER_TOKEN)
+    else:
+        raise ValueError(f"Unknown model type: {model_type}")
 
-    @staticmethod
-    def build_structured_failure(failure):
-        """Return a full failure dictionary with additional metadata."""
-        tags = failure.get("tags", [])
-        squad_name = CucumberParser.extract_squad_name(tags)
+# --- Invoke model ---
+def call_model(prompt, model_type="claude"):
+    llm = get_model(model_type)
+    return llm.invoke([prompt])
 
-        return {
-            "feature_name": failure.get("feature_name", ""),
-            "scenario_name": failure.get("scenario_name", ""),
-            "failed_steps": failure.get("failed_steps", []),
-            "tags": tags,
-            "file_path": failure.get("file_path", "N/A"),
-            "line_number": failure.get("line_number", "N/A"),
-            "squad_name": squad_name
-        }
+# --- Generate prompt ---
+def get_prompt(failure):
+    prompt_template = analyse_regression_failures_prompt()
 
+    failure_details = f"""
+Feature Name: {failure["feature_name"]}
+Scenario Name: {failure["scenario_name"]}
+Squad Name: {failure["squad_name"]}
+File Path: {failure.get("file_path", "N/A")}
+Line Number: {failure.get("line_number", "N/A")}
+Tags: {', '.join(failure.get("tags", []))}
+Failed Steps:
+{json.dumps(failure["failed_steps"], indent=2)}
+"""
+    return HumanMessage(content=prompt_template.format(failure_details=failure_details))
 
+# --- Load karate report ---
+def read_karate_report():
+    try:
+        with open(config.CUCUMBER_JSON_FILE_PATH, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        logger.error(f"❌ Karate JSON file not found: {config.CUCUMBER_JSON_FILE_PATH}")
+        sys.exit(1)
+    except json.JSONDecodeError:
+        logger.error(f"❌ Invalid JSON format: {config.CUCUMBER_JSON_FILE_PATH}")
+        sys.exit(1)
 
+# --- Main execution ---
+if __name__ == "__main__":
+    karate_data = read_karate_report()
+    parser = CucumberParser()
+    failures = parser.extract_failures(karate_data)
+
+    if not failures:
+        print("✅ No failed scenarios found.")
+        sys.exit(0)
+
+    total_failures = len(failures)
+    print(f"🚨 Found {total_failures} failed scenario(s) to analyze.")
+
+    with open("karate_failure_analysis.txt", "w", encoding="utf-8") as f_out, \
+         open("karate_failure_analysis.json", "w", encoding="utf-8") as json_out:
+
+        all_failure_results = []
+
+        for i, failure in enumerate(failures, start=1):
+            structured_failure = parser.build_structured_failure(failure)
+            prompt = get_prompt(structured_failure)
+            scenario_title = f"{structured_failure['feature_name']} - {structured_failure['scenario_name']}"
+
+            print(f"\n🔍 Processing Failure {i}/{total_failures}: {scenario_title}")
+            try:
+                response = call_model(prompt, "claude")
+                result_text, result_json = process_test_results(response, scenario_title, i)
+                f_out.write(result_text)
+                all_failure_results.append(result_json)
+                print(f"✅ Failure {i} processed successfully.")
+            except Exception as e:
+                print(f"❌ Error processing Failure {i}: {e}")
+
+        json.dump(all_failure_results, json_out, indent=2)
+
+    print(f"\n📄 Analysis completed. Output written to karate_failure_analysis.txt and karate_failure_analysis.json")
