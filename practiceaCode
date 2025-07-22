@@ -1,22 +1,47 @@
-# --- Generate prompt ---
-def get_prompt(failure):
-    prompt_template = analyse_regression_failures_prompt()
+class CucumberParser:
 
-    # Extract squad name from tags like "@squad_Jatayu"
-    tags = failure.get("tags", [])
-    squad_tag = next((tag for tag in tags if "@squad_" in tag), None)
-    squad_name = squad_tag.split("_")[1] if squad_tag else "Unknown"
+    @staticmethod
+    def extract_squad_name(tags):
+        """Extract squad name from tags like '@squad_Jatayu'."""
+        for tag in tags:
+            if "@squad_" in tag:
+                return tag.split("_", 1)[1]
+        return "Unknown"
 
-    failure_details = f"""
-Feature Name: {failure["feature_name"]}
-Scenario Name: {failure["scenario_name"]}
-Squad Name: {squad_name}
-File Path: {failure.get("file_path", "N/A")}
-Line Number: {failure.get("line_number", "N/A")}
-Tags: {', '.join(tags)}
-Failed Steps:
-{json.dumps(failure["failed_steps"], indent=2)}
-"""
+    @staticmethod
+    def extract_failures(karate_json):
+        failures = []
+        for feature in karate_json:
+            feature_name = feature.get("name", "")
+            tags = [tag.get("name", "") for tag in feature.get("tags", [])]
+            for element in feature.get("elements", []):
+                scenario_name = element.get("name", "")
+                steps = element.get("steps", [])
+                failed_steps = [step for step in steps if step.get("result", {}).get("status") == "failed"]
+                if failed_steps:
+                    failures.append({
+                        "feature_name": feature_name,
+                        "scenario_name": scenario_name,
+                        "failed_steps": failed_steps,
+                        "tags": tags
+                    })
+        return failures
 
-    prompt_text = prompt_template.format(failure_details=failure_details.strip())
-    return HumanMessage(content=prompt_text)
+    @staticmethod
+    def build_structured_failure(failure):
+        """Return a full failure dictionary with additional metadata."""
+        tags = failure.get("tags", [])
+        squad_name = CucumberParser.extract_squad_name(tags)
+
+        return {
+            "feature_name": failure.get("feature_name", ""),
+            "scenario_name": failure.get("scenario_name", ""),
+            "failed_steps": failure.get("failed_steps", []),
+            "tags": tags,
+            "file_path": failure.get("file_path", "N/A"),
+            "line_number": failure.get("line_number", "N/A"),
+            "squad_name": squad_name
+        }
+
+
+
