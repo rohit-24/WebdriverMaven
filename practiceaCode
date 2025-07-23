@@ -1,9 +1,15 @@
-import re
+import os
 
-def extract_cypress_test(file_path: str) -> list[str]:
-    with open(file_path, 'r', encoding='utf-8') as f:
-        content = f.read()
+def generate_playwright_files(page_object: str, step_def: str, output_dir: str):
+    os.makedirs(output_dir, exist_ok=True)
 
-    # Split by semicolon assuming 1 Cypress action per line
-    steps = [line.strip() for line in content.split(";") if line.strip()]
-    return steps
+    page_obj_path = os.path.join(output_dir, "audit_log.page.ts")
+    step_def_path = os.path.join(output_dir, "audit_log.steps.ts")
+
+    print(f"💾 Writing Page Object to: {page_obj_path}")
+    with open(page_obj_path, "w", encoding="utf-8") as f:
+        f.write(page_object)
+
+    print(f"💾 Writing Step Definitions to: {step_def_path}")
+    with open(step_def_path, "w", encoding="utf-8") as f:
+        f.write(step_def)
