@@ -1,31 +1,30 @@
-from config.config import INPUT_FILE, OUTPUT_DIR
-from python_scripts.file_parser import extract_cypress_test
-from python_scripts.playwright_generator import generate_playwright_files
-from prompts.migration_prompt_template import get_prompt
-from models.model_factory import get_model
-from utils.get_token import get_token
+import os
+import re
 
-def main():
-    print("🔐 Fetching token...")
-    token = get_token()
+def generate_playwright_files(response: str, output_dir: str):
+    print("🔍 Extracting sections from LLM response...")
+    page_object = extract_section(response, "PageObject")
+    step_def = extract_section(response, "StepDefinition")
 
-    print("🤖 Initializing LLM model...")
-    model = get_model("claude", token)  # change to "gemini" if needed
+    os.makedirs(output_dir, exist_ok=True)
 
-    print(f"📄 Reading Cypress test file: {INPUT_FILE}")
-    cypress_test = extract_cypress_test(INPUT_FILE)
-    print("✅ Cypress test file read successfully.")
+    page_obj_path = os.path.join(output_dir, "audit_log.page.ts")
+    step_def_path = os.path.join(output_dir, "audit_log.steps.ts")
 
-    print("📝 Generating prompt for LLM...")
-    prompt = get_prompt(cypress_test)
+    print(f"💾 Writing Page Object to: {page_obj_path}")
+    with open(page_obj_path, "w", encoding="utf-8") as f:
+        f.write(page_object)
 
-    print("🚀 Sending prompt to LLM...")
-    response = model.call(prompt)
-    print("✅ LLM response received.")
+    print(f"💾 Writing Step Definitions to: {step_def_path}")
+    with open(step_def_path, "w", encoding="utf-8") as f:
+        f.write(step_def)
 
-    print(f"📦 Saving converted Playwright files to: {OUTPUT_DIR}")
-    generate_playwright_files(response, OUTPUT_DIR)
-    print("🎉 Migration complete! Playwright files are ready.")
-
-if __name__ == "__main__":
-    main()
+def extract_section(response: str, section_name: str) -> str:
+    pattern = f"=== {section_name} ===\\n(.*?)(?=\\n===|\\Z)"
+    match = re.search(pattern, response, re.DOTALL)
+    if match:
+        print(f"✅ Found section: {section_name}")
+        return match.group(1).strip()
+    else:
+        print(f"⚠️ Section '{section_name}' not found in response.")
+        return "// Section not found"
