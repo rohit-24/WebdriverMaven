@@ -1,7 +1,19 @@
-os.makedirs(output_dir, exist_ok=True)
+import os
+import re
 
-with open(os.path.join(output_dir, "audit_log.page.ts"), "w", encoding="utf-8") as f:
-    f.write(page_object)
+def generate_playwright_files(response: str, output_dir: str):
+    page_object = extract_section(response, "PageObject")
+    step_def = extract_section(response, "StepDefinition")
 
-with open(os.path.join(output_dir, "audit_log.steps.ts"), "w", encoding="utf-8") as f:
-    f.write(step_def)
+    os.makedirs(output_dir, exist_ok=True)
+
+    with open(os.path.join(output_dir, "audit_log.page.ts"), "w", encoding="utf-8") as f:
+        f.write(page_object)
+
+    with open(os.path.join(output_dir, "audit_log.steps.ts"), "w", encoding="utf-8") as f:
+        f.write(step_def)
+
+def extract_section(response: str, section_name: str) -> str:
+    pattern = f"=== {section_name} ===\\n(.*?)(?=\\n===|\\Z)"
+    match = re.search(pattern, response, re.DOTALL)
+    return match.group(1).strip() if match else "// Section not found"
