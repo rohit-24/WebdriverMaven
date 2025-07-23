@@ -1,18 +1,14 @@
-def extract_cypress_test(file_path: str) -> str:
-    with open(file_path, 'r', encoding='utf-8') as f:
-        return f.read()
+def get_prompt(cypress_test: str) -> str:
+    return f"""
+I'm working on converting a Cypress test module to Playwright using TypeScript, Cucumber, and POM.
 
+Please generate a **complete Playwright Page Object class and corresponding Step Definition file** based on:
 
-def generate_playwright_files(response: str):
-    page_obj = extract_section(response, "Playwright Page Object")
-    steps = extract_section(response, "Step Definition")
+1. **Cypress Test Snippets**:
+{cypress_test}
 
-    with open("Reports/output/audit_log.page.ts", "w") as f:
-        f.write(page_obj)
-
-    with open("Reports/output/audit_log.steps.ts", "w") as f:
-        f.write(steps)
-
-def extract_section(response: str, section_header: str) -> str:
-    # Add logic to split based on header if needed
-    return response
+Requirements:
+- Use getByTestId and const selectors
+- Full Page Object and Step Definitions with Cucumber-style bindings
+- Follow `ScenarioWorld` pattern and include proper response handling
+"""
