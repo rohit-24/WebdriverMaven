@@ -1,26 +1,18 @@
-from config.config import Config
-from python_scripts.file_parser import extract_cypress_test
-from python_scripts.playwright_generator import generate_playwright_files
-from models.model_factory import get_model
-from utils.get_token import get_token
+def extract_cypress_test(file_path: str) -> str:
+    with open(file_path, 'r', encoding='utf-8') as f:
+        return f.read()
 
-def main():
-    token = get_token()
-    model = get_model("claude", token)
 
-    # Read Cypress test file
-    file_path = "Reports/input/sample_cypress_test.js"
-    cypress_test_content = extract_cypress_test(file_path)
+def generate_playwright_files(response: str):
+    page_obj = extract_section(response, "Playwright Page Object")
+    steps = extract_section(response, "Step Definition")
 
-    # Prepare prompt
-    from prompts.migration_prompt_template import get_prompt
-    prompt = get_prompt(cypress_test_content)
+    with open("Reports/output/audit_log.page.ts", "w") as f:
+        f.write(page_obj)
 
-    # Call LLM
-    response = model.call(prompt)
+    with open("Reports/output/audit_log.steps.ts", "w") as f:
+        f.write(steps)
 
-    # Save output
-    generate_playwright_files(response)
-
-if __name__ == "__main__":
-    main()
+def extract_section(response: str, section_header: str) -> str:
+    # Add logic to split based on header if needed
+    return response
