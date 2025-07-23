@@ -1,15 +1,46 @@
-import os
+from config.config import INPUT_FILE, OUTPUT_DIR
+from python_scripts.file_parser import extract_cypress_test
+from python_scripts.playwright_generator import generate_playwright_files
+from prompts.migration_prompt_template import get_prompt
+from models.model_factory import get_model
+from utils.get_token import get_token
 
-def generate_playwright_files(page_object: str, step_def: str, output_dir: str):
-    os.makedirs(output_dir, exist_ok=True)
+def chunk_list(items, size):
+    for i in range(0, len(items), size):
+        yield items[i:i + size]
 
-    page_obj_path = os.path.join(output_dir, "audit_log.page.ts")
-    step_def_path = os.path.join(output_dir, "audit_log.steps.ts")
+def main():
+    print("🔐 Fetching token...")
+    token = get_token()
 
-    print(f"💾 Writing Page Object to: {page_obj_path}")
-    with open(page_obj_path, "w", encoding="utf-8") as f:
-        f.write(page_object)
+    print("🤖 Initializing LLM model...")
+    model = get_model("claude", token)
 
-    print(f"💾 Writing Step Definitions to: {step_def_path}")
-    with open(step_def_path, "w", encoding="utf-8") as f:
-        f.write(step_def)
+    print(f"📄 Reading Cypress test file: {INPUT_FILE}")
+    steps = extract_cypress_test(INPUT_FILE)
+    print(f"✅ Loaded {len(steps)} Cypress steps")
+
+    all_page_obj = []
+    all_step_defs = []
+
+    for idx, step_chunk in enumerate(chunk_list(steps, 10)):
+        print(f"\n🚀 Processing chunk {idx + 1} ({len(step_chunk)} steps)...")
+        cypress_chunk = ";\n".join(step_chunk) + ";"
+
+        prompt = get_prompt(cypress_chunk)
+        response = model.call(prompt)
+
+        from python_scripts.playwright_generator import extract_section
+        page_obj = extract_section(response, "PageObject")
+        step_def = extract_section(response, "StepDefinition")
+
+        all_page_obj.append(page_obj)
+        all_step_defs.append(step_def)
+
+    print("💾 Writing merged output to .ts files...")
+    generate_playwright_files("\n".join(all_page_obj), "\n".join(all_step_defs), OUTPUT_DIR)
+
+    print("🎉 Migration complete! Full Playwright output generated.")
+
+if __name__ == "__main__":
+    main()
