@@ -1,17 +1,152 @@
-Valid Scenarios
-Select today's date from UI – e.g., 23-07-2025 → Should be accepted.
-Select a date exactly 2 years ago from today – e.g., 23-07-2023 → Should be allowed.
-Manually enter valid past date in range – e.g., 15-05-2024 → Should be accepted.
-Clear date using Backspace/Delete and enter valid date – Should update correctly.
-Paste a valid date (01-01-2024) → Should be accepted.
-❌ Invalid Scenarios
-Select any future date from UI (e.g., 01-08-2025) – Should be greyed out/unselectable.
-Select a date older than 2 years (e.g., 22-07-2023) – Should be disabled in UI.
-Manually enter date before allowed range (e.g., 01-01-2020) – Should show validation error.
-Manually enter a future date (e.g., 25-12-2025) – Should be rejected.
-Enter date in wrong format (e.g., 2025/07/01) – Should trigger format validation error.
-Enter alphabetic characters (e.g., ab-cd-efgh) – Should be rejected or auto-cleared.
-Enter partial date (e.g., 15-07) – Should not be accepted.
-Enter non-existent date (e.g., 31-02-2024) – Should show date validity error.
-Leave field blank and try to submit – Should show "required" error if mandatory.
-Enter symbols/special characters (e.g., $$-##-!!!!) – Should be rejected.
+✅ 1. Overview of the Agent
+Goal:
+Convert Cypress JS test files into:
+
+Playwright Page Object files
+
+Playwright Step Definition files
+...with TypeScript + Cucumber + POM standards.
+
+✅ 2. Suggested Folder Structure for New Agent
+arduino
+Copy
+Edit
+cypressToPlaywrightAgent/
+├── config/
+│   └── config.py
+├── models/
+│   ├── base_llm.py
+│   ├── claude_model.py
+│   └── gemini_model.py
+├── prompts/
+│   └── migration_prompt_template.py
+├── python_scripts/
+│   ├── file_parser.py               # Parses Cypress JS files
+│   └── playwright_generator.py      # Generates page object & step def
+├── utils/
+│   ├── get_token.py
+│   └── logger.py
+├── main.py
+├── requirements.txt
+└── README.md
+✅ 3. Main Flow (main.py)
+python
+Copy
+Edit
+from config.config import Config
+from python_scripts.file_parser import extract_cypress_test
+from python_scripts.playwright_generator import generate_playwright_files
+from models.model_factory import get_model
+from utils.get_token import get_token
+
+def main():
+    token = get_token()
+    model = get_model("claude", token)
+
+    # Read Cypress test file
+    file_path = "Reports/input/sample_cypress_test.js"
+    cypress_test_content = extract_cypress_test(file_path)
+
+    # Prepare prompt
+    from prompts.migration_prompt_template import get_prompt
+    prompt = get_prompt(cypress_test_content)
+
+    # Call LLM
+    response = model.call(prompt)
+
+    # Save output
+    generate_playwright_files(response)
+
+if __name__ == "__main__":
+    main()
+✅ 4. Cypress File Parser (file_parser.py)
+python
+Copy
+Edit
+def extract_cypress_test(file_path: str) -> str:
+    with open(file_path, 'r', encoding='utf-8') as f:
+        return f.read()
+✅ 5. Prompt Template (migration_prompt_template.py)
+python
+Copy
+Edit
+def get_prompt(cypress_test: str) -> str:
+    return f"""
+I'm working on converting a Cypress test module to Playwright using TypeScript, Cucumber, and POM.
+
+Please generate a **complete Playwright Page Object class and corresponding Step Definition file** based on:
+
+1. **Cypress Test Snippets**:
+{cypress_test}
+
+Requirements:
+- Use getByTestId and const selectors
+- Full Page Object and Step Definitions with Cucumber-style bindings
+- Follow `ScenarioWorld` pattern and include proper response handling
+"""
+✅ 6. Generate Output Files (playwright_generator.py)
+python
+Copy
+Edit
+def generate_playwright_files(response: str):
+    page_obj = extract_section(response, "Playwright Page Object")
+    steps = extract_section(response, "Step Definition")
+
+    with open("Reports/output/audit_log.page.ts", "w") as f:
+        f.write(page_obj)
+
+    with open("Reports/output/audit_log.steps.ts", "w") as f:
+        f.write(steps)
+
+def extract_section(response: str, section_header: str) -> str:
+    # Add logic to split based on header if needed
+    return response
+✅ 7. Model Factory (model_factory.py)
+python
+Copy
+Edit
+from models.claude_model import ClaudeModel
+from models.gemini_model import GeminiModel
+
+def get_model(model_type: str, api_key: str):
+    if model_type == "claude":
+        return ClaudeModel(api_key=api_key)
+    elif model_type == "gemini":
+        return GeminiModel(api_key=api_key)
+    else:
+        raise ValueError("Unsupported model type")
+✅ 8. Prompt Example Output
+If you feed in:
+
+js
+Copy
+Edit
+cy.get('[data-testid="audit-log-menu-button"]').click();
+cy.get('[data-testid="audit-log-datetime-filter"]').click();
+LLM should return:
+
+ts
+Copy
+Edit
+// Page Object
+export default class AuditLogPage extends BasePage {
+  async openAuditLogMenu() {
+    await page.getByTestId("audit-log-menu-button").click();
+  }
+  async clickDateTimeFilter() {
+    await page.getByTestId("audit-log-datetime-filter").click();
+  }
+}
+
+// Step Def
+When("user opens audit log", async function (this: ScenarioWorld) {
+  await this.pageObjects.auditLogPage.openAuditLogMenu();
+});
+✅ Next Steps
+✅ Confirm if you want the whole Python codebase scaffolded
+
+✅ Let me know if Claude or Gemini should be default
+
+✅ Should I add test case handling for multiple input files?
+
+Once confirmed, I’ll generate full working code in chunks (with comments and docstrings). Would you like to proceed?
