@@ -1,30 +1,9 @@
-import os
 import re
 
-def generate_playwright_files(response: str, output_dir: str):
-    print("🔍 Extracting sections from LLM response...")
-    page_object = extract_section(response, "PageObject")
-    step_def = extract_section(response, "StepDefinition")
+def extract_cypress_test(file_path: str) -> list[str]:
+    with open(file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
 
-    os.makedirs(output_dir, exist_ok=True)
-
-    page_obj_path = os.path.join(output_dir, "audit_log.page.ts")
-    step_def_path = os.path.join(output_dir, "audit_log.steps.ts")
-
-    print(f"💾 Writing Page Object to: {page_obj_path}")
-    with open(page_obj_path, "w", encoding="utf-8") as f:
-        f.write(page_object)
-
-    print(f"💾 Writing Step Definitions to: {step_def_path}")
-    with open(step_def_path, "w", encoding="utf-8") as f:
-        f.write(step_def)
-
-def extract_section(response: str, section_name: str) -> str:
-    pattern = f"=== {section_name} ===\\n(.*?)(?=\\n===|\\Z)"
-    match = re.search(pattern, response, re.DOTALL)
-    if match:
-        print(f"✅ Found section: {section_name}")
-        return match.group(1).strip()
-    else:
-        print(f"⚠️ Section '{section_name}' not found in response.")
-        return "// Section not found"
+    # Split by semicolon assuming 1 Cypress action per line
+    steps = [line.strip() for line in content.split(";") if line.strip()]
+    return steps
