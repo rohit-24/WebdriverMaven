@@ -1,25 +1,27 @@
-from config.config import INPUT_FILE, OUTPUT_DIR
-from python_scripts.file_parser import extract_cypress_test
-from python_scripts.playwright_generator import generate_playwright_files
-from prompts.migration_prompt_template import get_prompt
-from models.model_factory import get_model
-from utils.get_token import get_token
+def get_prompt(cypress_test: str) -> str:
+    return f"""
+I'm working on converting a Cypress test module to Playwright using TypeScript, Cucumber, and the Page Object Model (POM).
 
-def main():
-    token = get_token()
-    model = get_model("claude", token)  # change to "gemini" if needed
+Please generate a **complete Playwright Page Object class and corresponding Step Definition file** based on:
 
-    # Step 1: Read Cypress test file
-    cypress_test = extract_cypress_test(INPUT_FILE)
+**Cypress Test Snippets**:
+{cypress_test}
 
-    # Step 2: Generate prompt
-    prompt = get_prompt(cypress_test)
+Requirements:
 
-    # Step 3: Call Claude/Gemini
-    response = model.call(prompt)
+1. **Playwright Page Object**
+- Full implementation, not skeletal
+- Use `getByTestId` where possible
+- All selectors defined as const at class level
+- Follow BasePage pattern
+- Method names should reflect Cypress actions
 
-    # Step 4: Save .ts files to output folder
-    generate_playwright_files(response, OUTPUT_DIR)
+2. **Step Definition File**
+- Full Cucumber-style step bindings
+- Use `ScenarioWorld` pattern for world object
+- Delegate all logic to Page Object methods
 
-if __name__ == "__main__":
-    main()
+Output two sections:
+- === PageObject ===
+- === StepDefinition ===
+"""
