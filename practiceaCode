@@ -1,14 +1,7 @@
-def get_prompt(cypress_test: str) -> str:
-    return f"""
-I'm working on converting a Cypress test module to Playwright using TypeScript, Cucumber, and POM.
+os.makedirs(output_dir, exist_ok=True)
 
-Please generate a **complete Playwright Page Object class and corresponding Step Definition file** based on:
+with open(os.path.join(output_dir, "audit_log.page.ts"), "w", encoding="utf-8") as f:
+    f.write(page_object)
 
-1. **Cypress Test Snippets**:
-{cypress_test}
-
-Requirements:
-- Use getByTestId and const selectors
-- Full Page Object and Step Definitions with Cucumber-style bindings
-- Follow `ScenarioWorld` pattern and include proper response handling
-"""
+with open(os.path.join(output_dir, "audit_log.steps.ts"), "w", encoding="utf-8") as f:
+    f.write(step_def)
