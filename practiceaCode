@@ -1,12 +1,17 @@
-Subject: Urgent: Claim Settlement Delay Post Approval
-
-Hi Team,
-
-It’s been over a month since my claim was approved, yet the amount hasn’t been released. I’ve had to follow up multiple times, which has been very exhausting.
-
-The entire process has already taken 3 months – 2 months for approval due to internal delays, and now another month citing technical issues. This level of service is disappointing, especially when other insurers complete the entire process within 1-2 weeks.
-
-@Kiran, please help escalate this to FHPL senior management. I’m tired of chasing the same issue repeatedly.
-
-Regards,
-[Your Name]
+Valid Scenarios
+Select today's date from UI – e.g., 23-07-2025 → Should be accepted.
+Select a date exactly 2 years ago from today – e.g., 23-07-2023 → Should be allowed.
+Manually enter valid past date in range – e.g., 15-05-2024 → Should be accepted.
+Clear date using Backspace/Delete and enter valid date – Should update correctly.
+Paste a valid date (01-01-2024) → Should be accepted.
+❌ Invalid Scenarios
+Select any future date from UI (e.g., 01-08-2025) – Should be greyed out/unselectable.
+Select a date older than 2 years (e.g., 22-07-2023) – Should be disabled in UI.
+Manually enter date before allowed range (e.g., 01-01-2020) – Should show validation error.
+Manually enter a future date (e.g., 25-12-2025) – Should be rejected.
+Enter date in wrong format (e.g., 2025/07/01) – Should trigger format validation error.
+Enter alphabetic characters (e.g., ab-cd-efgh) – Should be rejected or auto-cleared.
+Enter partial date (e.g., 15-07) – Should not be accepted.
+Enter non-existent date (e.g., 31-02-2024) – Should show date validity error.
+Leave field blank and try to submit – Should show "required" error if mandatory.
+Enter symbols/special characters (e.g., $$-##-!!!!) – Should be rejected.
