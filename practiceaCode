@@ -1,31 +1,48 @@
-import os
-import re
+def get_prompt(cypress_test: str, base_page_code: str = "") -> str:
+    return f"""
+I'm working on converting Cypress tests to Playwright (TypeScript) using the Page Object Model and Cucumber.
 
-def generate_playwright_files(page_object: str, step_def: str, output_dir: str):
-    os.makedirs(output_dir, exist_ok=True)
+Below is the existing **BasePage** class used in the project:
 
-    page_obj_path = os.path.join(output_dir, "audit_log.page.ts")
-    step_def_path = os.path.join(output_dir, "audit_log.steps.ts")
+{base_page_code}
 
-    print(f"💾 Writing Page Object to: {page_obj_path}")
-    with open(page_obj_path, "w", encoding="utf-8") as f:
-        f.write(page_object)
+Please reuse any relevant methods from the above BasePage class wherever possible.
 
-    print(f"💾 Writing Step Definitions to: {step_def_path}")
-    with open(step_def_path, "w", encoding="utf-8") as f:
-        f.write(step_def)
+Below is a chunk of **Cypress test steps** to convert:
+{cypress_test}
 
-def extract_section(response: str, section_name: str) -> str:
-    """
-    Extracts the content between section headers like:
-    === PageObject ===
-    === StepDefinition ===
-    """
-    pattern = f"=== {section_name} ===\\n(.*?)(?=\\n===|\\Z)"
-    match = re.search(pattern, response, re.DOTALL)
-    if match:
-        print(f"✅ Found section: {section_name}")
-        return match.group(1).strip()
-    else:
-        print(f"⚠️ Section '{section_name}' not found in response.")
-        return f"// Section '{section_name}' not found in LLM output"
+Please generate the following:
+
+1. === PageObject ===
+- A full Playwright Page Object class
+- Use getByTestId where possible
+- Inherit from BasePage and reuse existing methods
+
+2. === StepDefinition ===
+- A complete Step Definition file using ScenarioWorld
+- Delegate logic to the Page Object methods
+"""
+
+
+def load_base_page(file_path: str) -> str:
+    with open(file_path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+BASE_PAGE_FILE = "path/to/base.page.ts"  # update path accordingly
+base_page_code = load_base_page(BASE_PAGE_FILE)
+
+for idx, step_chunk in enumerate(chunk_list(steps, 10)):
+    print(f"\n🚀 Processing chunk {idx + 1} ({len(step_chunk)} steps)...")
+    cypress_chunk = ";\n".join(step_chunk) + ";"
+
+    prompt = get_prompt(cypress_chunk, base_page_code)
+    response = model.call(prompt)
+
+    page_obj = extract_section(response, "PageObject")
+    step_def = extract_section(response, "StepDefinition")
+
+    all_page_obj.append(page_obj)
+    all_step_defs.append(step_def)
+
+
