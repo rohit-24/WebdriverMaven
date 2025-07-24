@@ -1,53 +1,28 @@
-import os
-import re
-
-def generate_playwright_files(page_object: str, step_def: str, output_dir: str):
-    os.makedirs(output_dir, exist_ok=True)
-
-    page_obj_path = os.path.join(output_dir, "audit_log.page.ts")
-    step_def_path = os.path.join(output_dir, "audit_log.steps.ts")
-
-    print(f"💾 Writing Page Object to: {page_obj_path}")
-    with open(page_obj_path, "w", encoding="utf-8") as f:
-        f.write(page_object)
-
-    print(f"💾 Writing Step Definitions to: {step_def_path}")
-    with open(step_def_path, "w", encoding="utf-8") as f:
-        f.write(step_def)
-
-
-def extract_section(response: str, section_name: str) -> str:
-    """
-    Extracts and sanitizes a section from the LLM response.
-    Expected header format: === PageObject === or === StepDefinition ===
-    """
-    pattern = f"=== {section_name} ===\\n(.*?)(?=\\n===|\\Z)"
-    match = re.search(pattern, response, re.DOTALL)
-    if not match:
-        print(f"⚠️ Section '{section_name}' not found in response.")
-        return f"// Section '{section_name}' not found"
-
-    raw_content = match.group(1).strip()
-    return sanitize_section(raw_content, section_name)
-
-
 def sanitize_section(content: str, section_name: str) -> str:
-    """
-    Removes unwanted explanations or markdown-style summaries
-    """
-    # Remove everything after a line like: "This implementation..." or markdown bullets
-    cutoff_phrases = [
-        "This implementation", "The Step Definition", "The Page Object", 
-        "1.", "*", "-", "✅", "```"
-    ]
+    print(f"\n🧹 Sanitizing section: {section_name}")
+    print("📄 Raw content preview (first 300 chars):")
+    print(content[:300])  # Show a small chunk for debugging
+
+    if section_name == "PageObject":
+        cutoff_phrases = ["This implementation", "The Page Object", "1.", "*", "-", "✅", "```"]
+    elif section_name == "StepDefinition":
+        cutoff_phrases = ["This implementation", "The Step Definition", "1.", "*", "-", "✅", "```"]
+    else:
+        cutoff_phrases = ["This implementation", "1.", "*", "-", "✅", "```"]
 
     lines = content.splitlines()
     cleaned_lines = []
-    for line in lines:
+
+    for i, line in enumerate(lines):
         if any(line.strip().startswith(p) for p in cutoff_phrases):
-            break  # Stop at first sign of extra commentary
+            print(f"🛑 Cutoff at line {i + 1}: '{line.strip()}'")
+            break
         cleaned_lines.append(line)
 
-    # Additional cleanup: trim whitespace
     cleaned = "\n".join(cleaned_lines).strip()
+
+    print("✅ Sanitized output preview (first 300 chars):")
+    print(cleaned[:300])  # Preview after cleaning
+    print("🧼 Done sanitizing.\n")
+
     return cleaned
