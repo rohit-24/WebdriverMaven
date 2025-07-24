@@ -1,18 +1,24 @@
-import re
+def get_prompt(cypress_code: str) -> str:
+    return f"""
+You are a Playwright migration agent. Convert the following Cypress test code to Playwright.
 
-def extract_section(response: str, section_name: str) -> str:
-    """
-    Extracts the content between section headers like:
-    === PageObject ===
-    === StepDefinition ===
-    """
-    # Improved regex: match between section_name and next === SECTION === or end of text
-    pattern = rf"=== {section_name} ===\s*(.*?)\s*(?:(?:=== \w+ ===)|\Z)"
-    match = re.search(pattern, response, re.DOTALL | re.IGNORECASE)
-    if match:
-        content = match.group(1).strip()
-        print(f"✅ Found and extracted clean '{section_name}' section")
-        return content
-    else:
-        print(f"⚠️ Section '{section_name}' not found in response.")
-        return f"// Section '{section_name}' not found in LLM output"
+1. Use Playwright's `test.step()` and locator methods with Playwright Test Runner.
+2. Generate proper selectors using `getByTestId` where available.
+3. The response should be in 2 sections:
+
+=== PageObject ===
+Write the Page Object Model class (with proper locators and methods).
+
+=== StepDefinition ===
+First include this comment line:
+**✅ Playwright expected Test Snippets for step definition**
+
+Then write each step like this:
+When("I select {{string}} as {{string}}...", async function (this: ScenarioWorld, ...)) {{
+    await pageObjects.YourPage.method(...);
+}})
+
+Now convert the following Cypress test:
+
+{cypress_code}
+"""
