@@ -1,28 +1,18 @@
-def sanitize_section(content: str, section_name: str) -> str:
-    print(f"\n🧹 Sanitizing section: {section_name}")
-    print("📄 Raw content preview (first 300 chars):")
-    print(content[:300])  # Show a small chunk for debugging
+import re
 
-    if section_name == "PageObject":
-        cutoff_phrases = ["This implementation", "The Page Object", "1.", "*", "-", "✅", "```"]
-    elif section_name == "StepDefinition":
-        cutoff_phrases = ["This implementation", "The Step Definition", "1.", "*", "-", "✅", "```"]
+def extract_section(response: str, section_name: str) -> str:
+    """
+    Extracts the content between section headers like:
+    === PageObject ===
+    === StepDefinition ===
+    """
+    # Improved regex: match between section_name and next === SECTION === or end of text
+    pattern = rf"=== {section_name} ===\s*(.*?)\s*(?:(?:=== \w+ ===)|\Z)"
+    match = re.search(pattern, response, re.DOTALL | re.IGNORECASE)
+    if match:
+        content = match.group(1).strip()
+        print(f"✅ Found and extracted clean '{section_name}' section")
+        return content
     else:
-        cutoff_phrases = ["This implementation", "1.", "*", "-", "✅", "```"]
-
-    lines = content.splitlines()
-    cleaned_lines = []
-
-    for i, line in enumerate(lines):
-        if any(line.strip().startswith(p) for p in cutoff_phrases):
-            print(f"🛑 Cutoff at line {i + 1}: '{line.strip()}'")
-            break
-        cleaned_lines.append(line)
-
-    cleaned = "\n".join(cleaned_lines).strip()
-
-    print("✅ Sanitized output preview (first 300 chars):")
-    print(cleaned[:300])  # Preview after cleaning
-    print("🧼 Done sanitizing.\n")
-
-    return cleaned
+        print(f"⚠️ Section '{section_name}' not found in response.")
+        return f"// Section '{section_name}' not found in LLM output"
