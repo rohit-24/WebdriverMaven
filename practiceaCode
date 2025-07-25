@@ -1,106 +1,13 @@
-import os
-import json
-import shutil
-import zipfile
-import streamlit as st
-from main import call_model, get_prompt
-from python_scripts.karate_parser import CucumberParser
-from python_scripts.test_results_parser import process_test_results
+import re
 
-MODULE_REPORT_FOLDER = "regressionAnalysisAgent/module_reports"
-OUTPUT_FILE = "karate_failure_analysis.txt"
+def extract_cypress_test(file_path: str) -> list[str]:
+    step_keywords = ("Given", "When", "Then", "And")
+    steps = []
 
+    with open(file_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith(step_keywords):
+                steps.append(line)
 
-def save_and_extract_zip(zip_file):
-    os.makedirs(MODULE_REPORT_FOLDER, exist_ok=True)
-    zip_path = os.path.join(MODULE_REPORT_FOLDER, "temp_upload.zip")
-
-    with open(zip_path, "wb") as f:
-        f.write(zip_file.read())
-
-    with zipfile.ZipFile(zip_path, "r") as zip_ref:
-        zip_ref.extractall(MODULE_REPORT_FOLDER)
-
-    os.remove(zip_path)
-
-
-def list_available_modules():
-    files = os.listdir(MODULE_REPORT_FOLDER)
-    return [f.replace(".json", "") for f in files if f.endswith(".json")]
-
-
-def get_module_file_path(module_name):
-    return os.path.join(MODULE_REPORT_FOLDER, f"{module_name}.json")
-
-
-def load_karate_json(file_path):
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        st.error(f"Error loading file: {e}")
-        return None
-
-
-def analyze_module_failures(module_name):
-    file_path = get_module_file_path(module_name)
-    karate_data = load_karate_json(file_path)
-    if not karate_data:
-        return ""
-
-    parser = CucumberParser()
-    failures = parser.extract_failures(karate_data)
-
-    if not failures:
-        return f"✅ No failed scenarios in module '{module_name}'"
-
-    total = len(failures)
-    output_text = f"🚨 Found {total} failures in module '{module_name}'\n\n"
-
-    for i, failure in enumerate(failures, start=1):
-        structured = parser.build_structured_failure(failure)
-        prompt = get_prompt(structured)
-        scenario_title = f"{structured['feature_name']} - {structured['scenario_name']}"
-
-        output_text += f"\n🔍 Failure {i}/{total}: {scenario_title}\n"
-        try:
-            response = call_model(prompt, model_type="claude")
-            result = process_test_results(response, scenario_title, i)
-            output_text += result + "\n"
-        except Exception as e:
-            output_text += f"❌ Error on Failure {i}: {e}\n"
-
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f_out:
-        f_out.write(output_text)
-
-    return output_text
-
-
-# --- Streamlit UI ---
-st.set_page_config(page_title="Karate Failure Analyzer", layout="wide")
-
-st.title("🧠 Karate API Failure Analyzer")
-st.markdown("Upload a ZIP file with multiple module `.json` reports for analysis.")
-
-# Step 1: Upload ZIP
-uploaded_file = st.file_uploader("Upload ZIP file containing JSON reports", type=["zip"])
-
-if uploaded_file:
-    save_and_extract_zip(uploaded_file)
-    st.success("✅ ZIP uploaded and extracted successfully.")
-
-    # Step 2: Show modules
-    modules = list_available_modules()
-    if not modules:
-        st.warning("⚠️ No .json modules found in the ZIP.")
-    else:
-        selected_module = st.selectbox("📂 Select a module to analyze", modules)
-
-        if st.button("🔍 Analyze Failures"):
-            with st.spinner(f"Analyzing failures in module: {selected_module}"):
-                result = analyze_module_failures(selected_module)
-                st.text_area("📄 Analysis Result", value=result, height=600)
-
-                # Download button
-                with open(OUTPUT_FILE, "r", encoding="utf-8") as f:
-                    st.download_button("⬇️ Download Result", f, file_name="karate_failure_analysis.txt")
+    return steps
