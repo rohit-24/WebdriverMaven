@@ -2,6 +2,8 @@ def extract_cypress_test(file_path: str) -> list[str]:
     step_keywords = ("Given", "When", "Then", "And")
     steps = []
 
+    inside_import_block = False
+
     with open(file_path, 'r', encoding='utf-8') as f:
         for line in f:
             stripped = line.strip()
@@ -10,12 +12,24 @@ def extract_cypress_test(file_path: str) -> list[str]:
             if not stripped:
                 continue
 
-            # --- SKIP lines starting with const/import/require
-            lowered = stripped.lower()
-            if lowered.startswith("const") or lowered.startswith("import") or lowered.startswith("require"):
+            # --- Start of multi-line import (e.g., const { Given, ...)
+            if stripped.startswith("const {") or stripped.startswith("import {"):
+                inside_import_block = True
                 continue
 
-            # --- INCLUDE only lines starting with Given/When/Then/And
+            # --- Inside multi-line import block
+            if inside_import_block:
+                if "}" in stripped:  # End of the block
+                    inside_import_block = False
+                continue
+
+            # --- Skip single-line import/require statements
+            lowered = stripped.lower()
+            if lowered.startswith("import") or lowered.startswith("require") or lowered.startswith("const"):
+                if "require(" in lowered or "from" in lowered:
+                    continue
+
+            # --- Match actual test steps
             if any(stripped.startswith(kw) for kw in step_keywords):
                 steps.append(stripped)
 
