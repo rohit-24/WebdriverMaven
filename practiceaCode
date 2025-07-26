@@ -8,28 +8,29 @@ def extract_cypress_test(file_path: str) -> list[str]:
         for line in f:
             stripped = line.strip()
 
-            # Skip empty lines
             if not stripped:
                 continue
 
-            # --- Start of multi-line import (e.g., const { Given, ...)
+            # Start of multi-line import block
             if stripped.startswith("const {") or stripped.startswith("import {"):
                 inside_import_block = True
                 continue
 
-            # --- Inside multi-line import block
+            # End of multi-line import block
             if inside_import_block:
-                if "}" in stripped:  # End of the block
+                if "}" in stripped:
                     inside_import_block = False
-                continue
+                    continue  # ⚠️ Problem: this skips processing the line with "}"
+                else:
+                    continue
 
-            # --- Skip single-line import/require statements
+            # Skip single-line import/require
             lowered = stripped.lower()
             if lowered.startswith("import") or lowered.startswith("require") or lowered.startswith("const"):
                 if "require(" in lowered or "from" in lowered:
                     continue
 
-            # --- Match actual test steps
+            # Capture steps like Given/When/Then/And
             if any(stripped.startswith(kw) for kw in step_keywords):
                 steps.append(stripped)
 
