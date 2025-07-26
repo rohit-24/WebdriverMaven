@@ -10,15 +10,12 @@ def extract_cypress_test(file_path: str) -> list[str]:
             if not stripped:
                 continue
 
-            # Skip lines that are const/import/require using step keywords
-            if "const" in stripped and any(kw in stripped for kw in step_keywords):
-                continue
-            if "require" in stripped and any(kw in stripped for kw in step_keywords):
-                continue
-            if "import" in stripped and any(kw in stripped for kw in step_keywords):
+            # --- SKIP lines starting with const/import/require
+            lowered = stripped.lower()
+            if lowered.startswith("const") or lowered.startswith("import") or lowered.startswith("require"):
                 continue
 
-            # Include only lines that start with Given/When/Then/And
+            # --- INCLUDE only lines starting with Given/When/Then/And
             if any(stripped.startswith(kw) for kw in step_keywords):
                 steps.append(stripped)
 
