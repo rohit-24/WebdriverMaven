@@ -6,8 +6,17 @@ def extract_cypress_test(file_path: str) -> list[str]:
 
     with open(file_path, 'r', encoding='utf-8') as f:
         for line in f:
-            line = line.strip()
-            if line.startswith(step_keywords):
-                steps.append(line)
+            stripped = line.strip()
+            # Ignore empty lines and lines like: const { Given, When... }
+            if (
+                not stripped or
+                stripped.startswith(("const", "let", "import")) or
+                re.match(r"^(const|let)?\s*\{?.*(Given|When|Then|And)", stripped)
+            ):
+                continue
+
+            # Include lines starting directly with Given/When/Then/And
+            if any(stripped.startswith(keyword) for keyword in step_keywords):
+                steps.append(stripped)
 
     return steps
