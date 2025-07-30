@@ -1,50 +1,5 @@
-const fs = require('fs');
-const path = require('path');
-
-const FEATURES_DIR = path.join(__dirname, 'features');
-
-function toKebabCase(str) {
-  return str
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '')
-    .trim()
-    .replace(/\s+/g, '-');
-}
-
-function processFile(filePath) {
-  const lines = fs.readFileSync(filePath, 'utf8').split('\n');
-
-  if (lines.length < 2) return;
-
-  const tagLine = lines[0].trim();        // e.g., @squad_Jatayu
-  const featureLine = lines[1].trim();    // e.g., Feature: API to get...
-
-  const tagName = tagLine.replace(/^@/, ''); // squad_Jatayu
-  const featureName = featureLine.replace(/^Feature:\s*/i, '').trim();
-
-  const kebabFeature = toKebabCase(featureName);
-  const folderName = path.basename(path.dirname(filePath));
-
-  const newTagLine = `@${kebabFeature}_feature`;
-  const newFeatureLine = `Feature: Squad_${tagName}_${folderName}`;
-
-  lines[0] = newTagLine;
-  lines[1] = newFeatureLine;
-
-  fs.writeFileSync(filePath, lines.join('\n'), 'utf8');
-  console.log(`✅ Updated: ${filePath}`);
-}
-
-function walk(dir) {
-  fs.readdirSync(dir).forEach(file => {
-    const fullPath = path.join(dir, file);
-    if (fs.statSync(fullPath).isDirectory()) {
-      walk(fullPath);
-    } else if (file.endsWith('.feature')) {
-      processFile(fullPath);
-    }
-  });
-}
-
-walk(FEATURES_DIR);
-console.log('\n🎉 All feature files processed.');
+SELECT emp_id
+FROM staff_details
+WHERE ACTIVE_FLG IN (0, 1)
+GROUP BY emp_id
+HAVING SUM(ACTIVE_FLG = 1) > 0 AND SUM(ACTIVE_FLG = 0) > 0;
