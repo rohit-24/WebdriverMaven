@@ -16,17 +16,17 @@ function processFile(filePath) {
 
   if (lines.length < 2) return;
 
-  const tagLine = lines[0].trim();       // e.g., @squad_Jatayu
-  const featureLine = lines[1].trim();   // e.g., Feature: IBPM workflow sr
+  const tagLine = lines[0].trim();        // e.g., @squad_Jatayu
+  const featureLine = lines[1].trim();    // e.g., Feature: API to get...
 
-  const featureNameRaw = featureLine.replace(/^Feature:\s*/i, '');
-  const tagNameRaw = tagLine.replace(/^@/, '');
-  const kebabFeature = toKebabCase(featureNameRaw);
+  const tagName = tagLine.replace(/^@/, ''); // squad_Jatayu
+  const featureName = featureLine.replace(/^Feature:\s*/i, '').trim();
 
+  const kebabFeature = toKebabCase(featureName);
   const folderName = path.basename(path.dirname(filePath));
 
   const newTagLine = `@${kebabFeature}_feature`;
-  const newFeatureLine = `Feature: ${tagNameRaw}-${folderName}`;
+  const newFeatureLine = `Feature: Squad_${tagName}_${folderName}`;
 
   lines[0] = newTagLine;
   lines[1] = newFeatureLine;
@@ -48,4 +48,3 @@ function walk(dir) {
 
 walk(FEATURES_DIR);
 console.log('\n🎉 All feature files processed.');
-
