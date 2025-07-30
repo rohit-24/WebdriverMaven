@@ -1,37 +1,51 @@
-def extract_cypress_test(file_path: str) -> list[str]:
-    step_keywords = ("Given", "When", "Then", "And")
-    steps = []
+function main() {
+  var dir = 'src/test/java/features';
+  var fs = Java.type('java.nio.file.Files');
+  var Paths = Java.type('java.nio.file.Paths');
+  var Charset = Java.type('java.nio.charset.StandardCharsets');
 
-    inside_import_block = False
+  function walk(dirPath) {
+    var fileList = [];
+    var path = Paths.get(dirPath);
+    var stream = fs.walk(path);
+    var it = stream.iterator();
+    while (it.hasNext()) {
+      var file = it.next();
+      if (fs.isRegularFile(file) && file.toString().endsWith('.feature')) {
+        fileList.push(file.toString());
+      }
+    }
+    return fileList;
+  }
 
-    with open(file_path, 'r', encoding='utf-8') as f:
-        for line in f:
-            stripped = line.strip()
+  var featureFiles = walk(dir);
+  var count = 0;
 
-            if not stripped:
-                continue
+  featureFiles.forEach(function(filePath) {
+    var lines = fs.readAllLines(Paths.get(filePath), Charset.UTF_8);
+    if (lines.size() >= 2) {
+      var tagLine = lines.get(0).trim();         // e.g. @squad_Jatayu
+      var featureLine = lines.get(1).trim();     // e.g. Feature: IBPM workflow sr
 
-            # Start of multi-line import block
-            if stripped.startswith("const {") or stripped.startswith("import {"):
-                inside_import_block = True
-                continue
+      var tagValue = tagLine.replace('@', '');   // squad_Jatayu
+      var featureName = featureLine.replace('Feature:', '').trim();  // IBPM workflow sr
 
-            # End of multi-line import block
-            if inside_import_block:
-                if "}" in stripped:
-                    inside_import_block = False
-                    continue  # ⚠️ Problem: this skips processing the line with "}"
-                else:
-                    continue
+      var filePathParts = filePath.split(java.io.File.separator);
+      var folderName = filePathParts[filePathParts.length - 2]; // e.g. ServiceRequest
 
-            # Skip single-line import/require
-            lowered = stripped.lower()
-            if lowered.startswith("import") or lowered.startswith("require") or lowered.startswith("const"):
-                if "require(" in lowered or "from" in lowered:
-                    continue
+      var newTagLine = '@' + featureName.toLowerCase().replace(/\s+/g, '-') + '_feature';
+      var newFeatureLine = 'Feature: ' + tagValue + '-' + folderName;
 
-            # Capture steps like Given/When/Then/And
-            if any(stripped.startswith(kw) for kw in step_keywords):
-                steps.append(stripped)
+      lines.set(0, newTagLine);
+      lines.set(1, newFeatureLine);
 
-    return steps
+      fs.write(Paths.get(filePath), lines, Charset.UTF_8);
+      print('✅ Updated: ' + filePath);
+      count++;
+    }
+  });
+
+  print('\n🔁 Done. Total files updated: ' + count);
+}
+main();
+
