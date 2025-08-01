@@ -1,3 +1,5 @@
 SELECT *
 FROM policy
-WHERE target LIKE '%subject.claims[\'country\']%.contains(%HK%)%';
+WHERE target LIKE '%subject.claims[\'country\']%.contains(%HK%)%'
+   OR target LIKE '%HK%contains(subject.claims[\'country\']%)%';
+
