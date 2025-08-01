@@ -1,5 +1,8 @@
-SELECT *
-FROM policy
-WHERE target LIKE '%subject.claims[\'country\']%.contains(%HK%)%'
-   OR target LIKE '%HK%contains(subject.claims[\'country\']%)%';
+From an RBAC (Role-Based Access Control) perspective, we also need to consider the following:
+
+If Rohit raises a UAMS request for a PB Sales RM role, and we attempt to onboard multiple security groups (e.g., Retail Sales RM) under the same bank ID, the RBAC configuration may conflict between PB and Retail Sales roles. This could lead to inaccurate results.
+
+To avoid such conflicts, we may require separate individual users for each role in each market.
+
+Additionally, our automation scripts rely on user-based roles. If each user has a unique password that cannot be shared, we need to evaluate how the automation scripts will function under such restrictions.
 
