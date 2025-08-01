@@ -1,5 +1,3 @@
-SELECT emp_id
-FROM staff_details
-WHERE ACTIVE_FLG IN (0, 1)
-GROUP BY emp_id
-HAVING SUM(ACTIVE_FLG = 1) > 0 AND SUM(ACTIVE_FLG = 0) > 0;
+SELECT *
+FROM policy
+WHERE target LIKE '%subject.claims[\'country\']%.contains(%HK%)%';
