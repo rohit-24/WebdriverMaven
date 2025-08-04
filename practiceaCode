@@ -1,8 +1,11 @@
-From an RBAC (Role-Based Access Control) perspective, we also need to consider the following:
+Subject: Request Closure & Settlement Rejection Clarification
+Dear Team,
 
-If Rohit raises a UAMS request for a PB Sales RM role, and we attempt to onboard multiple security groups (e.g., Retail Sales RM) under the same bank ID, the RBAC configuration may conflict between PB and Retail Sales roles. This could lead to inaccurate results.
+Could you please update me on when my request will be closed? I’ve had to follow up multiple times without any response.
 
-To avoid such conflicts, we may require separate individual users for each role in each market.
+My settlement was rejected due to an incorrect account number, even though I had already submitted the cancelled cheque both physically and over email. This is quite frustrating.
 
-Additionally, our automation scripts rely on user-based roles. If each user has a unique password that cannot be shared, we need to evaluate how the automation scripts will function under such restrictions.
+PFA screenshot showing I re-submitted the cheque on 29th August. Kindly clarify why documents are repeatedly requested despite being already shared.
+
+Looking forward to a quick resolution.
 
