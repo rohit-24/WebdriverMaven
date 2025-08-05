@@ -1,60 +1,7 @@
-import os
-from prompts.refactor_prompt_template import get_refactor_prompt
-from config import config
-from utils.get_token import get_token
-from models.claude_model import ClaudeModel
-from models.gemini_model import GeminiModel
-from python_scripts.playwright_generator import extract_section, generate_playwright_files
+def generate_playwright_files(page_obj_code: str, step_def_code: str, output_dir: str):
+    os.makedirs(output_dir, exist_ok=True)
+    with open(os.path.join(output_dir, "refactored.page.ts"), "w", encoding="utf-8") as f1:
+        f1.write(page_obj_code)
 
-# --- Load Token ---
-print("🔐 Fetching token ...")
-BEARER_TOKEN = get_token()
-
-# --- Model Selector ---
-def get_model(model_type: str):
-    if model_type == "claude":
-        return ClaudeModel(model_name=config.CLAUDE_MODEL_ID, project_id=config.PROJECT_ID, api_key=BEARER_TOKEN)
-    elif model_type == "gemini":
-        return GeminiModel(model_name=config.GEMINI_MODEL_ID, project_id=config.PROJECT_ID, api_key=BEARER_TOKEN)
-    else:
-        raise ValueError(f"Unknown model type: {model_type}")
-
-# --- Call LLM ---
-def call_model(prompt, model_type="claude"):
-    llm = get_model(model_type)
-    return llm.invoke([prompt])
-
-# --- Read file content ---
-def read_file(file_path: str) -> str:
-    with open(file_path, "r", encoding="utf-8") as f:
-        return f.read()
-
-# --- MAIN ---
-def main():
-    PAGE_OBJECT_FILE = "Reports/input/example.page.ts"
-    STEP_DEF_FILE = "Reports/input/example.step.ts"
-    BASE_PAGE_FILE = "Reports/input/base.page.ts"
-
-    print("📄 Loading input files ...")
-    page_obj_code = read_file(PAGE_OBJECT_FILE)
-    step_def_code = read_file(STEP_DEF_FILE)
-    base_page_code = read_file(BASE_PAGE_FILE)
-
-    print("💡 Preparing prompt for refactoring ...")
-    prompt = get_refactor_prompt(page_obj_code, step_def_code, base_page_code)
-
-    print("🤖 Sending to LLM for refactoring ...")
-    response = call_model(prompt, model_type="claude")
-
-    print("📦 Extracting sections ...")
-    refactored_page_obj = extract_section(response, "PageObject")
-    refactored_step_def = extract_section(response, "StepDefinition")
-
-    OUTPUT_DIR = "Reports/output"
-    print("📁 Writing refactored output files ...")
-    generate_playwright_files(refactored_page_obj, refactored_step_def, output_dir=OUTPUT_DIR)
-
-    print("✅ Done! Refactored Playwright files generated.")
-
-if __name__ == "__main__":
-    main()
+    with open(os.path.join(output_dir, "refactored.step.ts"), "w", encoding="utf-8") as f2:
+        f2.write(step_def_code)
