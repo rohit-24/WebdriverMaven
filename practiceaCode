@@ -1,7 +1,18 @@
-def generate_playwright_files(page_obj_code: str, step_def_code: str, output_dir: str):
-    os.makedirs(output_dir, exist_ok=True)
-    with open(os.path.join(output_dir, "refactored.page.ts"), "w", encoding="utf-8") as f1:
-        f1.write(page_obj_code)
 
-    with open(os.path.join(output_dir, "refactored.step.ts"), "w", encoding="utf-8") as f2:
-        f2.write(step_def_code)
+def extract_section(response: str, section_name: str) -> str:
+    """
+    Extracts the content between section headers like:
+    ### PageObject
+    ### StepDefinition
+    """
+    # Matches: ### PageObject\n<content>\n### or end of file
+    pattern = rf"###\s*{section_name}\s*\n(.*?)(?=\n###\s*\w+|\Z)"
+    match = re.search(pattern, response, re.DOTALL | re.IGNORECASE)
+    
+    if match:
+        content = match.group(1).strip()
+        print(f"✅ Found and extracted clean '{section_name}' section")
+        return content
+    else:
+        print(f"❌ Section '{section_name}' not found in LLM output.")
+        return f"// Section '{section_name}' not found in LLM output"
