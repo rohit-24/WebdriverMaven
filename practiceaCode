@@ -1,11 +1,34 @@
-Subject: Request Closure & Settlement Rejection Clarification
-Dear Team,
+refactor_prompt_template.py
 
-Could you please update me on when my request will be closed? I’ve had to follow up multiple times without any response.
+def get_refactor_prompt(page_object_code: str, step_def_code: str, base_page_code: str) -> str:
+    return f"""
+You are a Playwright code refactoring assistant.
 
-My settlement was rejected due to an incorrect account number, even though I had already submitted the cancelled cheque both physically and over email. This is quite frustrating.
+Objective:
+Refactor the provided Page Object and Step Definition files using best Playwright coding practices. The Base Page file contains shared methods.
 
-PFA screenshot showing I re-submitted the cheque on 29th August. Kindly clarify why documents are repeatedly requested despite being already shared.
+Your tasks:
+1. Use best practices for code readability and maintainability.
+2. Extract all hardcoded locators into `const` selectors.
+3. Avoid hardcoded strings inside functions.
+4. Reuse methods from the Base Page where applicable and comment them as: `// Reusing methods from base page`.
+5. Ensure Playwright conventions for `page.locator`, `expect`, and async handling.
+6. Output only two sections: `PageObject` and `StepDefinition`.
 
-Looking forward to a quick resolution.
+--- Page Object File ---
+{page_object_code}
 
+--- Step Definition File ---
+{step_def_code}
+
+--- Base Page File ---
+{base_page_code}
+
+Respond in the following format:
+
+### PageObject
+<refactored page object code>
+
+### StepDefinition
+<refactored step definition code>
+"""
