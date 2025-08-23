@@ -5,28 +5,32 @@ async fillDynamicForm() {
   for (let i = 0; i < labelCount; i++) {
     let labelText = (await allLabels.nth(i).innerText()).trim();
 
-    // 🚫 Skip empty labels (&nbsp;)
     if (!labelText || labelText === "\u00A0") continue;
 
     const label = allLabels.nth(i);
-    const container = label.locator(".."); // parent div
+    const container = label.locator("..");
     const input = container.locator("input");
     const select = container.locator("select");
-    const date = container.locator('input[type="date"]');
     const checkbox = container.locator('input[type="checkbox"]');
+    const dateField = container.locator("input[readonly]"); // 🚀 special handling
 
-    // 📝 Text or Number Input
-    if (await input.count() > 0 && !(await checkbox.count() > 0) && !(await date.count() > 0)) {
+    // 📅 Date fields (readonly, opens calendar)
+    if (await dateField.count() > 0) {
+      const today = new Date();
+      const day = String(today.getDate()).padStart(2, "0");
+
+      await dateField.first().click(); // open calendar
+      await this.page.waitForSelector(".calendar");
+      await this.page.locator(`.calendar .day:not(.disabled):has-text("${day}")`).first().click();
+
+      console.log(`📅 Picked date [${labelText}] = ${day}`);
+    }
+
+    // 📝 Text/number inputs (but not readonly or checkbox)
+    else if (await input.count() > 0 && !(await checkbox.count() > 0)) {
       const dummyValue = `${labelText.replace(/\s+/g, "_")}_Test`;
       await input.fill(dummyValue);
       console.log(`✅ Filled input [${labelText}] = ${dummyValue}`);
-    }
-
-    // 📅 Date Input
-    else if (await date.count() > 0) {
-      const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
-      await date.fill(today);
-      console.log(`📅 Filled date [${labelText}] = ${today}`);
     }
 
     // ✅ Checkbox
@@ -40,7 +44,6 @@ async fillDynamicForm() {
           await linkedLabel.scrollIntoViewIfNeeded();
           await linkedLabel.click();
         } else {
-          // fallback: directly check
           await this.page.evaluate(
             (el) => (el as HTMLInputElement).checked = true,
             await inputHandle.elementHandle()
@@ -54,7 +57,7 @@ async fillDynamicForm() {
     else if (await select.count() > 0) {
       const options = await select.locator("option").all();
       if (options.length > 1) {
-        const value = await options[1].getAttribute("value"); // pick 2nd option
+        const value = await options[1].getAttribute("value");
         if (value) {
           await select.selectOption(value);
           console.log(`🔽 Selected [${labelText}] = ${value}`);
