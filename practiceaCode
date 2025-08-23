@@ -1,1 +1,50 @@
-Rohit
+import { Page } from "@playwright/test";
+
+export class AutoFormFiller {
+  constructor(private page: Page) {}
+
+  async fillDynamicForm(): Promise<void> {
+    const labels = this.page.locator("label");
+
+    const count = await labels.count();
+    console.log(`Found ${count} labels`);
+
+    for (let i = 0; i < count; i++) {
+      const label = labels.nth(i);
+      const labelText = (await label.textContent())?.trim() || `Field_${i}`;
+      const container = label.locator(".."); // parent container
+
+      // Detect field types
+      const input = container.locator("input");
+      const select = container.locator("select");
+      const textarea = container.locator("textarea");
+      const checkbox = container.locator('input[type="checkbox"]');
+
+      if (await select.count() > 0) {
+        const options = await select.locator("option").allTextContents();
+        if (options.length > 1) {
+          await select.selectOption({ label: options[1] }); // skip placeholder, choose first real
+        }
+        console.log(`Filled dropdown [${labelText}]`);
+      } else if (await checkbox.count() > 0) {
+        await checkbox.first().check();
+        console.log(`Checked checkbox [${labelText}]`);
+      } else if (await textarea.count() > 0) {
+        await textarea.fill(`Test value for ${labelText}`);
+        console.log(`Filled textarea [${labelText}]`);
+      } else if (await input.count() > 0) {
+        const type = await input.first().getAttribute("type");
+        if (type === "date") {
+          const today = new Date().toISOString().split("T")[0];
+          await input.fill(today);
+        } else {
+          await input.fill(`Auto_${i}_Value`);
+        }
+        console.log(`Filled input [${labelText}]`);
+      } else {
+        console.log(`⚠️ No known input found for label: ${labelText}`);
+      }
+    }
+  }
+}
+
