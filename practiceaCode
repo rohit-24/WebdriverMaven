@@ -1,25 +1,65 @@
+async fillDynamicForm() {
+  const allLabels = this.page.locator("label");
+  const labelCount = await allLabels.count();
 
-} else if (await checkbox.count() > 0) {
-  // ☑️ Checkbox with potential dummy labels
-  const inputHandle = checkbox.first();
-  const id = await inputHandle.getAttribute("id");
+  for (let i = 0; i < labelCount; i++) {
+    let labelText = (await allLabels.nth(i).innerText()).trim();
 
-  if (id) {
-    // Pick the label tied to this checkbox (not the empty &nbsp one)
-    const linkedLabel = this.page.locator(`label[for="${id}"]`);
-    
-    if (await linkedLabel.isVisible()) {
-      await linkedLabel.click();
-      console.log(`✅ Clicked label for checkbox [${labelText}]`);
-    } else {
-      // Fallback if label not visible → force check the input
-      await this.page.evaluate((el) => (el as HTMLInputElement).checked = true, 
-                               await inputHandle.elementHandle());
-      console.log(`⚡ Forced checked hidden checkbox [${labelText}]`);
+    // 🚫 Skip empty labels (&nbsp;)
+    if (!labelText || labelText === "\u00A0") continue;
+
+    const label = allLabels.nth(i);
+    const container = label.locator(".."); // parent div
+    const input = container.locator("input");
+    const select = container.locator("select");
+    const date = container.locator('input[type="date"]');
+    const checkbox = container.locator('input[type="checkbox"]');
+
+    // 📝 Text or Number Input
+    if (await input.count() > 0 && !(await checkbox.count() > 0) && !(await date.count() > 0)) {
+      const dummyValue = `${labelText.replace(/\s+/g, "_")}_Test`;
+      await input.fill(dummyValue);
+      console.log(`✅ Filled input [${labelText}] = ${dummyValue}`);
+    }
+
+    // 📅 Date Input
+    else if (await date.count() > 0) {
+      const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
+      await date.fill(today);
+      console.log(`📅 Filled date [${labelText}] = ${today}`);
+    }
+
+    // ✅ Checkbox
+    else if (await checkbox.count() > 0) {
+      const inputHandle = checkbox.first();
+      const id = await inputHandle.getAttribute("id");
+
+      if (id) {
+        const linkedLabel = this.page.locator(`label[for="${id}"]`);
+        if (await linkedLabel.isVisible()) {
+          await linkedLabel.scrollIntoViewIfNeeded();
+          await linkedLabel.click();
+        } else {
+          // fallback: directly check
+          await this.page.evaluate(
+            (el) => (el as HTMLInputElement).checked = true,
+            await inputHandle.elementHandle()
+          );
+        }
+        console.log(`☑️ Checked checkbox [${labelText}]`);
+      }
+    }
+
+    // 🔽 Dropdown
+    else if (await select.count() > 0) {
+      const options = await select.locator("option").all();
+      if (options.length > 1) {
+        const value = await options[1].getAttribute("value"); // pick 2nd option
+        if (value) {
+          await select.selectOption(value);
+          console.log(`🔽 Selected [${labelText}] = ${value}`);
+        }
+      }
     }
   }
 }
-
-
-
-
