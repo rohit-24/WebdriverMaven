@@ -1,80 +1,27 @@
-async fillDynamicForm() {
-  const allLabels = this.page.locator("label");
-  const labelCount = await allLabels.count();
+// Playwright version of the document upload test
+const { test, expect } = require(’@playwright/test’);
 
-  for (let i = 0; i < labelCount; i++) {
-    let labelText = (await allLabels.nth(i).innerText()).trim();
-    if (!labelText || labelText === "\u00A0") continue;
+test(‘should select string from document type dropdown and enter remark for string MFF’, async ({ page }) => {
+// Navigate to the page with the document upload widget
+// await page.goto(‘your-url-here’);
 
-    const label = allLabels.nth(i);
-    const container = label.locator("..");
-    const input = container.locator("input");
-    const select = container.locator("select");
-    const checkbox = container.locator('input[type="checkbox"]');
-    const dateField = container.locator("input[readonly]");
-    const customDropdown = container.locator(".form-input.selectDropdown"); // 🚀 custom dropdown
+// Get the document upload widget and perform actions
+await page.locator(’.case-documents_file-upload’).hover();
 
-    // 📅 Date fields
-    if (await dateField.count() > 0) {
-      const today = new Date();
-      const day = String(today.getDate()).padStart(2, "0");
+// Click to open the dropdown
+await page.locator(‘dbs-dropdown .select-dropdown-icon’).click();
 
-      await dateField.first().click();
-      await this.page.waitForSelector(".calendar");
-      await this.page.locator(`.calendar .day:not(.disabled):has-text("${day}")`).first().click();
+// Select the dropdown option containing the dropdown value
+await page.locator(“div[id$=’-selectoption’]”).filter({ hasText: ‘your-dropdown-value’ }).click();
 
-      console.log(`📅 Picked date [${labelText}] = ${day}`);
-    }
+// Verify the selection is displayed in dropdown box
+await expect(page.locator(’.dropdown-box’)).toHaveText(‘have.text’, { timeout: 10000 });
 
-    // 📝 Text/number inputs
-    else if (await input.count() > 0 && !(await checkbox.count() > 0)) {
-      const dummyValue = `${labelText.replace(/\s+/g, "_")}_Test`;
-      await input.fill(dummyValue);
-      console.log(`✅ Filled input [${labelText}] = ${dummyValue}`);
-    }
+// Enter remark in the text input field
+await page.locator(“input[type=‘text’][maxlength=‘500’]”).last().clear();
+await page.locator(“input[type=‘text’][maxlength=‘500’]”).last().type(‘your-remark-text’);
+await expect(page.locator(“input[type=‘text’][maxlength=‘500’]”).last()).toHaveValue(‘your-remark-text’);
 
-    // ✅ Checkbox
-    else if (await checkbox.count() > 0) {
-      const inputHandle = checkbox.first();
-      const id = await inputHandle.getAttribute("id");
-
-      if (id) {
-        const linkedLabel = this.page.locator(`label[for="${id}"]`);
-        if (await linkedLabel.isVisible()) {
-          await linkedLabel.scrollIntoViewIfNeeded();
-          await linkedLabel.click();
-        } else {
-          await this.page.evaluate(
-            (el) => (el as HTMLInputElement).checked = true,
-            await inputHandle.elementHandle()
-          );
-        }
-        console.log(`☑️ Checked checkbox [${labelText}]`);
-      }
-    }
-
-    // 🔽 Native <select>
-    else if (await select.count() > 0) {
-      const options = await select.locator("option").all();
-      if (options.length > 1) {
-        const value = await options[1].getAttribute("value");
-        if (value) {
-          await select.selectOption(value);
-          console.log(`🔽 Selected native [${labelText}] = ${value}`);
-        }
-      }
-    }
-
-    // 🔽 Custom dropdown (Angular style)
-    else if (await customDropdown.count() > 0) {
-      const dropdown = customDropdown.first();
-
-      await dropdown.locator(".dropdown-box").click({ force: true });
-      const firstOption = dropdown.locator(".options-container ul li").first();
-      await firstOption.click({ force: true });
-
-      const selectedText = await firstOption.innerText();
-      console.log(`🔽 Selected custom [${labelText}] = ${selectedText}`);
-    }
-  }
-}
+// Click the upload button
+await page.locator(‘button:has-text(“upload”)’).click();
+});
