@@ -1,12 +1,97 @@
-} else if (type === "date" || (await input.getAttribute("readonly")) !== null) {
-  const elementHandle = await input.first().elementHandle();
-  const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
+import { Page } from "@playwright/test";
 
-  await this.page.evaluate((el, value) => {
-    (el as HTMLInputElement).value = value;
-    el.dispatchEvent(new Event("input", { bubbles: true })); // trigger Angular binding
-    el.dispatchEvent(new Event("change", { bubbles: true }));
-  }, elementHandle, today);
+export class AutoFormFiller {
+  constructor(private page: Page) {}
 
-  console.log(`✅ Set date for [${labelText}]`);
+  async fillDynamicForm(): Promise<void> {
+    const labels = this.page.locator(".smart-form-builder label");
+    const count = await labels.count();
+
+    console.log(`Found ${count} labels in dynamic form`);
+
+    for (let i = 0; i < count; i++) {
+      const label = labels.nth(i);
+      const labelText = (await label.textContent())?.trim() || `Field_${i}`;
+      const container = label.locator(".."); // parent wrapper
+
+      // Detect possible inputs
+      const input = container.locator("input");
+      const select = container.locator("select");
+      const textarea = container.locator("textarea");
+      const checkbox = container.locator('input[type="checkbox"]');
+
+      if (await select.count() > 0) {
+        // 🔽 Dropdown
+        const options = await select.locator("option").allTextContents();
+        if (options.length > 1) {
+          await select.selectOption({ label: options[1] }); // pick second option
+        }
+        console.log(`✅ Selected dropdown for [${labelText}]`);
+
+      } else if (await checkbox.count() > 0) {
+        // ☑️ Checkbox
+        if (!(await checkbox.isChecked())) {
+          await checkbox.check({ force: true });
+        }
+        console.log(`✅ Checked checkbox [${labelText}]`);
+
+      } else if (await textarea.count() > 0) {
+        // 📝 Textarea
+        await textarea.fill(`Test value for ${labelText}`);
+        console.log(`✅ Filled textarea [${labelText}]`);
+
+      } else if (await input.count() > 0) {
+        const type = await input.first().getAttribute("type");
+
+        if ((await input.getAttribute("readonly")) !== null || type === "date") {
+          // 📅 Handle readonly date picker → open calendar and select today
+          await input.first().click({ force: true });
+          const today = new Date().getDate().toString();
+
+          const calendarDay = this.page.locator(
+            `.calendar .day:not(.disabled):text-is("${today}")`
+          );
+
+          if (await calendarDay.isVisible()) {
+            await calendarDay.click();
+            console.log(`✅ Picked today's date for [${labelText}]`);
+          } else {
+            console.log(`⚠️ Could not pick date for [${labelText}]`);
+          }
+
+        } else {
+          // 🔤 Normal input
+          await input.fill(`Auto_${i}_Value`);
+          console.log(`✅ Filled input [${labelText}]`);
+        }
+
+      } else {
+        console.log(`⚠️ No known input type found for [${labelText}]`);
+      }
+    }
+  }
 }
+
+
+
+} else if (await checkbox.count() > 0) {
+  // ☑️ Checkbox (custom or hidden inputs)
+  const inputHandle = checkbox.first();
+  const id = await inputHandle.getAttribute("id");
+
+  if (id) {
+    const labelForInput = this.page.locator(`label[for="${id}"]`);
+    if (await labelForInput.isVisible()) {
+      await labelForInput.click();
+      console.log(`✅ Clicked label for checkbox [${labelText}]`);
+    } else {
+      // fallback: force check hidden input
+      await this.page.evaluate((el) => (el as HTMLInputElement).checked = true, await inputHandle.elementHandle());
+      console.log(`⚡ Forced checked hidden checkbox [${labelText}]`);
+    }
+  }
+}
+
+
+
+
