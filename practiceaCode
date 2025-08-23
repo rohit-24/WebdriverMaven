@@ -1,66 +1,12 @@
-import { Page } from "@playwright/test";
+} else if (type === "date" || (await input.getAttribute("readonly")) !== null) {
+  const elementHandle = await input.first().elementHandle();
+  const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
 
-export class AutoFormFiller {
-  constructor(private page: Page) {}
+  await this.page.evaluate((el, value) => {
+    (el as HTMLInputElement).value = value;
+    el.dispatchEvent(new Event("input", { bubbles: true })); // trigger Angular binding
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  }, elementHandle, today);
 
-  async fillDynamicForm(): Promise<void> {
-    const labels = this.page.locator(".smart-form-builder label");
-
-    const count = await labels.count();
-    console.log(`Found ${count} labels`);
-
-    for (let i = 0; i < count; i++) {
-      const label = labels.nth(i);
-      const labelText = (await label.textContent())?.trim() || `Field_${i}`;
-      const container = label.locator(".."); // parent
-
-      // Detect fields
-      const input = container.locator("input");
-      const select = container.locator("select");
-      const textarea = container.locator("textarea");
-      const checkbox = container.locator('input[type="checkbox"]');
-
-      if (await select.count() > 0) {
-        // Dropdown
-        const options = await select.locator("option").allTextContents();
-        if (options.length > 1) {
-          await select.selectOption({ label: options[1] });
-        }
-        console.log(`✅ Selected option for dropdown [${labelText}]`);
-
-      } else if (await checkbox.count() > 0) {
-        // Checkbox
-        if (!(await checkbox.isChecked())) {
-          await checkbox.check();
-        }
-        console.log(`✅ Checked checkbox [${labelText}]`);
-
-      } else if (await textarea.count() > 0) {
-        // Textarea
-        await textarea.fill(`Test value for ${labelText}`);
-        console.log(`✅ Filled textarea [${labelText}]`);
-
-      } else if (await input.count() > 0) {
-        const type = await input.first().getAttribute("type");
-
-        if (type === "date" || (await input.getAttribute("readonly")) !== null) {
-          // Handle readonly date field
-          await this.page.evaluate((el, val) => { (el as HTMLInputElement).value = val; }, 
-            await input.first().elementHandle(), 
-            new Date().toISOString().split("T")[0]
-          );
-          console.log(`✅ Set date for [${labelText}]`);
-
-        } else {
-          // Normal text field
-          await input.fill(`Auto_${i}_Value`);
-          console.log(`✅ Filled input [${labelText}]`);
-        }
-
-      } else {
-        console.log(`⚠️ No known input found for [${labelText}]`);
-      }
-    }
-  }
+  console.log(`✅ Set date for [${labelText}]`);
 }
-
