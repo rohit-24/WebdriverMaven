@@ -4,7 +4,6 @@ async fillDynamicForm() {
 
   for (let i = 0; i < labelCount; i++) {
     let labelText = (await allLabels.nth(i).innerText()).trim();
-
     if (!labelText || labelText === "\u00A0") continue;
 
     const label = allLabels.nth(i);
@@ -12,21 +11,22 @@ async fillDynamicForm() {
     const input = container.locator("input");
     const select = container.locator("select");
     const checkbox = container.locator('input[type="checkbox"]');
-    const dateField = container.locator("input[readonly]"); // 🚀 special handling
+    const dateField = container.locator("input[readonly]");
+    const customDropdown = container.locator(".form-input.selectDropdown"); // 🚀 custom dropdown
 
-    // 📅 Date fields (readonly, opens calendar)
+    // 📅 Date fields
     if (await dateField.count() > 0) {
       const today = new Date();
       const day = String(today.getDate()).padStart(2, "0");
 
-      await dateField.first().click(); // open calendar
+      await dateField.first().click();
       await this.page.waitForSelector(".calendar");
       await this.page.locator(`.calendar .day:not(.disabled):has-text("${day}")`).first().click();
 
       console.log(`📅 Picked date [${labelText}] = ${day}`);
     }
 
-    // 📝 Text/number inputs (but not readonly or checkbox)
+    // 📝 Text/number inputs
     else if (await input.count() > 0 && !(await checkbox.count() > 0)) {
       const dummyValue = `${labelText.replace(/\s+/g, "_")}_Test`;
       await input.fill(dummyValue);
@@ -53,16 +53,28 @@ async fillDynamicForm() {
       }
     }
 
-    // 🔽 Dropdown
+    // 🔽 Native <select>
     else if (await select.count() > 0) {
       const options = await select.locator("option").all();
       if (options.length > 1) {
         const value = await options[1].getAttribute("value");
         if (value) {
           await select.selectOption(value);
-          console.log(`🔽 Selected [${labelText}] = ${value}`);
+          console.log(`🔽 Selected native [${labelText}] = ${value}`);
         }
       }
+    }
+
+    // 🔽 Custom dropdown (Angular style)
+    else if (await customDropdown.count() > 0) {
+      const dropdown = customDropdown.first();
+
+      await dropdown.locator(".dropdown-box").click({ force: true });
+      const firstOption = dropdown.locator(".options-container ul li").first();
+      await firstOption.click({ force: true });
+
+      const selectedText = await firstOption.innerText();
+      console.log(`🔽 Selected custom [${labelText}] = ${selectedText}`);
     }
   }
 }
