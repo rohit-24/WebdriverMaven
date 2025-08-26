@@ -1,27 +1,26 @@
-// Playwright version of the document upload test
-const { test, expect } = require(’@playwright/test’);
-
-test(‘should select string from document type dropdown and enter remark for string MFF’, async ({ page }) => {
-// Navigate to the page with the document upload widget
-// await page.goto(‘your-url-here’);
-
-// Get the document upload widget and perform actions
-await page.locator(’.case-documents_file-upload’).hover();
-
-// Click to open the dropdown
-await page.locator(‘dbs-dropdown .select-dropdown-icon’).click();
-
-// Select the dropdown option containing the dropdown value
-await page.locator(“div[id$=’-selectoption’]”).filter({ hasText: ‘your-dropdown-value’ }).click();
-
-// Verify the selection is displayed in dropdown box
-await expect(page.locator(’.dropdown-box’)).toHaveText(‘have.text’, { timeout: 10000 });
-
-// Enter remark in the text input field
-await page.locator(“input[type=‘text’][maxlength=‘500’]”).last().clear();
-await page.locator(“input[type=‘text’][maxlength=‘500’]”).last().type(‘your-remark-text’);
-await expect(page.locator(“input[type=‘text’][maxlength=‘500’]”).last()).toHaveValue(‘your-remark-text’);
-
-// Click the upload button
-await page.locator(‘button:has-text(“upload”)’).click();
-});
+Locators (camelCase inside object, object name UPPER_SNAKE_CASE)
+export const CREATE_SK_LOCATORS = {
+  nodalContent: "nodal-content",
+  fileInput: 'input[type="file"]',
+  channelButtonPrefix: "se-channel-",
+  radioButtonContainer: "radio-button-container",
+  searchInput: "st-search-ip",
+  dropdownIcon: "dropdown-icon",
+  searchResultItem: "cst-search-results",
+  referenceNumberInput: "test-inputfield",
+  commentTextArea: "textarea",
+  reviewButtonContainer: "tar-review-btn"
+};
+📌 Text constants (object + keys ALL_CAPS)
+export const TEXT_CONSTANTS = {
+  SEARCH_BUTTON: "Search",
+  DESCRIPTION_PLACEHOLDER: "Description",
+  STRUCTURE_FIELDS: "Structure Fields",
+  ATTACHMENTS: "Attachments",
+  COMMENTS: "Comments"
+};
+✅ This follows a clean standard:
+Object name in UPPER_SNAKE_CASE (CREATE_SK_LOCATORS, TEXT_CONSTANTS).
+Keys for locators in camelCase (fileInput, searchInput…), easier to read in code.
+Keys for UI text in UPPER_SNAKE_CASE (SEARCH_BUTTON, ATTACHMENTS…), clear that these are constants.
+Do you also want me to show you how to organize these into separate files (e.g., locators.ts and constants.ts) so they’re easy to maintain across large projects?
