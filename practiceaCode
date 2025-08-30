@@ -1,90 +1,111 @@
-async fillDynamicForm() {
+// ======================
+// Helper functions
+// ======================
+
+async function handleDateField(container, labelText: string, page) {
+  const dateField = container.locator(IBPM_MFE_LOCATORS.dateInput);
+  if (await dateField.count() === 0) return false;
+
+  const today = new Date();
+  const day = String(today.getDate());
+  await dateField.first().click();
+  await page.locator(IBPM_MFE_LOCATORS.calendarContainer).waitFor();
+  await page.locator(IBPM_MFE_LOCATORS.calendarDay(day)).first().click();
+
+  console.log(`Picked date for [${labelText}] = ${day}`);
+  return true;
+}
+
+async function handleTextInput(container, labelText: string) {
+  const textInput = container.locator(IBPM_MFE_LOCATORS.textInput);
+  if (await textInput.count() === 0) return false;
+
+  const dummyValue = `${labelText.replace(/\s+/g, "_")}_Test`;
+  await textInput.fill(dummyValue);
+  console.log(`Filled input [${labelText}] = ${dummyValue}`);
+  return true;
+}
+
+async function handleTextArea(container, labelText: string) {
+  const textArea = container.locator(IBPM_MFE_LOCATORS.textAreaInput);
+  if (await textArea.count() === 0) return false;
+
+  const dummyValue = `${labelText.replace(/\s+/g, "_")}_Notes`;
+  await textArea.fill(dummyValue);
+  console.log(`Filled textarea [${labelText}] = ${dummyValue}`);
+  return true;
+}
+
+async function handleCheckbox(container, labelText: string, page) {
+  const checkbox = container.locator(IBPM_MFE_LOCATORS.checkboxInput);
+  const count = await checkbox.count();
+  if (count === 0) return false;
+
+  for (let j = 0; j < count; j++) {
+    const inputHandle = checkbox.nth(j);
+    const id = await inputHandle.getAttribute("id");
+
+    if (id) {
+      const linkedLabel = page.locator(`label[for="${id}"]`);
+      if (await linkedLabel.isVisible()) {
+        await linkedLabel.scrollIntoViewIfNeeded();
+        await linkedLabel.click();
+        console.log(`Checked checkbox with label [${id}]`);
+      }
+    }
+  }
+  return true;
+}
+
+async function handleCustomDropdown(container, labelText: string) {
+  const customDropdown = container.locator(IBPM_MFE_LOCATORS.customDropdown);
+  if (await customDropdown.count() === 0) return false;
+
+  const dropdown = customDropdown.first();
+  await dropdown.locator(IBPM_MFE_LOCATORS.customDropdownTrigger).click({ force: true });
+  const firstOption = dropdown.locator(IBPM_MFE_LOCATORS.customDropdownOption).first();
+  await firstOption.click({ force: true });
+  const selectedText = await dropdown.textContent();
+
+  console.log(`Selected dropdown [${labelText}] = ${selectedText}`);
+  return true;
+}
+
+// ======================
+// Main dynamic form filler
+// ======================
+
+async function fillDynamicForm(page) {
   await page.waitForTimeout(2000);
 
-  // Keep track of processed labels so we don’t repeat
   const processedLabels = new Set<string>();
 
   while (true) {
     const allLabels = page.locator(IBPM_MFE_LOCATORS.formLabel);
     const labelCount = await allLabels.count();
-
     let newFieldFound = false;
 
     for (let i = 0; i < labelCount; i++) {
       const label = allLabels.nth(i);
       const labelText = (await label.innerText()).trim();
 
-      if (!labelText || labelText === "\u00A0" || processedLabels.has(labelText)) {
-        continue; // skip empty or already processed
-      }
-
-      // ✅ Mark this label as processed
+      if (!labelText || labelText === "\u00A0" || processedLabels.has(labelText)) continue;
       processedLabels.add(labelText);
 
-      // container relative to this label
       const container = label.locator("xpath=..");
-      const textInput = container.locator(IBPM_MFE_LOCATORS.textInput);
-      const textArea = container.locator(IBPM_MFE_LOCATORS.textAreaInput); // ✅ new locator
-      const checkbox = container.locator(IBPM_MFE_LOCATORS.checkboxInput);
-      const dateField = container.locator(IBPM_MFE_LOCATORS.dateInput);
-      const customDropdown = container.locator(IBPM_MFE_LOCATORS.customDropdown);
 
-      // ========== Date Field ==========
-      if (await dateField.count() > 0) {
-        const today = new Date();
-        const day = String(today.getDate());
-        await dateField.first().click();
-        await page.locator(IBPM_MFE_LOCATORS.calendarContainer).waitFor();
-        await page.locator(IBPM_MFE_LOCATORS.calendarDay(day)).first().click();
-        console.log(`Picked date for [${labelText}] = ${day}`);
+      // Try handlers in order
+      if (
+        await handleDateField(container, labelText, page) ||
+        await handleTextInput(container, labelText) ||
+        await handleTextArea(container, labelText) ||
+        await handleCheckbox(container, labelText, page) ||
+        await handleCustomDropdown(container, labelText)
+      ) {
+        newFieldFound = true;
       }
-
-      // ========== Text Field ==========
-      else if (await textInput.count() > 0) {
-        const dummyValue = `${labelText.replace(/\s+/g, "_")}_Test`;
-        await textInput.fill(dummyValue);
-        console.log(`Filled input [${labelText}] = ${dummyValue}`);
-      }
-
-      // ========== Text Area ==========
-      else if (await textArea.count() > 0) {
-        const dummyValue = `${labelText.replace(/\s+/g, "_")}_Notes`;
-        await textArea.fill(dummyValue);
-        console.log(`Filled textarea [${labelText}] = ${dummyValue}`);
-      }
-
-      // ========== Checkbox ==========
-      else if (await checkbox.count() > 0) {
-        const count = await checkbox.count();
-        for (let j = 0; j < count; j++) {
-          const inputHandle = checkbox.nth(j);
-          const id = await inputHandle.getAttribute("id");
-
-          if (id) {
-            const linkedLabel = page.locator(`label[for="${id}"]`);
-            if (await linkedLabel.isVisible()) {
-              await linkedLabel.scrollIntoViewIfNeeded();
-              await linkedLabel.click();
-              console.log(`Checked checkbox with label [${id}]`);
-            }
-          }
-        }
-      }
-
-      // ========== Custom Dropdown ==========
-      else if (await customDropdown.count() > 0) {
-        const dropdown = customDropdown.first();
-        await dropdown.locator(IBPM_MFE_LOCATORS.customDropdownTrigger).click({ force: true });
-        const firstOption = dropdown.locator(IBPM_MFE_LOCATORS.customDropdownOption).first();
-        await firstOption.click({ force: true });
-        const selectedText = await dropdown.textContent();
-        console.log(`Selected dropdown [${labelText}] = ${selectedText}`);
-      }
-
-      newFieldFound = true; // ✅ we processed something new
     }
 
-    // 🔴 Break out if no new fields were added
     if (!newFieldFound) {
       console.log("✅ All dynamic form fields processed successfully.");
       break;
