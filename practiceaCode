@@ -24,6 +24,7 @@ async fillDynamicForm() {
       // container relative to this label
       const container = label.locator("xpath=..");
       const textInput = container.locator(IBPM_MFE_LOCATORS.textInput);
+      const textArea = container.locator(IBPM_MFE_LOCATORS.textAreaInput); // ✅ new locator
       const checkbox = container.locator(IBPM_MFE_LOCATORS.checkboxInput);
       const dateField = container.locator(IBPM_MFE_LOCATORS.dateInput);
       const customDropdown = container.locator(IBPM_MFE_LOCATORS.customDropdown);
@@ -43,6 +44,13 @@ async fillDynamicForm() {
         const dummyValue = `${labelText.replace(/\s+/g, "_")}_Test`;
         await textInput.fill(dummyValue);
         console.log(`Filled input [${labelText}] = ${dummyValue}`);
+      }
+
+      // ========== Text Area ==========
+      else if (await textArea.count() > 0) {
+        const dummyValue = `${labelText.replace(/\s+/g, "_")}_Notes`;
+        await textArea.fill(dummyValue);
+        console.log(`Filled textarea [${labelText}] = ${dummyValue}`);
       }
 
       // ========== Checkbox ==========
