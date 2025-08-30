@@ -1,26 +1,76 @@
-Locators (camelCase inside object, object name UPPER_SNAKE_CASE)
-export const CREATE_SK_LOCATORS = {
-  nodalContent: "nodal-content",
-  fileInput: 'input[type="file"]',
-  channelButtonPrefix: "se-channel-",
-  radioButtonContainer: "radio-button-container",
-  searchInput: "st-search-ip",
-  dropdownIcon: "dropdown-icon",
-  searchResultItem: "cst-search-results",
-  referenceNumberInput: "test-inputfield",
-  commentTextArea: "textarea",
-  reviewButtonContainer: "tar-review-btn"
-};
-📌 Text constants (object + keys ALL_CAPS)
-export const TEXT_CONSTANTS = {
-  SEARCH_BUTTON: "Search",
-  DESCRIPTION_PLACEHOLDER: "Description",
-  STRUCTURE_FIELDS: "Structure Fields",
-  ATTACHMENTS: "Attachments",
-  COMMENTS: "Comments"
-};
-✅ This follows a clean standard:
-Object name in UPPER_SNAKE_CASE (CREATE_SK_LOCATORS, TEXT_CONSTANTS).
-Keys for locators in camelCase (fileInput, searchInput…), easier to read in code.
-Keys for UI text in UPPER_SNAKE_CASE (SEARCH_BUTTON, ATTACHMENTS…), clear that these are constants.
-Do you also want me to show you how to organize these into separate files (e.g., locators.ts and constants.ts) so they’re easy to maintain across large projects?
+Playwright Framework Guidelines & Code Quality Standards
+1. Project Structure
+Follow a clear, modular folder structure:
+├── tests/                   # Feature/BDD specs or test files
+├── pages/                   # Page Object Models (POMs)
+├── locators/                # Locators/constants separated per page/module
+├── utils/                   # Utilities/helpers (API calls, date utils, etc.)
+├── fixtures/                # Test data / mock data
+├── config/                  # Playwright config, environment-specific settings
+├── reports/                 # Test execution reports (HTML/Allure, etc.)
+Keep test logic separate from locators and utilities.
+2. Naming Conventions
+Files/Folders → camelCase for files, PascalCase for class names.
+loginPage.ts, customerDetailsPage.ts, srValidator.ts
+Classes → PascalCase (LoginPage, SRValidator)
+Functions/Methods → camelCase (clickOnLoginButton())
+Locators object → UPPER_SNAKE_CASE for object name, camelCase for keys:
+export const CREATE_SK_LOCATORS = { searchInput: "st-search-ip" };
+Text constants → UPPER_SNAKE_CASE for both object and keys:
+export const TEXT_CONSTANTS = { SEARCH_BUTTON: "Search" };
+3. Page Object Model (POM)
+Each page gets its own class.
+Methods represent actions, not element interactions:
+❌ await page.click('#login-button')
+✅ await loginPage.login(username, password)
+Locators never hard-coded inside test — always in locators.ts or class properties.
+4. Assertions
+Use Playwright expect API (await expect(locator).toBeVisible()) instead of manual checks like .isVisible() === true.
+Avoid multiple expectations in a single test unless logically grouped.
+Write clear assertion messages (where applicable):
+await expect(locator, "Login button should be visible").toBeVisible();
+5. Selectors & Locators
+Prefer data-testid attributes → stable & independent of UI changes.
+Fallback: getByRole, getByText, .filter().
+Avoid brittle selectors (nth-child, deep DOM chains).
+Example:
+page.getByTestId('search-button');
+page.getByRole('button', { name: /Search/i });
+6. Constants & Test Data
+Keep UI text in TEXT_CONSTANTS object.
+Keep API endpoints in a dedicated api.endpoints.ts.
+Environment/configuration should come from config.ts or process.env.
+7. Error Handling
+Wrap reusable actions with safe error handling:
+async safeClick(locator: Locator) {
+  await locator.waitFor({ state: "visible" });
+  await locator.click();
+}
+8. Code Quality Rules
+✅ One test = one logical scenario.
+✅ Avoid copy-paste → extract common flows into helper functions.
+✅ Reuse page methods, don’t duplicate locators.
+✅ Always add return types (Promise<void>, Promise<string>).
+✅ Prefer async/await consistently.
+❌ Don’t use hard waits (waitForTimeout), prefer waitForLoadState, expect().toBeVisible().
+❌ Don’t mix test data into test steps → keep in fixtures or constants.
+9. Reusable Utilities
+Create utils for:
+API calls (apiService.ts)
+Date/time formatting
+Random data generation (e.g., faker.js)
+Never write raw logic in test files.
+10. Reviews & Standards
+Every PR should have:
+✅ Readable test case description
+✅ No hardcoded values (unless test-specific)
+✅ Proper use of POM & constants
+✅ Linting/prettier applied
+11. Reporting & CI/CD
+Use HTML reporter / Allure for detailed reports.
+Integrate with CI (Jenkins/GitHub Actions).
+Ensure tests can run in parallel and are idempotent (independent).
+12. BDD (if using Cucumber)
+Step definitions should call Page methods only, not raw selectors.
+Feature files should be business-readable, not technical.
+✅ Following this will give you a scalable, maintainable Playwright framework aligned with best practices.
