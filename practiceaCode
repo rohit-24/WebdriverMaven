@@ -1,25 +1,77 @@
-Rephrased Feedback
-Connectivity Limitation
-The SDET Buddy tool currently does not work when connected from the office or via VPN.
-It requires direct access through the office network, which reduces usability.
-IDE Support
-At present, the tool only integrates with IntelliJ.
-Support for more widely used IDEs such as VS Code is missing and should be considered.
-Background & Reusability
-Common setup steps like header configuration, token generation, UUID, and timestamp should always be placed in the Background.
-These are currently repeated inside each scenario, reducing maintainability.
-Payload Handling
-Too many inline set payload statements make scenarios verbose and harder to read.
-Payloads should be maintained in external JSON files, with only the necessary fields overridden in test cases.
-Examples Table Usage
-Example tables are often bulky and include the entire payload.
-Instead, they should only contain the input variations relevant to the scenario.
-Negative Scenario Generation
-Negative test cases are being generated with “hallucinated” or invalid data because the user does not provide expected negative responses.
-This requires manual cleanup and modification by the team.
-Scalability Concerns
-The current approach is not scalable:
-For each API, the user must create a new prompt.
-For each test case, a new project is generated with a separate Karate config file.
-This creates overhead when testing multiple APIs within the same feature.
-A more scalable solution is needed where multiple APIs can be covered in a single project/config without heavy setup per test.
+import LoginPage from "./generic/login.page";
+import NavigationPage from "./generic/navigation.page";
+import ProductAndServicesPage from "./mrtlp/productAndServices.page";
+import GlobalSearchPage from "./clients/global.search.page";
+import ClientProfilePage from "./clients/clientProfile.page";
+import CustomerAndAccountsPage from "./mrtlp/customerAndAccounts.page";
+import ActivationChecklistPage from "./mrtlp/activationChecklist.page";
+import ApplicationDetailsPage from "./mrtlp/applicationDetails.page";
+import GenericActionPage from "./mrtlp/genericAction.page";
+import CreateSRPage from "./serviceRequests/createSR.page";
+import AccountMortgageLoanPage from "./accounts/mortgageLoan.page";
+import CustomizeRecommendationsPage from "./wcp/customizeRecommendations.page";
+import ViewSRPage from "./serviceRequests/viewSR.page";
+import IbpmPage from "./serviceRequests/ibpm.page";
+import SearchSRPage from "./serviceRequests/searchSR.page";
+
+export class PageObjects {
+  public get loginPage() {
+    return new LoginPage();
+  }
+
+  public get productAndServicesPage() {
+    return new ProductAndServicesPage();
+  }
+
+  public get navigationPage() {
+    return new NavigationPage();
+  }
+
+  public get globalSearchPage() {
+    return new GlobalSearchPage();
+  }
+
+  public get clientProfilePage() {
+    return new ClientProfilePage();
+  }
+
+  public get accountMortgageLoanPage() {
+    return new AccountMortgageLoanPage();
+  }
+
+  public get customerAndAccountsPage() {
+    return new CustomerAndAccountsPage();
+  }
+
+  public get activationChecklistPage() {
+    return new ActivationChecklistPage();
+  }
+
+  public get applicationDetailsPage() {
+    return new ApplicationDetailsPage();
+  }
+
+  public get genericActionPage() {
+    return new GenericActionPage();
+  }
+
+  public get createSRPage() {
+    return new CreateSRPage();
+  }
+
+  public get customizeRecommendationsPage() {
+    return new CustomizeRecommendationsPage();
+  }
+
+  public get viewSRPage() {
+    return new ViewSRPage();
+  }
+
+  public get ibpmPage() {
+    return new IbpmPage();
+  }
+
+  public get searchSRPage() {
+    return new SearchSRPage();
+  }
+}
