@@ -1,114 +1,25 @@
-// ======================
-// Helper functions
-// ======================
-
-async function handleDateField(container, labelText: string, page) {
-  const dateField = container.locator(IBPM_MFE_LOCATORS.dateInput);
-  if (await dateField.count() === 0) return false;
-
-  const today = new Date();
-  const day = String(today.getDate());
-  await dateField.first().click();
-  await page.locator(IBPM_MFE_LOCATORS.calendarContainer).waitFor();
-  await page.locator(IBPM_MFE_LOCATORS.calendarDay(day)).first().click();
-
-  console.log(`Picked date for [${labelText}] = ${day}`);
-  return true;
-}
-
-async function handleTextInput(container, labelText: string) {
-  const textInput = container.locator(IBPM_MFE_LOCATORS.textInput);
-  if (await textInput.count() === 0) return false;
-
-  const dummyValue = `${labelText.replace(/\s+/g, "_")}_Test`;
-  await textInput.fill(dummyValue);
-  console.log(`Filled input [${labelText}] = ${dummyValue}`);
-  return true;
-}
-
-async function handleTextArea(container, labelText: string) {
-  const textArea = container.locator(IBPM_MFE_LOCATORS.textAreaInput);
-  if (await textArea.count() === 0) return false;
-
-  const dummyValue = `${labelText.replace(/\s+/g, "_")}_Notes`;
-  await textArea.fill(dummyValue);
-  console.log(`Filled textarea [${labelText}] = ${dummyValue}`);
-  return true;
-}
-
-async function handleCheckbox(container, labelText: string, page) {
-  const checkbox = container.locator(IBPM_MFE_LOCATORS.checkboxInput);
-  const count = await checkbox.count();
-  if (count === 0) return false;
-
-  for (let j = 0; j < count; j++) {
-    const inputHandle = checkbox.nth(j);
-    const id = await inputHandle.getAttribute("id");
-
-    if (id) {
-      const linkedLabel = page.locator(`label[for="${id}"]`);
-      if (await linkedLabel.isVisible()) {
-        await linkedLabel.scrollIntoViewIfNeeded();
-        await linkedLabel.click();
-        console.log(`Checked checkbox with label [${id}]`);
-      }
-    }
-  }
-  return true;
-}
-
-async function handleCustomDropdown(container, labelText: string) {
-  const customDropdown = container.locator(IBPM_MFE_LOCATORS.customDropdown);
-  if (await customDropdown.count() === 0) return false;
-
-  const dropdown = customDropdown.first();
-  await dropdown.locator(IBPM_MFE_LOCATORS.customDropdownTrigger).click({ force: true });
-  const firstOption = dropdown.locator(IBPM_MFE_LOCATORS.customDropdownOption).first();
-  await firstOption.click({ force: true });
-  const selectedText = await dropdown.textContent();
-
-  console.log(`Selected dropdown [${labelText}] = ${selectedText}`);
-  return true;
-}
-
-// ======================
-// Main dynamic form filler
-// ======================
-
-async function fillDynamicForm(page) {
-  await page.waitForTimeout(2000);
-
-  const processedLabels = new Set<string>();
-
-  while (true) {
-    const allLabels = page.locator(IBPM_MFE_LOCATORS.formLabel);
-    const labelCount = await allLabels.count();
-    let newFieldFound = false;
-
-    for (let i = 0; i < labelCount; i++) {
-      const label = allLabels.nth(i);
-      const labelText = (await label.innerText()).trim();
-
-      if (!labelText || labelText === "\u00A0" || processedLabels.has(labelText)) continue;
-      processedLabels.add(labelText);
-
-      const container = label.locator("xpath=..");
-
-      // Try handlers in order
-      if (
-        await handleDateField(container, labelText, page) ||
-        await handleTextInput(container, labelText) ||
-        await handleTextArea(container, labelText) ||
-        await handleCheckbox(container, labelText, page) ||
-        await handleCustomDropdown(container, labelText)
-      ) {
-        newFieldFound = true;
-      }
-    }
-
-    if (!newFieldFound) {
-      console.log("✅ All dynamic form fields processed successfully.");
-      break;
-    }
-  }
-}
+Rephrased Feedback
+Connectivity Limitation
+The SDET Buddy tool currently does not work when connected from the office or via VPN.
+It requires direct access through the office network, which reduces usability.
+IDE Support
+At present, the tool only integrates with IntelliJ.
+Support for more widely used IDEs such as VS Code is missing and should be considered.
+Background & Reusability
+Common setup steps like header configuration, token generation, UUID, and timestamp should always be placed in the Background.
+These are currently repeated inside each scenario, reducing maintainability.
+Payload Handling
+Too many inline set payload statements make scenarios verbose and harder to read.
+Payloads should be maintained in external JSON files, with only the necessary fields overridden in test cases.
+Examples Table Usage
+Example tables are often bulky and include the entire payload.
+Instead, they should only contain the input variations relevant to the scenario.
+Negative Scenario Generation
+Negative test cases are being generated with “hallucinated” or invalid data because the user does not provide expected negative responses.
+This requires manual cleanup and modification by the team.
+Scalability Concerns
+The current approach is not scalable:
+For each API, the user must create a new prompt.
+For each test case, a new project is generated with a separate Karate config file.
+This creates overhead when testing multiple APIs within the same feature.
+A more scalable solution is needed where multiple APIs can be covered in a single project/config without heavy setup per test.
