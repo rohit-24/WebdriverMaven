@@ -1,126 +1,55 @@
-// cypress/support/commands.js - Enhanced Excel Control
-
-// Function to check if a test case should be executed based on Excel
-Cypress.Commands.add(‘shouldExecuteTestCase’, (market, testCaseTag) => {
-return cy.task(‘checkTestCaseExecution’, { market, testCaseTag }).then((shouldExecute) => {
-if (!shouldExecute) {
-cy.log(`Test case ${testCaseTag} is disabled in Excel - skipping`);
-// Skip the test
-return false;
-}
-cy.log(`Test case ${testCaseTag} is enabled in Excel - executing`);
-return true;
-});
+When("I search using CIN {string} in document number field", function (cin) {
+  enterDocumentNumber(cin);
+  cy.addScreenshotToReport();
 });
 
-// Get test data for specific test case tag
-Cypress.Commands.add(‘getTestDataByTag’, (market, testCaseTag) => {
-return cy.task(‘getTestDataByTag’, { market, testCaseTag });
+
+@SG
+Scenario Outline: Global Search validation for multiple CINs
+  Given I login to Client Connect using my credentials
+  When I search using CIN "<CIN>" in document number field
+  Then I should see client profile results
+
+  Examples:
+    | CIN |
+    | DUMMY |
+
+
+
+const market = "SG";
+
+before(() => {
+  cy.task('readFieldFromExcel', { market, fieldName: 'CIN' }).then(cins => {
+    cins.forEach(cin => {
+      // Dynamically add scenario
+      Given(`I search using CIN ${cin} in document number field`, function () {
+        enterDocumentNumber(cin);
+      });
+    });
+  });
 });
 
-// Enhanced tasks in cypress.config.js or support file
-on(‘task’, {
-// Check if test case should be executed
-checkTestCaseExecution: ({ market, testCaseTag }) => {
-const filePath = path.resolve(‘TestData/LV_Data.xlsx’);
-const workbook = xlsx.readFile(filePath);
-const sheet = workbook.Sheets[market];
 
-```
-if (!sheet) {
-  throw new Error(`Sheet ${market} not found in Excel file`);
-}
 
-const jsonData = xlsx.utils.sheet_to_json(sheet);
 
-// Find row with matching test case tag
-const testCaseData = jsonData.find(row => 
-  row.TestCase === testCaseTag && 
-  (row.Execute === 'Y' || row.Execute === 'Yes' || row.Execute === true || row.Execute === 1)
-);
+on('task', {
+  readFieldFromExcel({ market, fieldName }) {
+    const filePath = path.resolve('TestData/LV_Data.xlsx');
+    const workbook = xlsx.readFile(filePath);
+    const sheet = workbook.Sheets[market];
+    if (!sheet) {
+      throw new Error(`Sheet ${market} not found in Excel file`);
+    }
 
-return !!testCaseData; // Return boolean
-```
+    const jsonData = xlsx.utils.sheet_to_json(sheet);
+    if (jsonData.length === 0) {
+      throw new Error(`No data found in sheet ${market}`);
+    }
 
-},
+    // Return all values of the requested field
+    const values = jsonData.map(row => row[fieldName]).filter(v => v !== undefined);
 
-// Get test data for specific test case
-getTestDataByTag: ({ market, testCaseTag }) => {
-const filePath = path.resolve(‘TestData/LV_Data.xlsx’);
-const workbook = xlsx.readFile(filePath);
-const sheet = workbook.Sheets[market];
-
-```
-if (!sheet) {
-  throw new Error(`Sheet ${market} not found in Excel file`);
-}
-
-const jsonData = xlsx.utils.sheet_to_json(sheet);
-
-// Find row with matching test case tag that should be executed
-const testCaseData = jsonData.find(row => 
-  row.TestCase === testCaseTag && 
-  (row.Execute === 'Y' || row.Execute === 'Yes' || row.Execute === true || row.Execute === 1)
-);
-
-if (!testCaseData) {
-  throw new Error(`Test case ${testCaseTag} not found or not enabled in Excel`);
-}
-
-return testCaseData;
-```
-
-},
-
-// Get all enabled test cases
-getEnabledTestCases: ({ market }) => {
-const filePath = path.resolve(‘TestData/LV_Data.xlsx’);
-const workbook = xlsx.readFile(filePath);
-const sheet = workbook.Sheets[market];
-
-```
-if (!sheet) {
-  throw new Error(`Sheet ${market} not found in Excel file`);
-}
-
-const jsonData = xlsx.utils.sheet_to_json(sheet);
-
-// Filter only enabled test cases
-const enabledTests = jsonData.filter(row => 
-  row.Execute === 'Y' || row.Execute === 'Yes' || row.Execute === true || row.Execute === 1
-);
-
-return enabledTests;
-```
-
-},
-
-// Dynamic test case execution based on Excel
-executeEnabledTestCases: ({ market }) => {
-const filePath = path.resolve(‘TestData/LV_Data.xlsx’);
-const workbook = xlsx.readFile(filePath);
-const sheet = workbook.Sheets[market];
-
-```
-if (!sheet) {
-  throw new Error(`Sheet ${market} not found in Excel file`);
-}
-
-const jsonData = xlsx.utils.sheet_to_json(sheet);
-
-// Get enabled test cases with their tags
-const enabledTests = jsonData.filter(row => 
-  row.Execute === 'Y' || row.Execute === 'Yes' || row.Execute === true || row.Execute === 1
-);
-
-return enabledTests.map(test => ({
-  testCase: test.TestCase,
-  cin: test.CIN,
-  password: test.Password,
-  description: test.Description || '',
-  expectedResult: test.ExpectedResult || 'client360'
-}));
-```
-
-}
+    return values;
+  }
 });
+
