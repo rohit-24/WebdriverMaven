@@ -1,70 +1,25 @@
-When("I search using CIN {string} in document number field", function (cin) {
-  enterDocumentNumber(cin);
-  cy.addScreenshotToReport();
-});
-
-
-@SG
-Scenario Outline: Global Search validation for multiple CINs
-  Given I login to Client Connect using my credentials
-  When I search using CIN "<CIN>" in document number field
-  Then I should see client profile results
-
-  Examples:
-    | CIN |
-    | DUMMY |
-
-
-// cypress/support/excelUtils.js
-const xlsx = require("xlsx");
-
-function readExcelSheet(filePath, sheetName) {
-  const workbook = xlsx.readFile(filePath);
-  const sheet = workbook.Sheets[sheetName];
-  return xlsx.utils.sheet_to_json(sheet);
-}
-
-module.exports = { readExcelSheet };
-
-
-
-const { defineConfig } = require("cypress");
-const fs = require("fs");
-const path = require("path");
-const { readExcelSheet } = require("./cypress/support/excelUtils");
 
 function generateFeatureFromExcel(market) {
   const jsonData = readExcelSheet("TestData/LV_Data.xlsx", market);
 
-  // Build Examples dynamically
+  if (!jsonData.length) {
+    throw new Error(`No data found in sheet ${market}`);
+  }
+
   const rows = jsonData.map(r => `    | ${r.CIN} | ${market} |`).join("\n");
 
-  // Load template
   const templatePath = path.resolve("cypress/e2e/features/search.template.feature");
   let feature = fs.readFileSync(templatePath, "utf8");
 
-  // Replace placeholder
-  feature = feature.replace(/\| placeholder \| SG \|/, rows);
+  // Debug
+  console.log(`🔎 Before replace for ${market}:\n`, feature);
 
-  // Write actual feature
-  const outPath = path.resolve("cypress/e2e/features/search.feature");
+  // Replace placeholder row
+  feature = feature.replace(/\|.*placeholder.*\|.*\|/, rows);
+
+  // Write updated feature
+  const outPath = path.resolve(`cypress/e2e/features/search_${market}.feature`);
   fs.writeFileSync(outPath, feature, "utf8");
 
-  console.log(`✅ Generated feature with ${jsonData.length} CINs for ${market}`);
+  console.log(`✅ Generated ${outPath} with ${jsonData.length} CINs`);
 }
-
-module.exports = defineConfig({
-  e2e: {
-    setupNodeEvents(on, config) {
-      // Generate feature(s) before tests start
-      generateFeatureFromExcel("SG");
-      generateFeatureFromExcel("HK"); // add more markets if needed
-
-      return config;
-    },
-    specPattern: "cypress/e2e/features/*.feature"
-  }
-});
-
-
-
