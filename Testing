@@ -12,50 +12,34 @@ Feature: Client Search
 
 
 
-const { defineConfig } = require("cypress");
-const fs = require("fs");
-const path = require("path");
-const { readExcelSheet } = require("./cypress/support/excelUtils");
+ function generateFeatureForMarket(market) {
+  const featurePath = path.resolve(`cypress/e2e/features/search_${market}.feature`);
 
-function generateFeaturesFromTemplate() {
-  const templatePath = path.resolve("cypress/e2e/features/search.template.feature");
-  const templateContent = fs.readFileSync(templatePath, "utf8");
-
-  // Find all tags like @SG, @HK, @MY
-  const marketTags = [...templateContent.matchAll(/@([A-Z]+)/g)].map(m => m[1]);
-
-  marketTags.forEach(market => {
-    const jsonData = readExcelSheet("TestData/LV_Data.xlsx", market);
-
-    if (!jsonData.length) {
-      console.warn(`⚠️ No data found for market ${market}, skipping...`);
-      return;
-    }
-
-    // Build Examples dynamically from Excel sheet
-    const headers = Object.keys(jsonData[0]);
-    const headerRow = `      | ${headers.join(" | ")} |`;
-    const dataRows = jsonData.map(r => `      | ${headers.map(h => r[h]).join(" | ")} |`).join("\n");
-
-    // Replace placeholder row in template
-    let feature = templateContent.replace(/\|.*placeholder.*\|/, `${headerRow}\n${dataRows}`);
-
-    // Write market-specific feature
-    const outPath = path.resolve(`cypress/e2e/features/search_${market}.feature`);
-    fs.writeFileSync(outPath, feature, "utf8");
-
-    console.log(`✅ Generated feature: ${outPath} with ${jsonData.length} rows`);
-  });
-}
-
-module.exports = defineConfig({
-  e2e: {
-    setupNodeEvents(on, config) {
-      // Generate features before tests
-      generateFeaturesFromTemplate();
-      return config;
-    },
-    specPattern: "cypress/e2e/features/*.feature",
-    supportFile: "cypress/support/e2e.js"
+  if (!fs.existsSync(featurePath)) {
+    console.warn(`⚠️ Feature template not found for ${market}: ${featurePath}`);
+    return;
   }
-});
+
+  let featureContent = fs.readFileSync(featurePath, "utf8");
+  const jsonData = readExcelSheet("TestData/LV_Data.xlsx", market);
+
+  if (!jsonData.length) {
+    console.warn(`⚠️ No data found for market ${market}, skipping...`);
+    return;
+  }
+
+  // Build Examples dynamically
+  const headers = Object.keys(jsonData[0]);
+  const headerRow = `      | ${headers.join(" | ")} |`;
+  const dataRows = jsonData
+    .map(r => `      | ${headers.map(h => r[h]).join(" | ")} |`)
+    .join("\n");
+
+  // Replace placeholder row
+  featureContent = featureContent.replace(/\|.*placeholder.*\|/, `${headerRow}\n${dataRows}`);
+
+  // Overwrite same feature file
+  fs.writeFileSync(featurePath, featureContent, "utf8");
+
+  console.log(`✅ Updated ${featurePath} with ${jsonData.length} rows`);
+}
