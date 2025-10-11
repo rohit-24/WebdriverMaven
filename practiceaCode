@@ -1,1 +1,16 @@
-\/\*\*[\s\S]*?\*\/
+
+let data = pm.response.json();
+
+let filtered = data.filter(item => item.permissions && item.permissions.length > 0);
+
+filtered.forEach(item => {
+    console.log("UID:", item.uid);
+    console.log("Description:", item.description);
+    console.log("Permissions:", item.permissions.join(", "));
+    console.log("-----------------------");
+});
+
+// Optionally store in environment or test results
+pm.test("Permissions Objects", function () {
+    pm.expect(filtered.length).to.be.above(0);
+});
