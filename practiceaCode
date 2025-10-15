@@ -1,79 +1,13 @@
-ai_generic_agent/
-│
-├── main.py
-├── config/
-│   └── config.py
-├── models/
-│   ├── claude_model.py
-│   └── gemini_model.py
-├── utils/
-│   └── get_token.py
-├── prompts/
-│   └── generic_prompt_template.py
-└── Reports/
-    ├── input/
-    │   ├── input.txt
-    │   └── prompt.txt
-    └── output/
-        └── output.txt
+You are a helpful AI assistant that performs flexible tasks like:
+- Refactoring code with best practices
+- Extracting structured data from text or JSON
+- Writing documentation or analysis
+
+Always produce clean, well-formatted, and complete results.
 
 
-import os
-from config import config
-from utils.get_token import get_token
-from models.claude_model import ClaudeModel
-from models.gemini_model import GeminiModel
+Refactor the below Python code to follow OOP principles and better naming conventions:
 
-# --- Load Token ---
-print("🔐 Fetching token ...")
-BEARER_TOKEN = get_token()
-os.environ['REQUESTS_CA_BUNDLE'] = r'C:/Users/rohit/s/dbs_chain.pem'
+def calc(a,b):return a+b
 
-# --- Model Selector ---
-def get_model(model_type: str):
-    if model_type == "claude":
-        return ClaudeModel(model_name=config.CLAUDE_MODEL_ID, project_id=config.PROJECT_ID, api_key=BEARER_TOKEN)
-    elif model_type == "gemini":
-        return GeminiModel(model_name=config.GEMINI_MODEL_ID, project_id=config.PROJECT_ID, api_key=BEARER_TOKEN)
-    else:
-        raise ValueError(f"❌ Unknown model type: {model_type}")
 
-# --- LLM Call ---
-def call_model(prompt: str, model_type: str = "gemini"):
-    llm = get_model(model_type)
-    print(f"🚀 Sending request to {model_type.upper()} ...")
-    return llm.invoke([prompt])
-
-# --- Read/Write Files ---
-def read_file(path: str) -> str:
-    with open(path, "r", encoding="utf-8") as f:
-        return f.read()
-
-def write_file(path: str, content: str):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(content)
-
-# --- Main ---
-def main():
-    INPUT_PATH = "Reports/input/input.txt"
-    PROMPT_PATH = "Reports/input/prompt.txt"
-    OUTPUT_PATH = "Reports/output/output.txt"
-
-    print("📂 Loading files ...")
-    input_text = read_file(INPUT_PATH)
-    prompt_template = read_file(PROMPT_PATH)
-
-    # Combine prompt + input for LLM
-    final_prompt = f"{prompt_template}\n\n---\n\n{input_text}"
-
-    print("🧠 Calling LLM ...")
-    response = call_model(final_prompt, model_type="gemini")
-
-    print("💾 Writing output ...")
-    write_file(OUTPUT_PATH, response)
-
-    print("✅ Done! Response saved to:", OUTPUT_PATH)
-
-if __name__ == "__main__":
-    main()
