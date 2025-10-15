@@ -1,16 +1,60 @@
+from core.llm_client import get_llm
 
-let data = pm.response.json();
+def run_agent(prompt_template_path: str, input_path: str, output_path: str):
+    # Read base prompt template
+    with open(prompt_template_path, "r", encoding="utf-8") as f:
+        base_prompt = f.read()
 
-let filtered = data.filter(item => item.permissions && item.permissions.length > 0);
+    # Read user input
+    with open(input_path, "r", encoding="utf-8") as f:
+        user_input = f.read()
 
-filtered.forEach(item => {
-    console.log("UID:", item.uid);
-    console.log("Description:", item.description);
-    console.log("Permissions:", item.permissions.join(", "));
-    console.log("-----------------------");
-});
+    # Combine both
+    final_prompt = f"{base_prompt}\n\nUser request:\n{user_input}"
 
-// Optionally store in environment or test results
-pm.test("Permissions Objects", function () {
-    pm.expect(filtered.length).to.be.above(0);
-});
+    # Call LLM
+    llm = get_llm()
+    response = llm.predict(final_prompt)
+
+    # Save output
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(response)
+
+    print(f"✅ Output written to: {output_path}")
+
+from core.agent import run_agent
+
+if __name__ == "__main__":
+    prompt_template_path = "prompts/base_prompt.txt"
+    input_path = "inputs/request.txt"
+    output_path = "outputs/response.txt"
+
+    run_agent(prompt_template_path, input_path, output_path)
+
+
+
+You are a helpful AI assistant that performs flexible tasks like:
+- Refactoring code with best practices
+- Extracting structured data from text or JSON
+- Writing documentation or analysis
+
+Always produce clean, well-formatted, and complete results.
+
+
+
+
+Example inputs/request.txt
+Refactor the below Python code to follow OOP principles and better naming conventions:
+
+def calc(a,b):return a+b
+
+→ Output (outputs/response.txt)
+Here’s the refactored version:
+
+class Calculator:
+    def add(self, a: int, b: int) -> int:
+        """Return the sum of two numbers."""
+        return a + b
+
+
+Would you like me to modify this agent so it automatically detects the task type (e.g., code refactor, summarization, or JSON extraction) from the input text — so you don’t have to specify it explicitly in the prompt?
