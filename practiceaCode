@@ -1,13 +1,39 @@
-You are a helpful AI assistant that performs flexible tasks like:
-- Refactoring code with best practices
-- Extracting structured data from text or JSON
-- Writing documentation or analysis
+const axios = require('axios');
 
-Always produce clean, well-formatted, and complete results.
+const BASE_URL = 'https://your-api-endpoint.com/api/cases'; // replace with your actual URL
+const TARGET_CASE_ID = 'PFSG-800020870';
+const BEARER_TOKEN = 'YOUR_BEARER_TOKEN_HERE';
 
+async function findCasePage() {
+  try {
+    const firstPageResponse = await axios.get(`${BASE_URL}?page=1`, {
+      headers: { Authorization: `Bearer ${BEARER_TOKEN}` }
+    });
 
-Refactor the below Python code to follow OOP principles and better naming conventions:
+    const totalPages = firstPageResponse.data.data.totalPages;
+    console.log(`Total Pages: ${totalPages}`);
 
-def calc(a,b):return a+b
+    // loop through all pages
+    for (let page = 1; page <= totalPages; page++) {
+      console.log(`Checking page ${page}...`);
+      const response = await axios.get(`${BASE_URL}?page=${page}`, {
+        headers: { Authorization: `Bearer ${BEARER_TOKEN}` }
+      });
 
+      const cases = response.data.data.onGoingCase;
+      const found = cases.find(c => c.caseId === TARGET_CASE_ID);
 
+      if (found) {
+        console.log(`✅ Found Case ID ${TARGET_CASE_ID} on Page ${page}`);
+        console.log(found);
+        return;
+      }
+    }
+
+    console.log(`❌ Case ID ${TARGET_CASE_ID} not found in any page.`);
+  } catch (error) {
+    console.error('Error fetching data:', error.message);
+  }
+}
+
+findCasePage();
