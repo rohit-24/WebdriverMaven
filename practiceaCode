@@ -1,8 +1,29 @@
-Feedback for Kiran:
-Kiran takes ownership of his tasks and works very diligently. He has been actively contributing to key initiatives such as Customized Pipelines using CUBOX and LV automation, which were among the first to be implemented by our team.
-He has played a major role in resolving blockers related to Jenkins pipeline creation and has successfully implemented customized pipelines aligned with DBS policy. Kiran has also provided strong support to multiple teams in setting up automation pipelines and has shown good leadership in fixing Dev and Test Jenkins issues.
-He demonstrates strong domain knowledge in Client Connect modules like Account Planning, Wealth-CoPilot, PPR, Call Report, Engagements, Interactions, and Docs/Declarations. Additionally, he has performed Load, Soak, and Spike testing, implemented the 100% CICD process, and actively monitors both UI and API regression test results. He is also supportive in helping team members set up automation projects.
-Areas of Improvement:
-Can focus more on improving documentation and knowledge sharing for new team members.
-Could work on better prioritizing tasks to manage multiple initiatives more efficiently.
-Can enhance collaboration by proactively communicating progress and blockers during sprint cycles.
+After(async function (this: ScenarioWorld, { result }: ITestCaseHookParameter) {
+  try {
+    if (result?.status === 'failed') {
+
+      // safe screenshot
+      if (this.page && !this.page.isClosed()) {
+        try {
+          const image = await this.page.screenshot({ fullPage: true });
+          if (image) this.attach(image, "image/png");
+        } catch (e) {
+          console.log("Screenshot skipped - page closed");
+        }
+      }
+
+      // safe tracing stop
+      if (process.env.CI && this.context && !this.context.isClosed?.()) {
+        try {
+          await this.context.tracing.stop({
+            path: `${tracesDir}/${this.testName}-trace.zip`,
+          });
+        } catch (e) {
+          console.log("Trace stop skipped - context closed");
+        }
+      }
+    }
+  } catch (err) {
+    console.log("Error in After hook =>", err);
+  }
+});
