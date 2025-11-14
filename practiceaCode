@@ -1,29 +1,53 @@
+import { After, AfterAll, AfterStep, Status, ITestCaseHookParameter } from "@cucumber/cucumber";
+import { ScenarioWorld } from "../setup/world";
+import { tracesDir } from "../support/env.config";
+
 After(async function (this: ScenarioWorld, { result }: ITestCaseHookParameter) {
-  try {
-    if (result?.status === 'failed') {
 
-      // safe screenshot
-      if (this.page && !this.page.isClosed()) {
-        try {
-          const image = await this.page.screenshot({ fullPage: true });
-          if (image) this.attach(image, "image/png");
-        } catch (e) {
-          console.log("Screenshot skipped - page closed");
-        }
-      }
+  this.attach(`Status: ${result?.status}. Duration: ${result?.duration?.seconds}s`);
 
-      // safe tracing stop
-      if (process.env.CI && this.context && !this.context.isClosed?.()) {
-        try {
-          await this.context.tracing.stop({
-            path: `${tracesDir}/${this.testName}-trace.zip`,
-          });
-        } catch (e) {
-          console.log("Trace stop skipped - context closed");
-        }
-      }
+  const isFailed = result?.status !== Status.PASSED;
+  const takeScreenshot = process.env.CI ? this.parameters.screenshots === true : true;
+
+  if (isFailed && takeScreenshot) {
+    console.error("Scenario failed:", result?.exception);
+
+    try {
+      await BasePage.pageObject.waitForLoadState("networkidle");
+    } catch (e) {
+      console.warn("LoadState wait skipped due to failure");
     }
-  } catch (err) {
-    console.log("Error in After hook =>", err);
+
+    const image = await BasePage.pageObject.screenshot({ fullPage: true });
+    image && this.attach(image, "image/png");
+  }
+
+  if (process.env.CI) {
+    await this.context?.tracing.stop({
+      path: `${tracesDir}/${this.testName}-trace.zip`
+    });
   }
 });
+
+
+AfterStep(async function (this: ScenarioWorld) {
+  const takeScreenshot = process.env.CI ? this.parameters.screenshots === true : false;
+
+  if (takeScreenshot) {
+    const image = await BasePage.pageObject.screenshot({ fullPage: true });
+    image && this.attach(image, "image/png");
+  }
+});
+
+
+AfterAll(async function () {
+  await browser.close();
+  await BasePage.pageObject.context().clearCookies();
+  await BasePage.pageObject.close();
+  await BasePage.pageObject.video()?.saveAs(`recordings/${this.testName}.mp4`);
+  await BasePage.pageObject.video()?.delete();
+  await this.context?.close();
+});
+
+
+
