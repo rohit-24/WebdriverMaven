@@ -1,3 +1,22 @@
+Then('the pending approval count should increase by {int}', async function (increaseValue: number) {
+  const { summaryPage } = this.pages;
+
+  const newCount = await summaryPage.getPendingApprovalCount();
+  this.context.newPendingCount = newCount;
+
+  const previous = Number(this.context.previousPendingCount);
+  const expected = previous + Number(increaseValue);
+
+  console.log("Previous:", previous);
+  console.log("New:", this.context.newPendingCount);
+  console.log("Expected:", expected);
+
+  expect(this.context.newPendingCount).toEqual(expected);
+});
+
+
+
+
 async getPendingApprovalCount(): Promise<number> {
   // Locate container by data-testid
   const container = this.page.locator('[data-testid="pf-admin-summary-tab-item-container-2"]');
