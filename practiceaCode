@@ -1,53 +1,50 @@
-import { After, AfterAll, AfterStep, Status, ITestCaseHookParameter } from "@cucumber/cucumber";
-import { ScenarioWorld } from "../setup/world";
-import { tracesDir } from "../support/env.config";
+async getPendingApprovalCount(): Promise<number> {
+  // Locate container by data-testid
+  const container = this.page.locator('[data-testid="pf-admin-summary-tab-item-container-2"]');
+  
+  // Locate sibling div before the "Pending approval" text
+  const countText = await container.locator('xpath=.//div[normalize-space(text())="Pending approval"]/preceding-sibling::div').innerText();
+  
+  return Number(countText.trim());
+}
 
-After(async function (this: ScenarioWorld, { result }: ITestCaseHookParameter) {
+const count = await summaryPage.getPendingApprovalCount();
+console.log("Pending approval count:", count);
+expect(count).toBeGreaterThan(0);
 
-  this.attach(`Status: ${result?.status}. Duration: ${result?.duration?.seconds}s`);
 
-  const isFailed = result?.status !== Status.PASSED;
-  const takeScreenshot = process.env.CI ? this.parameters.screenshots === true : true;
+// Step Definition
+const previousCount = await tablePage.getApprovedRecordsCount();
 
-  if (isFailed && takeScreenshot) {
-    console.error("Scenario failed:", result?.exception);
+await formPage.fillFormAndSubmit();   // Submit action
 
-    try {
-      await BasePage.pageObject.waitForLoadState("networkidle");
-    } catch (e) {
-      console.warn("LoadState wait skipped due to failure");
-    }
+await tablePage.waitForTableToLoad(); // Wait for navigation and table refresh
 
-    const image = await BasePage.pageObject.screenshot({ fullPage: true });
-    image && this.attach(image, "image/png");
-  }
+const newCount = await tablePage.getApprovedRecordsCount();
+expect(newCount).toBe(previousCount + 1);
 
-  if (process.env.CI) {
-    await this.context?.tracing.stop({
-      path: `${tracesDir}/${this.testName}-trace.zip`
-    });
-  }
+
+async getFirstRowData() {
+  return {
+    name: await this.page.locator('table tbody tr:first-child td:nth-child(1)').innerText(),
+    status: await this.page.locator('table tbody tr:first-child td:nth-child(2)').innerText(),
+    createdDate: await this.page.locator('table tbody tr:first-child td:nth-child(3)').innerText(),
+  };
+}
+
+const firstRowData = await tablePage.getFirstRowData();
+
+expect(firstRowData.name).toBe(expectedName);
+expect(firstRowData.status).toBe("Approved"); // Example
+
+Then('the record count should increase and new record should be displayed first', async function () {
+  const previousCount = this.context.previousCount;
+  
+  const newCount = await tablePage.getApprovedRecordsCount();
+  expect(newCount).toEqual(previousCount + 1);
+
+  const firstRow = await tablePage.getFirstRowData();
+  expect(firstRow.name).toEqual(this.context.createdRecord.name);
 });
-
-
-AfterStep(async function (this: ScenarioWorld) {
-  const takeScreenshot = process.env.CI ? this.parameters.screenshots === true : false;
-
-  if (takeScreenshot) {
-    const image = await BasePage.pageObject.screenshot({ fullPage: true });
-    image && this.attach(image, "image/png");
-  }
-});
-
-
-AfterAll(async function () {
-  await browser.close();
-  await BasePage.pageObject.context().clearCookies();
-  await BasePage.pageObject.close();
-  await BasePage.pageObject.video()?.saveAs(`recordings/${this.testName}.mp4`);
-  await BasePage.pageObject.video()?.delete();
-  await this.context?.close();
-});
-
 
 
