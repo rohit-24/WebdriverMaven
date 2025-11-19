@@ -1,69 +1,76 @@
-Then('the pending approval count should increase by {int}', async function (increaseValue: number) {
-  const { summaryPage } = this.pages;
+🚀 First-Ever Production Sanity Suite
 
-  const newCount = await summaryPage.getPendingApprovalCount();
-  this.context.newPendingCount = newCount;
+Problem Statement (Before Automation):
 
-  const previous = Number(this.context.previousPendingCount);
-  const expected = previous + Number(increaseValue);
+➢
+RMs perform LV sanity checks manually in production
 
-  console.log("Previous:", previous);
-  console.log("New:", this.context.newPendingCount);
-  console.log("Expected:", expected);
+➢
+Time-consuming: 30-40 minutes per CR per market
 
-  expect(this.context.newPendingCount).toEqual(expected);
-});
+➢
+Screens verified and screenshots captured manually
 
+➢
+Manual JIRA updates required
 
+➢
+Even small changes require LV users' time and availability
 
+The Breakthrough:
 
-async getPendingApprovalCount(): Promise<number> {
-  // Locate container by data-testid
-  const container = this.page.locator('[data-testid="pf-admin-summary-tab-item-container-2"]');
-  
-  // Locate sibling div before the "Pending approval" text
-  const countText = await container.locator('xpath=.//div[normalize-space(text())="Pending approval"]/preceding-sibling::div').innerText();
-  
-  return Number(countText.trim());
-}
+➢
+First-of-its-kind automation on platform
 
-const count = await summaryPage.getPendingApprovalCount();
-console.log("Pending approval count:", count);
-expect(count).toBeGreaterThan(0);
+➢
+Production-grade LV sanity suite covering major journeys
 
+➢
+Trigger-on-demand via Jenkins for new CRs or releases
 
-// Step Definition
-const previousCount = await tablePage.getApprovedRecordsCount();
+Main Features:
 
-await formPage.fillFormAndSubmit();   // Submit action
+➢
+MFA Authentication with real-time RM approval
 
-await tablePage.waitForTableToLoad(); // Wait for navigation and table refresh
+➢
+Customer Data Protection - zero sensitive data leakage
 
-const newCount = await tablePage.getApprovedRecordsCount();
-expect(newCount).toBe(previousCount + 1);
+➢
+Secured Reporting with password-protected zip files
 
+➢
+Jenkins Pipeline Integration built from scratch
 
-async getFirstRowData() {
-  return {
-    name: await this.page.locator('table tbody tr:first-child td:nth-child(1)').innerText(),
-    status: await this.page.locator('table tbody tr:first-child td:nth-child(2)').innerText(),
-    createdDate: await this.page.locator('table tbody tr:first-child td:nth-child(3)').innerText(),
-  };
-}
+➢
+Script Standardization for platform-wide compliance
 
-const firstRowData = await tablePage.getFirstRowData();
+Workflow:
 
-expect(firstRowData.name).toBe(expectedName);
-expect(firstRowData.status).toBe("Approved"); // Example
+➢
+RMs onboarded to AULV via UAMS request
 
-Then('the record count should increase and new record should be displayed first', async function () {
-  const previousCount = this.context.previousCount;
-  
-  const newCount = await tablePage.getApprovedRecordsCount();
-  expect(newCount).toEqual(previousCount + 1);
+➢
+RM enters Bank ID, Target Market, Test Data Excel
 
-  const firstRow = await tablePage.getFirstRowData();
-  expect(firstRow.name).toEqual(this.context.createdRecord.name);
-});
+➢
+Mobile push notification for app access approval
 
+➢
+Execution results delivered as secure zip with reports/video
 
+Time & Impact:
+
+➢
+~30 hours saved yearly across markets (5 mins vs 35 mins)
+
+➢
+Full reports + video (vs screenshots only)
+
+Market Status:
+
+➢
+SG, CN, ID rollout complete ✅
+
+➢
+TW, HK, IN upcoming 🌐
