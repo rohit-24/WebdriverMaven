@@ -1,76 +1,25 @@
-🚀 First-Ever Production Sanity Suite
-
-Problem Statement (Before Automation):
-
-➢
-RMs perform LV sanity checks manually in production
-
-➢
-Time-consuming: 30-40 minutes per CR per market
-
-➢
-Screens verified and screenshots captured manually
-
-➢
-Manual JIRA updates required
-
-➢
-Even small changes require LV users' time and availability
-
-The Breakthrough:
-
-➢
-First-of-its-kind automation on platform
-
-➢
-Production-grade LV sanity suite covering major journeys
-
-➢
-Trigger-on-demand via Jenkins for new CRs or releases
-
-Main Features:
-
-➢
-MFA Authentication with real-time RM approval
-
-➢
-Customer Data Protection - zero sensitive data leakage
-
-➢
-Secured Reporting with password-protected zip files
-
-➢
-Jenkins Pipeline Integration built from scratch
-
-➢
-Script Standardization for platform-wide compliance
-
-Workflow:
-
-➢
-RMs onboarded to AULV via UAMS request
-
-➢
-RM enters Bank ID, Target Market, Test Data Excel
-
-➢
-Mobile push notification for app access approval
-
-➢
-Execution results delivered as secure zip with reports/video
-
-Time & Impact:
-
-➢
-~30 hours saved yearly across markets (5 mins vs 35 mins)
-
-➢
-Full reports + video (vs screenshots only)
-
-Market Status:
-
-➢
-SG, CN, ID rollout complete ✅
-
-➢
-TW, HK, IN upcoming 🌐
+🥇 1. forceConsistentCasingInFileNames (must-have)
+Why it’s essential
+Immediately catches case sensitivity mismatch between imports and actual file names
+Prevents CI/Linux-only failures
+Protects codebase integrity long term
+Zero cost and always ON
+Industry recommendation
+Keep it always enabled in tsconfig.json
+This is now considered a standard in TypeScript and large automation frameworks.
+{
+  "compilerOptions": {
+    "forceConsistentCasingInFileNames": true
+  }
+}
+🥇 2. tsc --noEmit before running tests
+Why it’s important
+Catches all compile/type errors before running Playwright
+Ensures PR/CI pipeline quality
+Prevents failing tests due to broken imports or types
+In package.json:
+"scripts": {
+  "check-types": "tsc --noEmit",
+  "test": "npm run check-types && playwright test"
+}
+This becomes part of your CI pipeline as a type gatekeeper.
