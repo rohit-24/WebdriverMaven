@@ -1,52 +1,20 @@
-Feature: Policy Submission
+* def ZoneId = Java.type('java.time.ZoneId')
+* def LocalDateTime = Java.type('java.time.LocalDateTime')
+* def Formatter = Java.type('java.time.format.DateTimeFormatter')
 
-  Background:
-    * url policiesBaseURL
+* def formatter = Formatter.ofPattern("yyyy-MM-dd HH:mm")
+* def zone = ZoneId.of("Asia/Singapore")
 
-    # --- Dynamic Date Logic ---
-    * def today = new Date()
-    * def policyStartDate = new Date(today.getTime() + (24 * 60 * 60 * 1000))
-    * def lastProductDate = new Date(policyStartDate.getTime() + (24 * 60 * 60 * 1000))
-    * def lastIssuanceDate = new Date(lastProductDate.getTime() + (24 * 60 * 60 * 1000))
+# Generate dynamic dates
+* def policyStartDate = LocalDateTime.now(zone).plusDays(1)
+* def lastProductDate = policyStartDate.plusDays(1)
+* def lastIssuanceDate = lastProductDate.plusDays(1)
 
-    * def format = 
-      """
-      function(date) {
-        return java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-          .format(date.toInstant().atZone(java.time.ZoneId.of("Asia/Singapore")));
-      }
-      """
+# Convert to formatted strings
+* def policyStartDateTime = policyStartDate.format(formatter)
+* def lastDateTimeForProductSelection = lastProductDate.format(formatter)
+* def lastIssuanceDateTime = lastIssuanceDate.format(formatter)
 
-    * def policyStartDateTime = format(policyStartDate)
-    * def lastDateTimeForProductSelection = format(lastProductDate)
-    * def lastIssuanceDateTime = format(lastIssuanceDate)
-
-    * print '--- Generated Dynamic Dates ---'
-    * print 'Policy Start       :', policyStartDateTime
-    * print 'Product Selection  :', lastDateTimeForProductSelection
-    * print 'Issuance Date      :', lastIssuanceDateTime
-
-
-  Scenario: Maker submits a policy to be in PENDING_APPROVAL status
-    Given url policiesBaseURL
-    And headers { "Accept":"application/json", "Authorization":"#(makerToken)" }
-
-    And request {
-      submitPolicy: {
-        "insuranceProvider": "ManuLife (Singapore) Ptd Ltd - Submit",
-        "insuranceProviderShortForm": "ManuLife",
-        "policyStartDateTime": "#(policyStartDateTime)",
-        "lastDateTimeForProductSelection": "#(lastDateTimeForProductSelection)",
-        "lastIssuanceDateTime": "#(lastIssuanceDateTime)",
-        "automaticPremiumSpread": "YES",
-        "cashValueEnhancement": "Yes"
-      }
-    }
-
-    When method POST
-    Then status 200
-    And match response.status == 'PENDING_APPROVAL'
-    * def policyId = response.id
-    * def policyCode = response.policyCode
-    * print '--- Maker Submitted Policy for Checker Action ---',
-      'ID: ' + policyId, 'Code: ' + policyCode, 'Status: ' + response.status
+* print policyStartDateTime
+* print lastDateTimeForProductSelection
+* print lastIssuanceDateTime
