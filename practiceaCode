@@ -1,25 +1,52 @@
-🥇 1. forceConsistentCasingInFileNames (must-have)
-Why it’s essential
-Immediately catches case sensitivity mismatch between imports and actual file names
-Prevents CI/Linux-only failures
-Protects codebase integrity long term
-Zero cost and always ON
-Industry recommendation
-Keep it always enabled in tsconfig.json
-This is now considered a standard in TypeScript and large automation frameworks.
-{
-  "compilerOptions": {
-    "forceConsistentCasingInFileNames": true
-  }
-}
-🥇 2. tsc --noEmit before running tests
-Why it’s important
-Catches all compile/type errors before running Playwright
-Ensures PR/CI pipeline quality
-Prevents failing tests due to broken imports or types
-In package.json:
-"scripts": {
-  "check-types": "tsc --noEmit",
-  "test": "npm run check-types && playwright test"
-}
-This becomes part of your CI pipeline as a type gatekeeper.
+Feature: Policy Submission
+
+  Background:
+    * url policiesBaseURL
+
+    # --- Dynamic Date Logic ---
+    * def today = new Date()
+    * def policyStartDate = new Date(today.getTime() + (24 * 60 * 60 * 1000))
+    * def lastProductDate = new Date(policyStartDate.getTime() + (24 * 60 * 60 * 1000))
+    * def lastIssuanceDate = new Date(lastProductDate.getTime() + (24 * 60 * 60 * 1000))
+
+    * def format = 
+      """
+      function(date) {
+        return java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+          .format(date.toInstant().atZone(java.time.ZoneId.of("Asia/Singapore")));
+      }
+      """
+
+    * def policyStartDateTime = format(policyStartDate)
+    * def lastDateTimeForProductSelection = format(lastProductDate)
+    * def lastIssuanceDateTime = format(lastIssuanceDate)
+
+    * print '--- Generated Dynamic Dates ---'
+    * print 'Policy Start       :', policyStartDateTime
+    * print 'Product Selection  :', lastDateTimeForProductSelection
+    * print 'Issuance Date      :', lastIssuanceDateTime
+
+
+  Scenario: Maker submits a policy to be in PENDING_APPROVAL status
+    Given url policiesBaseURL
+    And headers { "Accept":"application/json", "Authorization":"#(makerToken)" }
+
+    And request {
+      submitPolicy: {
+        "insuranceProvider": "ManuLife (Singapore) Ptd Ltd - Submit",
+        "insuranceProviderShortForm": "ManuLife",
+        "policyStartDateTime": "#(policyStartDateTime)",
+        "lastDateTimeForProductSelection": "#(lastDateTimeForProductSelection)",
+        "lastIssuanceDateTime": "#(lastIssuanceDateTime)",
+        "automaticPremiumSpread": "YES",
+        "cashValueEnhancement": "Yes"
+      }
+    }
+
+    When method POST
+    Then status 200
+    And match response.status == 'PENDING_APPROVAL'
+    * def policyId = response.id
+    * def policyCode = response.policyCode
+    * print '--- Maker Submitted Policy for Checker Action ---',
+      'ID: ' + policyId, 'Code: ' + policyCode, 'Status: ' + response.status
