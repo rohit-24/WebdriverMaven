@@ -1,6 +1,11 @@
 import { LLM } from "@langchain/core/language_models/llms";
+import type { BaseLanguageModelParams } from "@langchain/core/language_models/base";
 
 export class GatewayLLM extends LLM {
+  constructor(fields: BaseLanguageModelParams = {}) {
+    super(fields);
+  }
+
   _llmType(): string {
     return "gateway-llm";
   }
@@ -11,7 +16,7 @@ export class GatewayLLM extends LLM {
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${process.env.GATEWAY_TOKEN}`,
+          Authorization: `Bearer ${process.env.LLM_GATEWAY_TOKEN}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -27,17 +32,6 @@ export class GatewayLLM extends LLM {
     );
 
     const data = await response.json();
-
     return data?.content?.[0]?.text ?? "";
   }
 }
-
-
-import { GatewayLLM } from "./GatewayLLM";
-
-const llm = new GatewayLLM();
-
-const response = await llm.invoke("Explain slice in JavaScript");
-console.log(response);
-
-
