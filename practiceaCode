@@ -1,50 +1,19 @@
-import { tool } from "@langchain/core/tools";
-import { z } from "zod";
-
-/**
- * Weather Tool
- * Input: city (string)
- * Output: weather info (string)
- */
-export const getWeatherTool = tool(
-  async ({ city }) => {
-    // 🔹 Hardcoded weather data for now
-    const weatherData: Record<string, string> = {
-      Singapore: "🌤️ 30°C, Humid",
-      Bangalore: "🌦️ 24°C, Cloudy",
-      Mumbai: "☀️ 32°C, Hot",
-      London: "🌧️ 15°C, Rainy",
-    };
-
-    return (
-      weatherData[city] ??
-      "❓ Weather data not available for this city"
-    );
-  },
-  {
-    name: "get_weather",
-    description: "Get current weather for a given city",
-    schema: z.object({
-      city: z
-        .string()
-        .describe("Name of the city to get weather for"),
-    }),
-  }
-);
-
-
+import "dotenv/config";
+import { GatewayLLM } from "./GatewayLLM.js";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { getWeatherTool } from "./weatherTool.js";
-import { GatewayLLM } from "./GatewayLLM.js";
 
 async function main() {
+  // 1️⃣ Initialize LLM
   const llm = new GatewayLLM();
 
+  // 2️⃣ Create agent with tools
   const agent = createReactAgent({
     llm,
     tools: [getWeatherTool],
   });
 
+  // 3️⃣ Ask a question that requires the tool
   const response = await agent.invoke({
     messages: [
       {
@@ -54,9 +23,8 @@ async function main() {
     ],
   });
 
+  // 4️⃣ Print final agent response
   console.log(response.messages.at(-1)?.content);
 }
 
 main().catch(console.error);
-
-
