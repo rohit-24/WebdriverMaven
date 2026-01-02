@@ -1,31 +1,64 @@
-{
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+import { BaseChatModel } from "@langchain/core/language_models/chat_models";
+import { BaseMessage, AIMessage } from "@langchain/core/messages";
+import { ChatResult } from "@langchain/core/outputs";
 
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
+class CustomClaudeChatModel extends BaseChatModel {
+  apiUrl: string;
+  token: string;
+  modelPath: string;
 
-    "strict": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
+  constructor(config: { apiUrl: string; token: string; modelPath: string }) {
+    super({});
+    this.apiUrl = config.apiUrl;
+    this.token = config.token;
+    this.modelPath = config.modelPath;
+  }
 
-    "outDir": "dist"
-  },
-  "include": ["src/**/*.ts"]
+  _llmType(): string {
+    return "custom-claude";
+  }
+
+  async _generate(messages: BaseMessage[]): Promise<ChatResult> {
+    // Convert LangChain messages to your API format
+    const formattedMessages = messages.map((msg) => ({
+      role: msg._getType() === "human" ? "user" : "assistant",
+      content: [{ type: "text", text: msg.content as string }],
+    }));
+
+    const response = await fetch(
+      `${this.apiUrl}${this.modelPath}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.token}`, // Or whatever auth your endpoint uses
+        },
+        body: JSON.stringify({
+          anthropic_version: "vertex-2023-10-16",
+          messages: formattedMessages,
+          max_tokens: 1024,
+        }),
+      }
+    );
+
+    const data = await response.json();
+    
+    return {
+      generations: [
+        {
+          text: data.content[0].text,
+          message: new AIMessage(data.content[0].text),
+        },
+      ],
+    };
+  }
 }
 
+// Usage
+const model = new CustomClaudeChatModel({
+  apiUrl: "https://stork.apps.ocp8.uat.xyz.com",
+  token: process.env.OFFICE_API_TOKEN!,
+  modelPath: "/v1/projects/xyz-mod-adag-d4q9v/locations/asia-southeast1/publishers/anthropic/models/claude-3-5-sonnet@20240620:streamRawPredict",
+});
 
-
-
-import { GatewayLLM } from "./GatewayLLM";
-
-async function main() {
-  const llm = new GatewayLLM();
-
-  const response = await llm.invoke("Explain slice in JavaScript");
-  console.log(response);
-}
-
-main().catch(console.error);
+const response = await model.invoke("Explain slice in JavaScript");
