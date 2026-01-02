@@ -1,64 +1,18 @@
-import { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import { BaseMessage, AIMessage } from "@langchain/core/messages";
-import { ChatResult } from "@langchain/core/outputs";
-
-class CustomClaudeChatModel extends BaseChatModel {
-  apiUrl: string;
-  token: string;
-  modelPath: string;
-
-  constructor(config: { apiUrl: string; token: string; modelPath: string }) {
-    super({});
-    this.apiUrl = config.apiUrl;
-    this.token = config.token;
-    this.modelPath = config.modelPath;
-  }
-
-  _llmType(): string {
-    return "custom-claude";
-  }
-
-  async _generate(messages: BaseMessage[]): Promise<ChatResult> {
-    // Convert LangChain messages to your API format
-    const formattedMessages = messages.map((msg) => ({
-      role: msg._getType() === "human" ? "user" : "assistant",
-      content: [{ type: "text", text: msg.content as string }],
-    }));
-
-    const response = await fetch(
-      `${this.apiUrl}${this.modelPath}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${this.token}`, // Or whatever auth your endpoint uses
-        },
-        body: JSON.stringify({
-          anthropic_version: "vertex-2023-10-16",
-          messages: formattedMessages,
-          max_tokens: 1024,
-        }),
-      }
-    );
-
-    const data = await response.json();
-    
-    return {
-      generations: [
-        {
-          text: data.content[0].text,
-          message: new AIMessage(data.content[0].text),
-        },
-      ],
-    };
+{
+  "parser": "@typescript-eslint/parser",
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module",
+    "project": "./tsconfig.json"
+  },
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unused-vars": "warn"
   }
 }
 
-// Usage
-const model = new CustomClaudeChatModel({
-  apiUrl: "https://stork.apps.ocp8.uat.xyz.com",
-  token: process.env.OFFICE_API_TOKEN!,
-  modelPath: "/v1/projects/xyz-mod-adag-d4q9v/locations/asia-southeast1/publishers/anthropic/models/claude-3-5-sonnet@20240620:streamRawPredict",
-});
-
-const response = await model.invoke("Explain slice in JavaScript");
+Create an .eslintrc.json file:
