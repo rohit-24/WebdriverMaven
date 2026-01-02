@@ -1,32 +1,62 @@
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
 
-{
-  "name": "langchain-framework",
-  "version": "1.0.0",
-  "description": "LangChain AI Agent with Custom Claude Endpoint",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "tsx src/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+/**
+ * Weather Tool
+ * Input: city (string)
+ * Output: weather info (string)
+ */
+export const getWeatherTool = tool(
+  async ({ city }) => {
+    // 🔹 Hardcoded weather data for now
+    const weatherData: Record<string, string> = {
+      Singapore: "🌤️ 30°C, Humid",
+      Bangalore: "🌦️ 24°C, Cloudy",
+      Mumbai: "☀️ 32°C, Hot",
+      London: "🌧️ 15°C, Rainy",
+    };
+
+    return (
+      weatherData[city] ??
+      "❓ Weather data not available for this city"
+    );
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "@langchain/anthropic": "^0.1.3",
-    "@langchain/core": "^0.1.8",
-    "@langchain/community": "^0.0.25",
-    "dotenv": "^17.2.3",
-    "langchain": "^0.1.2.3",
-    "axios": "^1.6.0"
-  },
-  "devDependencies": {
-    "@types/node": "^25.0.3",
-    "@typescript-eslint/eslint-plugin": "^8.51.0",
-    "@typescript-eslint/parser": "^8.51.0",
-    "typescript": "^5.9.3",
-    "tsx": "^4.21.6"
+  {
+    name: "get_weather",
+    description: "Get current weather for a given city",
+    schema: z.object({
+      city: z
+        .string()
+        .describe("Name of the city to get weather for"),
+    }),
   }
+);
+
+
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { getWeatherTool } from "./weatherTool.js";
+import { GatewayLLM } from "./GatewayLLM.js";
+
+async function main() {
+  const llm = new GatewayLLM();
+
+  const agent = createReactAgent({
+    llm,
+    tools: [getWeatherTool],
+  });
+
+  const response = await agent.invoke({
+    messages: [
+      {
+        role: "user",
+        content: "What is the weather in Singapore?",
+      },
+    ],
+  });
+
+  console.log(response.messages.at(-1)?.content);
 }
+
+main().catch(console.error);
+
+
