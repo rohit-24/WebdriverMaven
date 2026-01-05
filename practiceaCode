@@ -1,34 +1,137 @@
-import { ChatAnthropic } from "@langchain/anthropic";
-import { tool } from "@langchain/core/tools";
-import { z } from "zod";
+import { BaseChatModel } from "@langchain/core/language_models/chat_models";
+import { BaseMessage, AIMessage, ToolMessage } from "@langchain/core/messages";
+import { ChatResult } from "@langchain/core/outputs";
+import { CallbackManagerForLLMRun } from "@langchain/core/callbacks/manager";
 
-// Use the built-in ChatAnthropic but point it to your endpoint
-const model = new ChatAnthropic({
-  apiKey: process.env.OFFICE_API_TOKEN!,
-  model: "claude-3-5-sonnet@20240620",
-  // Override the base URL to use your custom endpoint
-  clientOptions: {
-    baseURL: "https://stork.apps.ocp8.uat.xyz.com/v1/projects/xyz-mod-adag-d4q9v/locations/asia-southeast1/publishers/anthropic/models"
+export class CustomClaudeChatModel extends BaseChatModel {
+  apiUrl: string;
+  token: string;
+  modelPath: string;
+
+  constructor(config: { apiUrl: string; token: string; modelPath: string }) {
+    super({});
+    this.apiUrl = config.apiUrl;
+    this.token = config.token;
+    this.modelPath = config.modelPath;
   }
-});
 
-const getWeatherTool = tool(
-  async (input) => `It's sunny in ${input.city}!`,
-  {
-    name: "get_weather",
-    description: "Get the weather for a given city",
-    schema: z.object({
-      city: z.string().describe("The city to get the weather for"),
-    }),
+  _llmType(): string {
+    return "custom-claude";
   }
-);
 
-// Now it's simple again!
-const agent = createReactAgent({
-  llm: model,
-  tools: [getWeatherTool],
-});
+  async _generate(
+    messages: BaseMessage[],
+    options?: this["ParsedCallOptions"],
+    runManager?: CallbackManagerForLLMRun
+  ): Promise<ChatResult> {
+    // Convert LangChain messages to Claude API format
+    const formattedMessages = messages.map((msg) => {
+      const msgType = msg._getType();
+      
+      if (msgType === "human") {
+        return {
+          role: "user",
+          content: typeof msg.content === "string" 
+            ? [{ type: "text", text: msg.content }]
+            : msg.content,
+        };
+      } else if (msgType === "ai") {
+        return {
+          role: "assistant",
+          content: typeof msg.content === "string"
+            ? [{ type: "text", text: msg.content }]
+            : msg.content,
+        };
+      } else if (msgType === "tool") {
+        // Handle tool results
+        const toolMsg = msg as ToolMessage;
+        return {
+          role: "user",
+          content: [
+            {
+              type: "tool_result",
+              tool_use_id: toolMsg.tool_call_id,
+              content: toolMsg.content,
+            },
+          ],
+        };
+      }
+      
+      return {
+        role: "user",
+        content: [{ type: "text", text: msg.content as string }],
+      };
+    });
 
-const result = await agent.invoke({
-  messages: [{ role: "user", content: "What's the weather in Tokyo?" }],
-});
+    // Prepare tools in Claude's format
+    const tools = options?.tools?.map((tool: any) => ({
+      name: tool.name,
+      description: tool.description,
+      input_schema: {
+        type: "object",
+        properties: tool.schema?.shape 
+          ? Object.entries(tool.schema.shape).reduce((acc, [key, value]: [string, any]) => {
+              acc[key] = {
+                type: value._def?.typeName === "ZodString" ? "string" : "string",
+                description: value._def?.description || "",
+              };
+              return acc;
+            }, {} as Record<string, any>)
+          : {},
+        required: tool.schema?.shape 
+          ? Object.keys(tool.schema.shape)
+          : [],
+      },
+    }));
+
+    const requestBody: any = {
+      anthropic_version: "vertex-2023-10-16",
+      messages: formattedMessages,
+      max_tokens: 1024,
+    };
+
+    // Add tools if provided
+    if (tools && tools.length > 0) {
+      requestBody.tools = tools;
+    }
+
+    const response = await fetch(`${this.apiUrl}${this.modelPath}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.token}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    const data = await response.json();
+
+    // Handle tool calls in the response
+    const aiMessage = new AIMessage({
+      content: data.content,
+      tool_calls: data.content
+        .filter((block: any) => block.type === "tool_use")
+        .map((toolUse: any) => ({
+          id: toolUse.id,
+          name: toolUse.name,
+          args: toolUse.input,
+        })),
+    });
+
+    return {
+      generations: [
+        {
+          text: data.content
+            .filter((block: any) => block.type === "text")
+            .map((block: any) => block.text)
+            .join(""),
+          message: aiMessage,
+        },
+      ],
+    };
+  }
+
+  bindTools(tools: any[]): this {
+    return this.bind({ tools });
+  }
+}
