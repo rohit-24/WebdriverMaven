@@ -1,30 +1,34 @@
-import "dotenv/config";
-import { GatewayLLM } from "./GatewayLLM.js";
-import { createReactAgent } from "@langchain/langgraph/prebuilt";
-import { getWeatherTool } from "./weatherTool.js";
+import { ChatAnthropic } from "@langchain/anthropic";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
 
-async function main() {
-  // 1️⃣ Initialize LLM
-  const llm = new GatewayLLM();
+// Use the built-in ChatAnthropic but point it to your endpoint
+const model = new ChatAnthropic({
+  apiKey: process.env.OFFICE_API_TOKEN!,
+  model: "claude-3-5-sonnet@20240620",
+  // Override the base URL to use your custom endpoint
+  clientOptions: {
+    baseURL: "https://stork.apps.ocp8.uat.xyz.com/v1/projects/xyz-mod-adag-d4q9v/locations/asia-southeast1/publishers/anthropic/models"
+  }
+});
 
-  // 2️⃣ Create agent with tools
-  const agent = createReactAgent({
-    llm,
-    tools: [getWeatherTool],
-  });
+const getWeatherTool = tool(
+  async (input) => `It's sunny in ${input.city}!`,
+  {
+    name: "get_weather",
+    description: "Get the weather for a given city",
+    schema: z.object({
+      city: z.string().describe("The city to get the weather for"),
+    }),
+  }
+);
 
-  // 3️⃣ Ask a question that requires the tool
-  const response = await agent.invoke({
-    messages: [
-      {
-        role: "user",
-        content: "What is the weather in Singapore?",
-      },
-    ],
-  });
+// Now it's simple again!
+const agent = createReactAgent({
+  llm: model,
+  tools: [getWeatherTool],
+});
 
-  // 4️⃣ Print final agent response
-  console.log(response.messages.at(-1)?.content);
-}
-
-main().catch(console.error);
+const result = await agent.invoke({
+  messages: [{ role: "user", content: "What's the weather in Tokyo?" }],
+});
