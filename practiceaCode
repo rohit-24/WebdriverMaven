@@ -1,18 +1,28 @@
 import {
   BaseChatModel,
+  type BaseChatModelCallOptions,
 } from "@langchain/core/language_models/chat_models";
+
 import {
   AIMessage,
   BaseMessage,
 } from "@langchain/core/messages";
+
+import type {
+  ChatResult,
+  ChatGeneration,
+} from "@langchain/core/outputs";
 
 export class GatewayChatModel extends BaseChatModel {
   _llmType(): string {
     return "gateway-chat-model";
   }
 
-  async _generate(messages: BaseMessage[]) {
-    // Take last user message
+  async _generate(
+    messages: BaseMessage[],
+    _options: BaseChatModelCallOptions,
+  ): Promise<ChatResult> {
+    // Take the last user message
     const lastMessage = messages[messages.length - 1];
 
     const response = await fetch(
@@ -43,14 +53,17 @@ export class GatewayChatModel extends BaseChatModel {
 
     const data = await response.json();
 
+    const aiMessage = new AIMessage(
+      data?.content?.[0]?.text ?? ""
+    );
+
+    const generation: ChatGeneration = {
+      message: aiMessage,
+      text: aiMessage.content as string,
+    };
+
     return {
-      generations: [
-        {
-          message: new AIMessage(
-            data?.content?.[0]?.text ?? ""
-          ),
-        },
-      ],
+      generations: [generation],
     };
   }
 }
