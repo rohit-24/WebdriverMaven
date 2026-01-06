@@ -1,69 +1,32 @@
-import {
-  BaseChatModel,
-  type BaseChatModelCallOptions,
-} from "@langchain/core/language_models/chat_models";
+import "dotenv/config";
+import { createAgent } from "@langchain/langgraph";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
+import { GatewayChatModel } from "./GatewayChatModel.js";
 
-import {
-  AIMessage,
-  BaseMessage,
-} from "@langchain/core/messages";
-
-import type {
-  ChatResult,
-  ChatGeneration,
-} from "@langchain/core/outputs";
-
-export class GatewayChatModel extends BaseChatModel {
-  _llmType(): string {
-    return "gateway-chat-model";
+// Tool
+const getWeather = tool(
+  async ({ city }) => `It's always sunny in ${city}!`,
+  {
+    name: "get_weather",
+    description: "Get the weather for a given city",
+    schema: z.object({
+      city: z.string(),
+    }),
   }
+);
 
-  async _generate(
-    messages: BaseMessage[],
-    _options: BaseChatModelCallOptions,
-  ): Promise<ChatResult> {
-    // Take the last user message
-    const lastMessage = messages[messages.length - 1];
+// Create agent ✅
+const agent = createAgent({
+  model: new GatewayChatModel(),
+  tools: [getWeather],
+});
 
-    const response = await fetch(
-      "https://stork.apps.ocp8.uat.dbs.com/v1/projects/dbs-mod-adag-d4q9v/locations/asia-southeast1/publishers/anthropic/models/claude-3.5-sonnet@20240620:streamRawPredict",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.GATEWAY_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          anthropic_version: "vertex-2023-10-16",
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: String(lastMessage.content),
-                },
-              ],
-            },
-          ],
-          max_tokens: 1024,
-        }),
-      }
-    );
+// Invoke
+const result = await agent.invoke({
+  messages: [
+    { role: "user", content: "What's the weather in Tokyo?" },
+  ],
+});
 
-    const data = await response.json();
-
-    const aiMessage = new AIMessage(
-      data?.content?.[0]?.text ?? ""
-    );
-
-    const generation: ChatGeneration = {
-      message: aiMessage,
-      text: aiMessage.content as string,
-    };
-
-    return {
-      generations: [generation],
-    };
-  }
-}
+console.log(result.messages.at(-1)?.content);
