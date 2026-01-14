@@ -1,64 +1,22 @@
-export class LoansPage {
-  constructor(private page: Page) {}
+async mockStatus(tabName: string) {
+  await Basepage.pageObject.routeOnce(
+    `**/v1/admin/loans/list?status=${tabName}*`,
+    async route => {
+      const updatedMockData = {
+        ...mockData,
+        adminLoanConfig: [
+          {
+            ...mockData.adminLoanConfig[0],
+            status: tabName
+          }
+        ]
+      };
 
-  async openTab(tabName: string) {
-    await this.page.getByRole("tab", { name: tabName }).click();
-  }
-
-  async openThreeDotMenu() {
-    await this.page
-      .locator('[data-testid="loan-options"]')
-      .first()
-      .click();
-  }
-
-  async getVisibleActions(): Promise<string[]> {
-    const actions = await this.page
-      .locator('[data-testid^="dropdown-menu-item"]')
-      .allTextContents();
-
-    return actions.map(a => a.trim());
-  }
-
-  async verifyLoanActions(rules: { Tab: string; Actions: string }[]) {
-    for (const rule of rules) {
-      await this.openTab(rule.Tab);
-      await this.openThreeDotMenu();
-
-      const expectedActions = rule.Actions.split(",").map(a => a.trim());
-      const actualActions = await this.getVisibleActions();
-
-      expect(actualActions).toEqual(expect.arrayContaining(expectedActions));
-      expect(actualActions.length).toBe(expectedActions.length);
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(updatedMockData)
+      });
     }
-  }
+  );
 }
-
-Then(
-  "I should see the following actions in loan options menu",
-  async function (dataTable) {
-    const expectedRules = dataTable.hashes();
-    await loansPage.verifyLoanActions(expectedRules);
-  }
-);
-
-Scenario Outline: Verify loan actions for "<TabName>" tab
-  Given I am logged in as "<loginUser>" user
-  When I navigate to Premium Financing Admin configuration
-  And I open "<TabName>" loans tab
-  Then I should see the following actions in loan options menu
-    | Tab              | Actions     |
-    | Live             | View,Edit   |
-    | Approved         | View,Edit   |
-    | Pending approval | View        |
-
-@wip
-Examples:
-  | Country | loginUser              | TabName          |
-  | SG      | sg pfAdmin maker User  | Live             |
-  | SG      | sg pfAdmin maker User  | Approved         |
-  | SG      | sg pfAdmin maker User  | Pending approval |
-
-
-
-
