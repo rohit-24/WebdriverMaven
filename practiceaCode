@@ -1,22 +1,65 @@
-async mockStatus(tabName: string) {
-  await Basepage.pageObject.routeOnce(
-    `**/v1/admin/loans/list?status=${tabName}*`,
-    async route => {
-      const updatedMockData = {
-        ...mockData,
-        adminLoanConfig: [
-          {
-            ...mockData.adminLoanConfig[0],
-            status: tabName
-          }
-        ]
-      };
+import { AgentExecutor, createToolCallingAgent } from "langchain/agents";
+import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { StructuredToolInterface } from "@langchain/core/tools";
+import { HumanMessage } from "@langchain/core/messages";
+import { CustomClaudeLLM } from "./customClaude";
 
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(updatedMockData)
-      });
-    }
-  );
+interface AgentConfig {
+  endpoint: string;
+  bearerToken: string;
+  tools?: StructuredToolInterface[];
+  maxTokens?: number;
+  temperature?: number;
+}
+
+interface AgentResult {
+  invoke: (params: { input: string }) => Promise<{ output: unknown }>;
+}
+
+export async function createClaudeAgent(config: AgentConfig): Promise<AgentResult> {
+  const llm = new CustomClaudeLLM({
+    endpoint: config.endpoint,
+    bearerToken: config.bearerToken,
+    maxTokens: config.maxTokens,
+    temperature: config.temperature,
+  });
+
+  // If no tools provided, return a simple invoke function
+  if (!config.tools || config.tools.length === 0) {
+    return {
+      invoke: async (params: { input: string }) => {
+        const result = await llm.invoke([new HumanMessage(params.input)]);
+        return {
+          output: result.content,
+        };
+      },
+    };
+  }
+
+  // Create agent with tools
+  const prompt = ChatPromptTemplate.fromMessages([
+    ["system", "You are a helpful assistant. Use the available tools when needed to answer user questions accurately."],
+    ["human", "{input}"],
+    ["placeholder", "{agent_scratchpad}"],
+  ]);
+
+  const llmWithTools = llm.bindTools(config.tools);
+  const agent = createToolCallingAgent({
+    llm: llmWithTools,
+    tools: config.tools,
+    prompt,
+  });
+
+  const agentExecutor = new AgentExecutor({
+    agent,
+    tools: config.tools,
+    verbose: true,
+  });
+
+  return {
+    invoke: async (params: { input: string }) => {
+      const result = await agentExecutor.invoke(params);
+      return { output: result.output };
+    },
+  };
 }
