@@ -1,111 +1,15 @@
-{
-  "openapi": "3.1.0",
-  "info": {
-    "title": "Wikipedia API",
-    "description": "Search and retrieve Wikipedia articles",
-    "version": "v1.0.0"
-  },
-  "servers": [
-    {
-      "url": "https://en.wikipedia.org/w"
-    }
-  ],
-  "paths": {
-    "/api.php": {
-      "get": {
-        "operationId": "wikipediaSearch",
-        "summary": "Search Wikipedia",
-        "description": "Search Wikipedia and get article summaries",
-        "parameters": [
-          {
-            "name": "action",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "default": "query",
-              "enum": ["query"]
-            },
-            "description": "API action"
-          },
-          {
-            "name": "list",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "default": "search"
-            }
-          },
-          {
-            "name": "srsearch",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Search term"
-          },
-          {
-            "name": "srlimit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 3
-            },
-            "description": "Number of results"
-          },
-          {
-            "name": "format",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "default": "json"
-            }
-          },
-          {
-            "name": "origin",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "default": "*"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Wikipedia search results",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "query": {
-                      "type": "object",
-                      "properties": {
-                        "search": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "title": { "type": "string" },
-                              "snippet": { "type": "string" },
-                              "pageid": { "type": "integer" }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
+You are a public profiling agent. When given a person's name:
+
+1. Use Google Search to find recent news, articles, and mentions
+2. Use Wikipedia Search to find if they have a Wikipedia page
+3. If Wikipedia page exists, use Wikipedia Summary to get their background
+4. Combine all findings into a structured profile
+
+Always cite your sources. Only use publicly available information.
+
+Profile structure:
+- Name & Basic Info
+- Professional Background (from Wikipedia)
+- Recent News & Activities (from Google)
+- Public Affiliations
+- Sources
