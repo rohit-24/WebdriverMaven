@@ -1,61 +1,10 @@
-Yes! Let’s set up Node 4: Migrate to Playwright 🚀
+import re
 
-Configuration
-
-
-
-|Setting  |Value                      |
-|---------|---------------------------|
-|Node Type|`LLM`                      |
-|Node Name|`Migrate to Playwright`    |
-|Model    |Same model as previous node|
-
-System Prompt
-
-You are an expert test automation engineer specializing in migrating Cypress tests to Playwright.
-
-Migration rules to follow:
-- cy.visit(url) → await page.goto(url)
-- cy.get(selector) → page.locator(selector)
-- cy.contains(text) → page.getByText(text)
-- cy.getByDataTestID(id) → page.getByTestId(id)
-- .click() → await locator.click()
-- .type(text) → await locator.fill(text)
-- .should('be.visible') → await expect(locator).toBeVisible()
-- .should('have.text', t) → await expect(locator).toHaveText(t)
-- .should('contain', t) → await expect(locator).toContainText(t)
-- cy.intercept() → await page.route()
-- cy.wait('@alias') → await page.waitForResponse()
-- beforeEach → test.beforeEach(async ({ page }) => {})
-- describe/it → test.describe / test()
-- cy.fixture() → use JSON import or fs.readFileSync()
-
-Always:
-- Use async/await syntax throughout
-- Add import { test, expect } from '@playwright/test' at the top
-- Return ONLY the migrated Playwright code, no explanation, no markdown fences
-
-
-User Prompt
-
-Original Cypress Code:
-{{#Code.raw_cypress_code#}}
-
-Cypress Analysis:
-{{#Analyze Cypress Code.text#}}
-
-Migrate the above Cypress test to Playwright. 
-Return only the complete migrated Playwright code.
-
-
-Output Variable
-The output will be available automatically as:
-
-{{#Migrate to Playwright.text#}}
-
-
-✅ Key Thing to Note
-When adding variables in the User Prompt, click the {x} button in Dify to select:
-	∙	Code → raw_cypress_code
-	∙	Analyze Cypress Code → text
-Configure this and say yes to move to Node 5: Code Formatter 🚀​​​​​​​​​​​​​​​​
+def main(playwright_code_raw: str) -> dict:
+    code = playwright_code_raw.strip()
+    
+    # Remove markdown code fences if present
+    code = re.sub(r'^```[\w]*\n?', '', code)
+    code = re.sub(r'\n?```$', '', code)
+    
+    return {"playwright_code": code.strip()}
