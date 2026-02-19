@@ -1,10 +1,1 @@
-import re
-
-def main(playwright_code_raw: str) -> dict:
-    code = playwright_code_raw.strip()
-    
-    # Remove markdown code fences if present
-    code = re.sub(r'^```[\w]*\n?', '', code)
-    code = re.sub(r'\n?```$', '', code)
-    
-    return {"playwright_code": code.strip()}
+https://gist.github.com/khawjaahmad/341b9c56dc6db5a8e8a2246186c65870
