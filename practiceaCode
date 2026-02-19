@@ -1,9 +1,8 @@
-Here is the Wikipedia data retrieved:
-
-Title: {{code.title}}
-Description: {{code.description}}
-Summary: {{code.summary}}
-Wikipedia URL: {{code.url}}
-
-Please present this as a clean profile summary.
-If found is false, tell the user no information was found.
+def main(person_name: str) -> dict:
+    try:
+        import urllib.request
+        # Test with a simple ping
+        urllib.request.urlopen("https://www.google.com", timeout=5)
+        return {"status": "Internet works", "name": person_name}
+    except Exception as e:
+        return {"status": f"Blocked: {str(e)}", "name": person_name}
