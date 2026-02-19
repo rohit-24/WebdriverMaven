@@ -1,6 +1,57 @@
+Yes! Absolutely. The simplest approach — just use an LLM node directly. No code, no API, no tools needed.
+
+Simple Flow
+
+[Start Node]
+     ↓
+[LLM Node]
+     ↓
+[End Node]
+
+
+Setup
+Start Node:
+	∙	Add variable: person_name (String)
+LLM Node:
+	∙	Select your model
+	∙	System Prompt:
+
 You are a public profiling agent. When given a person's name, 
 provide a detailed profile based on your training knowledge including:
 - Full name and background
 - Professional career and achievements
 - Known affiliations and organizations
 - Public activities and contributions
+
+
+	∙	User Prompt:
+
+Give me a detailed public profile of: {{start.person_name}}
+
+
+End Node:
+	∙	Output the LLM response
+
+Limitation to Know
+
+
+
+|              |LLM Node Only         |With Search Tools|
+|--------------|----------------------|-----------------|
+|Setup         |Very easy             |Complex          |
+|Speed         |Fast                  |Slower           |
+|Data freshness|Up to training cutoff |Real-time        |
+|Accuracy      |Good for famous people|Better           |
+|Recent news   |❌ No                  |✅ Yes            |
+
+When This is Good Enough
+	∙	For well-known public figures (politicians, CEOs, celebrities)
+	∙	When you don’t need latest news
+	∙	For quick prototyping
+
+When You Need Search Too
+	∙	For less known people
+	∙	When you need recent events
+	∙	For accurate current info
+
+Want me to guide you to set this up in 2 minutes? It’s the fastest way to get your profiling agent working right now!​​​​​​​​​​​​​​​​
