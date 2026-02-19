@@ -1,57 +1,98 @@
-Yes! Absolutely. The simplest approach — just use an LLM node directly. No code, no API, no tools needed.
+Now I can see clearly! This is a custom GenAI Grounding tool that uses Google Search grounding. Let me explain and guide you on how to use it.
 
-Simple Flow
+What This Tool Does
+From the description:
+	∙	Submits a user prompt to a GenAI inference engine
+	∙	Grounded using enterprise web search powered by Google Search
+	∙	Requires api_key and app_code for authentication
+	∙	Returns model-generated result based on grounded information
+So basically it’s LLM + Google Search combined in one API call!
 
-[Start Node]
-     ↓
-[LLM Node]
-     ↓
-[End Node]
+Tool Details
 
-
-Setup
-Start Node:
-	∙	Add variable: person_name (String)
-LLM Node:
-	∙	Select your model
-	∙	System Prompt:
-
-You are a public profiling agent. When given a person's name, 
-provide a detailed profile based on your training knowledge including:
-- Full name and background
-- Professional career and achievements
-- Known affiliations and organizations
-- Public activities and contributions
+Name: prompt_admin_post
+Method: POST
+Path: /genai-infer/api/prompt_admin
+Auth: api_key + app_code (in headers)
 
 
-	∙	User Prompt:
+Step 1: Test It in Postman First
 
-Give me a detailed public profile of: {{start.person_name}}
+curl -X POST "https://your-base-url/genai-infer/api/prompt_admin" \
+  -H "Content-Type: application/json" \
+  -H "api_key: your_api_key" \
+  -H "app_code: your_app_code" \
+  -d '{
+    "prompt": "Give me a public profile of Elon Musk including his background, career and recent news"
+  }'
 
 
-End Node:
-	∙	Output the LLM response
+Test this first and confirm you get a response — then we use it in Dify.
 
-Limitation to Know
+Step 2: Use It in Dify Workflow
+Once confirmed working, here’s the simple flow:
+
+[START] person_name
+    ↓
+[LLM Node] - Generate search prompt
+    ↓
+[HTTP Request Node] - Call grounding tool
+    ↓
+[LLM Node] - Format final report
+    ↓
+[END]
 
 
+START Node
 
-|              |LLM Node Only         |With Search Tools|
-|--------------|----------------------|-----------------|
-|Setup         |Very easy             |Complex          |
-|Speed         |Fast                  |Slower           |
-|Data freshness|Up to training cutoff |Real-time        |
-|Accuracy      |Good for famous people|Better           |
-|Recent news   |❌ No                  |✅ Yes            |
+Variable: person_name (string)
 
-When This is Good Enough
-	∙	For well-known public figures (politicians, CEOs, celebrities)
-	∙	When you don’t need latest news
-	∙	For quick prototyping
 
-When You Need Search Too
-	∙	For less known people
-	∙	When you need recent events
-	∙	For accurate current info
+LLM Node - Build Prompt
 
-Want me to guide you to set this up in 2 minutes? It’s the fastest way to get your profiling agent working right now!​​​​​​​​​​​​​​​​
+System: You are a prompt generator.
+
+User: Create a detailed search prompt to find public 
+profile information about: {{#start.person_name#}}
+
+Include: background, career, recent news, affiliations
+
+
+HTTP Request Node
+
+Method: POST
+URL: https://your-base-url/genai-infer/api/prompt_admin
+Headers:
+  Content-Type: application/json
+  api_key: your_api_key
+  app_code: your_app_code
+Body (JSON):
+{
+  "prompt": "{{#llm.text#}}"
+}
+
+
+Final LLM Node - Format Report
+
+System: You are a professional profiling analyst.
+
+User: Format this grounded search result into a 
+clean public profile report:
+
+{{#http.body#}}
+
+Format:
+## Public Profile: [Name]
+**Summary:**
+**Career:**
+**Recent News:**
+**Key Facts:**
+
+
+Step 3: What to Check First
+Before building in Dify, please confirm:
+	1.	What is the base URL? (the full URL before /genai-infer/api/prompt_admin)
+	2.	Do you have the api_key and app_code?
+	3.	What does the request body look like? (is it just prompt or more fields?)
+
+Can you check with your team for the base URL and credentials, then test the curl first? Once that works we can plug it straight into Dify!​​​​​​​​​​​​​​​​
