@@ -1,8 +1,5 @@
-def main(person_name: str) -> dict:
-    try:
-        import urllib.request
-        # Test with a simple ping
-        urllib.request.urlopen("https://www.google.com", timeout=5)
-        return {"status": "Internet works", "name": person_name}
-    except Exception as e:
-        return {"status": f"Blocked: {str(e)}", "name": person_name}
+Method: GET
+URL: https://en.wikipedia.org/api/rest_v1/page/summary/{{start.person_name}}
+Headers:
+  Accept: application/json
+  User-Agent: Mozilla/5.0
