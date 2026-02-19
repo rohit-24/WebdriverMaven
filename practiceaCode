@@ -1,37 +1,9 @@
-import urllib.request
-import json
+Here is the Wikipedia data retrieved:
 
-def main(person_name: str) -> dict:
-    # Format name for Wikipedia URL
-    name = person_name.strip().replace(" ", "_")
-    
-    # Wikipedia REST API URL
-    url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{name}"
-    
-    try:
-        req = urllib.request.Request(
-            url,
-            headers={
-                "Accept": "application/json",
-                "User-Agent": "DifyBot/1.0"
-            }
-        )
-        with urllib.request.urlopen(req) as response:
-            data = json.loads(response.read().decode())
-        
-        return {
-            "found": True,
-            "title": data.get("title", ""),
-            "description": data.get("description", ""),
-            "summary": data.get("extract", ""),
-            "url": data.get("content_urls", {}).get("desktop", {}).get("page", "")
-        }
-    
-    except Exception as e:
-        return {
-            "found": False,
-            "title": "",
-            "description": "",
-            "summary": f"Error: {str(e)}",
-            "url": ""
-        }
+Title: {{code.title}}
+Description: {{code.description}}
+Summary: {{code.summary}}
+Wikipedia URL: {{code.url}}
+
+Please present this as a clean profile summary.
+If found is false, tell the user no information was found.
