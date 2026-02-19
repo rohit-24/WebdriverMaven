@@ -1,45 +1,6 @@
-Here are the Postman/curl commands to test Wikipedia API directly:
-
-Test 1: Wikipedia Summary API
-
-curl -X GET "https://en.wikipedia.org/api/rest_v1/page/summary/Elon_Musk" \
-  -H "Accept: application/json" \
-  -H "User-Agent: Mozilla/5.0"
-
-
-Test 2: Wikipedia Search API
-
-curl -X GET "https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=Elon+Musk&srlimit=3&format=json&origin=*" \
-  -H "Accept: application/json"
-
-
-Test 3: Wikipedia Page Extract (Full Summary)
-
-curl -X GET "https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=true&explaintext=true&titles=Elon_Musk&format=json&origin=*" \
-  -H "Accept: application/json"
-
-
-Postman Setup
-For Test 1:
-
-Method: GET
-URL: https://en.wikipedia.org/api/rest_v1/page/summary/Elon_Musk
-Headers:
-  Accept: application/json
-  User-Agent: Mozilla/5.0
-
-
-For Test 2:
-
-Method: GET
-URL: https://en.wikipedia.org/w/api.php
-Params:
-  action: query
-  list: search
-  srsearch: Elon Musk
-  srlimit: 3
-  format: json
-  origin: *
-
-
-Test these first and let me know which one returns a successful response — then we’ll use that exact endpoint inside Dify!​​​​​​​​​​​​​​​​
+You are a public profiling agent. When given a person's name, 
+provide a detailed profile based on your training knowledge including:
+- Full name and background
+- Professional career and achievements
+- Known affiliations and organizations
+- Public activities and contributions
