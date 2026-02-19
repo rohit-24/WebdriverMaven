@@ -1,98 +1,100 @@
-Now I can see clearly! This is a custom GenAI Grounding tool that uses Google Search grounding. Let me explain and guide you on how to use it.
+Now I can see the full picture! This is a well-built Public Profiling Workflow. Let me explain what’s happening:
 
-What This Tool Does
-From the description:
-	∙	Submits a user prompt to a GenAI inference engine
-	∙	Grounded using enterprise web search powered by Google Search
-	∙	Requires api_key and app_code for authentication
-	∙	Returns model-generated result based on grounded information
-So basically it’s LLM + Google Search combined in one API call!
+Full Flow Breakdown
 
-Tool Details
-
-Name: prompt_admin_post
-Method: POST
-Path: /genai-infer/api/prompt_admin
-Auth: api_key + app_code (in headers)
-
-
-Step 1: Test It in Postman First
-
-curl -X POST "https://your-base-url/genai-infer/api/prompt_admin" \
-  -H "Content-Type: application/json" \
-  -H "api_key: your_api_key" \
-  -H "app_code: your_app_code" \
-  -d '{
-    "prompt": "Give me a public profile of Elon Musk including his background, career and recent news"
-  }'
-
-
-Test this first and confirm you get a response — then we use it in Dify.
-
-Step 2: Use It in Dify Workflow
-Once confirmed working, here’s the simple flow:
-
-[START] person_name
-    ↓
-[LLM Node] - Generate search prompt
-    ↓
-[HTTP Request Node] - Call grounding tool
-    ↓
-[LLM Node] - Format final report
-    ↓
+[START]
+   ↓
+[CURRENT DATE]
+   ↓
+[EXTRACT WEB INTENT]  ← LLM extracts what to search
+   ↓
+[FORMAT INTENT]  ← formats the search intent
+   ↓
+[REWRITE QUERY]  ← Gemini expands query into multiple
+   e.g. "donald trump | donald trump news | 
+         donald trump political views"
+   ↓
+[QUERY ITERATOR]  ← loops through each query
+   ↓
+   [IBG100D_GOOGLE_GROUNDING]  ← Google search for each query
+   ↓
+   [FORMAT AND ADD METADATA]  ← formats each result
+   ↓
+[SUMMARIZE OUTPUT]  ← combines all results
+   ↓
+[PUBLIC PROFILING REPORT]  ← final formatted report
+   ↓
 [END]
 
 
-START Node
+Key Insight from Image 2
+The comment on REWRITE QUERY node says:
+“Expands query to improve search quality, currently no specific search scope”
+“Can try to replace with a code block”
+This means the REWRITE QUERY node is the smart part — it takes one name like "Donald Trump" and expands it into multiple targeted queries.
 
-Variable: person_name (string)
+How to Replicate This Simply
+Since you want to build from scratch, here’s the simplified version:
+Step 1: START Node
 
-
-LLM Node - Build Prompt
-
-System: You are a prompt generator.
-
-User: Create a detailed search prompt to find public 
-profile information about: {{#start.person_name#}}
-
-Include: background, career, recent news, affiliations
-
-
-HTTP Request Node
-
-Method: POST
-URL: https://your-base-url/genai-infer/api/prompt_admin
-Headers:
-  Content-Type: application/json
-  api_key: your_api_key
-  app_code: your_app_code
-Body (JSON):
-{
-  "prompt": "{{#llm.text#}}"
-}
+Variables:
+- person_name (string)
+- company (string) optional
 
 
-Final LLM Node - Format Report
+Step 2: REWRITE QUERY (LLM Node)
+
+System: You are a search query generator.
+
+User: Generate 4 specific search queries for profiling this person:
+Person: {{#start.person_name#}}
+
+Return queries separated by | like:
+"query1 | query2 | query3 | query4"
+
+Example output:
+"Elon Musk biography | Elon Musk Tesla CEO | 
+ Elon Musk net worth | Elon Musk latest news"
+
+
+Step 3: QUERY ITERATOR
+	∙	Input: output from REWRITE QUERY
+	∙	Split by |
+	∙	Loop through each query
+Step 4: Inside Iterator - GOOGLE GROUNDING
+	∙	Use IBG100D_GOOGLE_GROUNDING tool (which you already have!)
+	∙	Pass each query
+Step 5: FORMAT AND ADD METADATA (Code Node)
+
+def main(search_result: str, query: str) -> dict:
+    return {
+        "formatted": f"Query: {query}\nResult: {search_result}",
+        "source": "Google"
+    }
+
+
+Step 6: Final LLM - PUBLIC PROFILING REPORT
 
 System: You are a professional profiling analyst.
 
-User: Format this grounded search result into a 
-clean public profile report:
+User: Based on these search results, create a comprehensive 
+public profile report:
 
-{{#http.body#}}
+{{#iterator.output#}}
 
-Format:
-## Public Profile: [Name]
+Format as:
+## Profile: [Name]
 **Summary:**
-**Career:**
+**Professional Background:**
 **Recent News:**
 **Key Facts:**
+**Sources:**
 
 
-Step 3: What to Check First
-Before building in Dify, please confirm:
-	1.	What is the base URL? (the full URL before /genai-infer/api/prompt_admin)
-	2.	Do you have the api_key and app_code?
-	3.	What does the request body look like? (is it just prompt or more fields?)
+What is IBG100D_GOOGLE_GROUNDING?
+This is likely a Gemini Google Grounding tool — it’s a special Google AI feature that uses real-time Google Search grounded in facts. It’s more powerful than regular search because it:
+	∙	Returns verified, grounded information
+	∙	Reduces hallucinations
+	∙	Provides source citations automatically
 
-Can you check with your team for the base URL and credentials, then test the curl first? Once that works we can plug it straight into Dify!​​​​​​​​​​​​​​​​
+Do you have access to the IBG100D_GOOGLE_GROUNDING node in your Dify? If yes, we can build this exact flow step by step!​​​​​​​​​​​​​​​​
