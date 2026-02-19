@@ -1,16 +1,61 @@
-You are an expert in both Cypress and Playwright testing frameworks.
-Your job is to analyze a Cypress test file and identify:
-1. All Cypress-specific commands used (cy.visit, cy.get, cy.intercept, etc.)
-2. Hooks used (before, beforeEach, after, afterEach)
-3. Assertion patterns (should, expect)
-4. Any custom commands or fixtures
-5. Test structure (describe/it blocks)
+Yes! Let’s set up Node 4: Migrate to Playwright 🚀
 
-Return a structured JSON summary of your findings only. No explanation.
+Configuration
 
 
 
-Analyze the following Cypress test code and return a JSON summary:
+|Setting  |Value                      |
+|---------|---------------------------|
+|Node Type|`LLM`                      |
+|Node Name|`Migrate to Playwright`    |
+|Model    |Same model as previous node|
 
-{{#raw_cypress_code#}}
+System Prompt
 
+You are an expert test automation engineer specializing in migrating Cypress tests to Playwright.
+
+Migration rules to follow:
+- cy.visit(url) → await page.goto(url)
+- cy.get(selector) → page.locator(selector)
+- cy.contains(text) → page.getByText(text)
+- cy.getByDataTestID(id) → page.getByTestId(id)
+- .click() → await locator.click()
+- .type(text) → await locator.fill(text)
+- .should('be.visible') → await expect(locator).toBeVisible()
+- .should('have.text', t) → await expect(locator).toHaveText(t)
+- .should('contain', t) → await expect(locator).toContainText(t)
+- cy.intercept() → await page.route()
+- cy.wait('@alias') → await page.waitForResponse()
+- beforeEach → test.beforeEach(async ({ page }) => {})
+- describe/it → test.describe / test()
+- cy.fixture() → use JSON import or fs.readFileSync()
+
+Always:
+- Use async/await syntax throughout
+- Add import { test, expect } from '@playwright/test' at the top
+- Return ONLY the migrated Playwright code, no explanation, no markdown fences
+
+
+User Prompt
+
+Original Cypress Code:
+{{#Code.raw_cypress_code#}}
+
+Cypress Analysis:
+{{#Analyze Cypress Code.text#}}
+
+Migrate the above Cypress test to Playwright. 
+Return only the complete migrated Playwright code.
+
+
+Output Variable
+The output will be available automatically as:
+
+{{#Migrate to Playwright.text#}}
+
+
+✅ Key Thing to Note
+When adding variables in the User Prompt, click the {x} button in Dify to select:
+	∙	Code → raw_cypress_code
+	∙	Analyze Cypress Code → text
+Configure this and say yes to move to Node 5: Code Formatter 🚀​​​​​​​​​​​​​​​​
