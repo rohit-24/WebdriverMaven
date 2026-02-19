@@ -1,6 +1,162 @@
-def main(query_text: str) -> dict:
-    # Split by | and clean each query
-    queries = [q.strip() for q in query_text.split("|") if q.strip()]
-    return {
-        "queries_list": queries
-    }
+Perfect! Here’s your step-by-step guide to building a Cypress → Playwright Migration Workflow in Dify.
+
+🗺️ Workflow Overview
+
+[Start] → [Code Extractor] → [Analyzer LLM] → [Migrator LLM] → [Code Formatter] → [End]
+
+
+Node 1: START Node
+This is the entry point of your workflow.
+Configuration:
+	∙	Node Type: Start
+	∙	Add two input variables:
+
+
+
+|Variable Name |Type            |Required|Description                      |
+|--------------|----------------|--------|---------------------------------|
+|`cypress_code`|Paragraph (Text)|No      |Paste Cypress test code directly |
+|`cypress_file`|File            |No      |Upload a `.cy.js` / `.cy.ts` file|
+
+Both are optional individually, but your downstream node will handle whichever is provided.
+
+Node 2: CODE Node — “Extract Input”
+This node normalizes the input — whether the user pasted code or uploaded a file, it produces a single unified variable.
+Configuration:
+	∙	Node Type: Code
+	∙	Language: Python 3
+	∙	Inputs:
+	∙	cypress_code → from Start
+	∙	cypress_file → from Start
+Code:
+
+def main(cypress_code: str, cypress_file: str) -> dict:
+    # If file content is provided, prefer it; otherwise use pasted code
+    final_code = cypress_file.strip() if cypress_file and cypress_file.strip() else cypress_code.strip()
+    
+    if not final_code:
+        raise ValueError("No Cypress code provided. Please paste code or upload a file.")
+    
+    return {"raw_cypress_code": final_code}
+
+
+	∙	Output variable: raw_cypress_code
+
+Node 3: LLM Node — “Analyze Cypress Code”
+This node analyzes the Cypress test and extracts key patterns before migration.
+Configuration:
+	∙	Node Type: LLM
+	∙	Model: GPT-4o / Claude 3.5 Sonnet (your choice)
+	∙	Input variable: raw_cypress_code from Node 2
+System Prompt:
+
+You are an expert in both Cypress and Playwright testing frameworks.
+Your job is to analyze a Cypress test file and identify:
+1. All Cypress-specific commands used (cy.visit, cy.get, cy.intercept, etc.)
+2. Hooks used (before, beforeEach, after, afterEach)
+3. Assertion patterns (should, expect)
+4. Any custom commands or fixtures
+5. Test structure (describe/it blocks)
+
+Return a structured JSON summary of your findings.
+
+
+User Prompt:
+
+Analyze the following Cypress test code and return a JSON summary:
+
+{{#raw_cypress_code#}}
+
+
+	∙	Output variable: cypress_analysis
+
+Node 4: LLM Node — “Migrate to Playwright”
+This is the core migration node. It uses the original code + analysis to produce clean Playwright code.
+Configuration:
+	∙	Node Type: LLM
+	∙	Model: GPT-4o / Claude 3.5 Sonnet
+	∙	Input variables: raw_cypress_code + cypress_analysis
+System Prompt:
+
+You are an expert test automation engineer specializing in migrating Cypress tests to Playwright.
+
+Migration rules to follow:
+- cy.visit(url) → await page.goto(url)
+- cy.get(selector) → page.locator(selector)
+- cy.contains(text) → page.getByText(text)
+- .click() → await locator.click()
+- .type(text) → await locator.fill(text)
+- .should('be.visible') → await expect(locator).toBeVisible()
+- .should('have.text', t) → await expect(locator).toHaveText(t)
+- cy.intercept() → await page.route()
+- cy.wait('@alias') → await page.waitForResponse()
+- beforeEach → test.beforeEach(async ({ page }) => {})
+- describe/it → test.describe / test()
+
+Always:
+- Use async/await syntax
+- Import { test, expect } from '@playwright/test'
+- Return ONLY the migrated Playwright code, no explanations
+
+
+User Prompt:
+
+Original Cypress Code:
+{{#raw_cypress_code#}}
+
+Analysis:
+{{#cypress_analysis#}}
+
+Migrate the above Cypress test to Playwright. Return only the complete migrated code.
+
+
+	∙	Output variable: playwright_code_raw
+
+Node 5: CODE Node — “Format Output”
+Cleans up the output and strips any markdown code fences if the LLM added them.
+Configuration:
+	∙	Node Type: Code
+	∙	Language: Python 3
+	∙	Input: playwright_code_raw
+Code:
+
+import re
+
+def main(playwright_code_raw: str) -> dict:
+    code = playwright_code_raw.strip()
+    
+    # Remove markdown code fences if present
+    code = re.sub(r'^```[\w]*\n?', '', code)
+    code = re.sub(r'\n?```$', '', code)
+    
+    return {"playwright_code": code.strip()}
+
+
+	∙	Output variable: playwright_code
+
+Node 6: END Node
+Returns the final migrated Playwright code.
+Configuration:
+	∙	Node Type: End
+	∙	Output variable: playwright_code
+
+✅ Final Node Map
+
+Start (cypress_code + cypress_file)
+  ↓
+Code: Extract Input → raw_cypress_code
+  ↓
+LLM: Analyze Cypress Code → cypress_analysis
+  ↓
+LLM: Migrate to Playwright → playwright_code_raw
+  ↓
+Code: Format Output → playwright_code
+  ↓
+End (playwright_code)
+
+
+💡 Tips
+	∙	In Dify, connect each node’s output variable to the next node’s input using the {{# #}} variable syntax.
+	∙	Test with a simple Cypress file first (e.g., a login test) before trying complex ones.
+	∙	You can add an optional 6th LLM node between Migrator and Formatter to do a “review & fix” pass if you want higher quality output.
+Want me to go deeper on any specific node, or help you write example Cypress test cases to validate the workflow?​​​​​​​​​​​​​​​​
