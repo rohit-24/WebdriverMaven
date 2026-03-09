@@ -1,1 +1,11 @@
-https://gist.github.com/khawjaahmad/341b9c56dc6db5a8e8a2246186c65870
+async waitForReassignResponse(): Promise<void> {
+
+  const [response] = await Promise.all([
+    page.waitForResponse(resp =>
+      resp.url().includes('/v2/sr/details') &&
+      resp.status() === 200
+    ),
+    page.getByRole('button', { name: 'Submit' }).click()
+  ]);
+
+}
