@@ -9,3 +9,26 @@ async waitForReassignResponse(): Promise<void> {
   ]);
 
 }
+
+
+
+
+async waitForReassignResponse(): Promise<void> {
+
+  // Step 1 - log everything first to debug
+  this.page.on('response', resp => {
+    console.log(`[RESPONSE] ${resp.status()} ${resp.url()}`);
+  });
+
+  // Step 2 - broad match, no status filter
+  const [response] = await Promise.all([
+    this.page.waitForResponse(resp =>
+      resp.url().includes('/sr/details'),  // broader match
+      { timeout: 30000 }
+    ),
+    this.page.getByRole('button').filter({ hasText: "Submit" }).click()
+  ]);
+
+  console.log('Final URL:', response.url());
+  console.log('Final Status:', response.status());
+}
