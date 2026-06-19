@@ -1,466 +1,1152 @@
+Excellent. You're now moving from **Country static data** into **Trade Finance business static data**.
 
+Don't memorize screens. Understand **WHY each one exists**.
+
+I'll explain in the same practical Lloyds/Finastra TI way.
+
+# First remember this big picture
+
+Imagine a customer:
+
+**Tata Steel India imports machinery from Germany for ₹10 Crores.**
+
+TI system needs answers to many questions.
+
+```text
+What goods? → Goods Code
+
+Who pays shipping? → Incoterms
+
+Which documents are required? → Document Types
+
+Customer wants financing? → Base Rate
+
+Which FX rate? → FX Rate Codes
+
+Any spread on interest? → Differential Rates
+
+Any collateral? → Collateral Types
+
+Reporting requirement? → Statistics
+
+Which centralized account? → COE Account Types
+```
 
 ---
 
-# 📘 FTI Learning Notes - Country Category
-
----
-
-# 1. Countries
+# 1️⃣ FX Rate Codes
 
 ## What is it?
 
-Master list of countries configured in FTI using ISO country codes.
+Defines **which foreign exchange rate to use**.
 
-Used for:
+Examples:
 
-* Customer addresses
-* Beneficiary details
-* Compliance checks
-* Country risk management
-* Sanctions screening
-* Tax rules
+```text
+SPOT = Current market rate
 
-### Real life example
+BUY = Bank buying currency
 
-Lloyds issues an LC to a beneficiary in UAE.
+CORP = Corporate negotiated rate
 
-FTI checks:
-
-* Country = UAE
-* Country risk level
-* Sanction rules
-* Applicable country regulations
-
-### Easy way to remember
-
-**Country = Which nation is involved in the transaction?**
+NEGO = Negotiated customer rate
+```
 
 ---
 
-# 2. Currencies
+## Real example
+
+Importer buys machinery.
+
+Amount = $100,000
+
+Customer account = GBP
+
+Today's rates:
+
+```text
+Spot = 1 USD = 0.74 GBP
+
+Corporate = 0.75 GBP
+
+Negotiated = 0.76 GBP
+```
+
+TI needs to know which rate to apply.
+
+It uses FX Rate Code.
+
+---
+
+### Easy note
+
+**FX Rate Code = Which exchange rate should the bank use?**
+
+---
+
+# 2️⃣ Base Rate Codes
 
 ## What is it?
 
-Master list of all supported currencies.
+Defines the starting interest rate.
+
+Formula:
+
+```text
+Final Interest
+
+=
+
+Base Rate
+
++
+
+Spread
+```
+
+---
+
+## Real example
+
+Trade Loan = ₹10 Crores
+
+Base Rate:
+
+```text
+SOFR = 4%
+
+```
+
+Bank margin:
+
+```text
++1%
+```
+
+Final:
+
+```text
+5%
+```
+
+---
+
+### Easy note
+
+**Base Rate = Starting interest rate**
+
+Examples:
+
+* SOFR
+* SONIA
+* EURIBOR
+* Fixed rate
+
+---
+
+# 3️⃣ Differential Rates
+
+## What is it?
+
+Extra percentage added or subtracted.
+
+Formula:
+
+```text
+Final Rate
+
+=
+
+Base Rate
+
++
+
+Differential
+```
+
+---
+
+## Real example
+
+Normal customer:
+
+```text
+Base = 5%
+
+Spread = +2%
+
+Final = 7%
+```
+
+Premium customer:
+
+```text
+Base = 5%
+
+Spread = -0.5%
+
+Final = 4.5%
+```
+
+---
+
+### Easy note
+
+**Differential = Extra markup or discount**
+
+---
+
+# 4️⃣ Goods Codes
+
+## What is it?
+
+Categorizes what is being traded.
+
+Examples:
+
+```text
+Agriculture
+
+Textiles
+
+Mining
+
+Electronics
+
+Machinery
+
+Food
+```
+
+---
+
+## Real example
+
+Import LC
+
+```text
+Goods = Sunflower Oil
+
+Category = Food
+```
+
+or
+
+```text
+Goods = Steel
+
+Category = Manufacturing
+```
+
+---
+
+### Why needed?
+
+Risk checks.
+
+Certain goods have restrictions.
+
+---
+
+### Easy note
+
+**Goods Code = What product is being traded?**
+
+---
+
+# 5️⃣ Incoterms
+
+Very important in Trade Finance.
+
+## What is it?
 
 Defines:
 
-* Currency code
-* Decimal places
-* Rounding rules
-* Formatting rules
+```text
+Who pays?
+
+Who ships?
+
+Who insures?
+
+Who carries risk?
+```
+
+---
+
+## Common ones
+
+### FOB
+
+Seller:
+
+```text
+Delivers to ship
+```
+
+Buyer:
+
+```text
+Pays freight
+
+Pays insurance
+```
+
+---
+
+### CIF
+
+Seller pays:
+
+```text
+Cost
+
+Insurance
+
+Freight
+```
+
+---
+
+## Example
+
+India imports machinery from Germany.
+
+CIF Hamburg:
+
+Seller pays:
+
+✅ Shipping
+
+✅ Insurance
+
+Buyer receives goods.
+
+---
+
+### Easy note
+
+**Incoterms = Responsibilities between buyer and seller**
+
+Remember:
+
+```text
+FOB
+
+CIF
+
+CFR
+
+DAP
+
+EXW
+```
+
+---
+
+# 6️⃣ Document Types
+
+## What is it?
+
+List of documents accepted by TI.
 
 Examples:
 
-* USD
-* GBP
-* INR
-* EUR
-* JPY
+```text
+Invoice
 
-### Real life example
+Bill of Lading
 
-If LC amount = 1,000,000 JPY
+Air Waybill
 
-FTI automatically knows:
+Certificate of Origin
 
-* JPY has 0 decimal places
-* Proper formatting rules
+Insurance Certificate
 
-### Easy way to remember
-
-**Currency = Which money is being used?**
+Packing List
+```
 
 ---
 
-# 3. Calendars
+## Real example
 
-## What is it?
+LC requires:
 
-Stores business days, weekends and holidays.
+```text
+Commercial Invoice
 
-Can be configured by:
+Bill of Lading
 
-* Country
-* Currency
-* Branch
+Insurance Certificate
+```
 
-Used to calculate:
-
-* Maturity dates
-* Payment dates
-* Due dates
-
-### Real life example
-
-LC maturity = 15 August
-
-15 August is a holiday.
-
-FTI automatically shifts to the next business day.
-
-### Easy way to remember
-
-**Calendar = When can business happen?**
+TI validates all documents.
 
 ---
 
-# 4. Languages
+### Easy note
+
+**Document Types = Which papers are needed?**
+
+---
+
+# 7️⃣ Collateral Types
 
 ## What is it?
 
-Defines languages supported by FTI.
+Security given to bank.
+
+Examples:
+
+```text
+Cash
+
+Fixed Deposit
+
+Corporate Guarantee
+
+Bank Guarantee
+
+Property
+```
+
+---
+
+## Real example
+
+Company requests ₹100 Crore Bank Guarantee.
+
+Bank says:
+
+```text
+Give 20% cash collateral
+```
+
+Customer deposits:
+
+```text
+₹20 Crores
+```
+
+---
+
+### Easy note
+
+**Collateral = Security given to bank**
+
+---
+
+# 8️⃣ Statistics (Statistical Codes)
+
+## What is it?
+
+Used for reporting and compliance.
+
+Not actual money movement.
 
 Used for:
 
-* Screen labels
-* Documents
-* Notifications
-* Translations
+* RBI reports
+* Country reports
+* Risk reports
+* Regulatory reporting
+
+---
+
+## Real example
+
+TI stores:
+
+```text
+Customer = Tata
+
+Country = Germany
+
+Amount = $10 Million
+
+Sector = Manufacturing
+```
+
+Later reports are generated.
+
+---
+
+### Easy note
+
+**Statistics = Reporting information**
+
+---
+
+# 9️⃣ COE Account Types (Centralized Operating Entity)
+
+This is mostly a Lloyds setup.
+
+## What is it?
+
+Used when one branch processes work for another branch.
+
+---
+
+## Real example
+
+```text
+Customer branch = London
+
+Processing center = India
+```
+
+India processes transaction.
+
+Money still belongs to London.
+
+COE account tracks this internally.
+
+---
+
+### Easy note
+
+**COE = Internal accounting between branches**
+
+---
+
+# ⭐ Master Cheat Sheet
+
+| Screen             | One line memory                  |
+| ------------------ | -------------------------------- |
+| FX Rate Codes      | Which exchange rate?             |
+| Base Rate Codes    | Starting interest rate           |
+| Differential Rates | Extra margin/discount            |
+| Goods Codes        | What goods are traded?           |
+| Incoterms          | Who pays for shipping/insurance? |
+| Document Types     | Which documents are required?    |
+| Collateral Types   | What security is given?          |
+| Statistics         | Reporting data                   |
+
+
+
+Perfect. Rohit, these are mostly **SWIFT, Guarantee and Payment static data screens** in TI/Finastra.
+
+Again, don't memorize screens. Remember **the business question each screen answers**.
+
+I'll explain using one continuous example.
+
+# Example we'll use
+
+**Tata Steel India imports machinery worth $5 million from Siemens Germany using an LC through Lloyds Bank.**
+
+---
+
+# 1️⃣ Document of Title (Shipping Guarantees)
+
+## What is it?
+
+A **Document of Title proves ownership of goods**.
+
+Common examples:
+
+```text
+BOL = Bill Of Lading
+
+AWB = Air Waybill
+```
+
+---
+
+## Why Shipping Guarantee?
+
+Sometimes:
+
+```text
+Ship reaches India
+
+Goods arrive
+
+Original Bill of Lading hasn't arrived yet
+```
+
+Customer cannot collect goods.
+
+Bank issues a **Shipping Guarantee**.
+
+Port releases goods temporarily.
+
+---
+
+## Real example
+
+```text
+Importer = Tata Steel
+
+Exporter = Siemens Germany
+
+Goods arrive at Mumbai port
+
+Original BOL delayed
+```
+
+Lloyds issues Shipping Guarantee.
+
+Customer collects goods.
+
+Later original BOL is returned.
+
+---
+
+## Fields shown
+
+```text
+Ship Name
+
+BOL Date
+
+Port of Embarkation
+
+Port of Discharge
+
+Goods Description
+```
+
+---
+
+### Easy note
+
+**Document of Title = Ownership proof of shipped goods.**
+
+---
+
+# 2️⃣ Sub-Guarantee Data Fields
+
+## What is it?
+
+Additional custom fields for a guarantee.
+
+Think of it as:
+
+```text
+Extra information boxes
+```
+
+Every country needs different data.
+
+---
+
+## Real example
+
+Parent Guarantee:
+
+```text
+Lloyds UK → Guarantees ₹50 Cr project
+```
+
+Sub-guarantee:
+
+```text
+Lloyds India issues local guarantee
+```
+
+India may require:
+
+```text
+Tender Number
+
+GST Number
+
+Local Contract ID
+
+Government Approval ID
+```
+
+These extra fields are stored here.
+
+---
+
+### Easy note
+
+**Sub-Guarantee Data Fields = Additional country-specific information.**
+
+---
+
+# 3️⃣ SWIFT BIC (Bank Identifier Code)
+
+Very important.
+
+## What is it?
+
+Unique identity of a bank.
+
+Like Aadhaar for banks.
+
+Format:
+
+```text
+AAAA BB CC DDD
+
+Bank Country Location Branch
+```
+
+Example:
+
+```text
+LOYDGB2L
+
+LOYD = Lloyds
+
+GB = UK
+
+2L = London
+```
+
+---
+
+## Real example
+
+Tata imports from Germany.
+
+LC chain:
+
+```text
+Lloyds UK
+
+↓
+
+Deutsche Bank Germany
+```
+
+TI uses SWIFT BIC.
+
+---
+
+### Easy note
+
+**SWIFT BIC = Bank's unique global address.**
+
+---
+
+# 4️⃣ SWIFT BIC Plus IBAN
+
+## What is it?
+
+Connects:
+
+```text
+Bank
+
++
+
+Bank Account Structure
+```
+
+---
+
+## Why?
+
+TI validates:
+
+```text
+Is this account really valid for this bank?
+```
+
+---
+
+## Example
+
+Germany:
+
+```text
+IBAN
+
+DE89 3704 0044 0532 0130 00
+```
+
+TI checks:
+
+```text
+DE
+
+Belongs to Germany?
+
+Bank exists?
+
+Account format correct?
+```
+
+---
+
+### Easy note
+
+**BIC + IBAN = Bank + Account validation.**
+
+---
+
+# 5️⃣ SWIFT IBAN Structure
+
+## What is it?
+
+Defines IBAN rules country-wise.
+
+Every country has different lengths.
 
 Examples:
 
-* English
-* Spanish
-* French
+Germany
 
-### Real life example
+```text
+22 characters
+```
 
-Customer in Spain
+UK
 
-↓
+```text
+22 characters
+```
 
-Generate document in Spanish.
+France
 
-### Easy way to remember
-
-**Language = In which language should users see information?**
-
----
-
-# 5. Trade Finance Dictionary
-
-## What is it?
-
-Central library of trade finance terms and descriptions.
-
-Stores:
-
-* Trade clauses
-* Standard texts
-* Definitions
-
-### Real life example
-
-Code = 111A
-
-Description = Set on Release
-
-Instead of typing repeatedly, FTI fetches predefined text.
-
-### Easy way to remember
-
-**Dictionary = Reusable trade finance terminology library.**
+```text
+27 characters
+```
 
 ---
 
-# 6. Static Data Language Description
+## Real example
 
-## What is it?
+Germany
 
-Allows descriptions to appear in different languages.
+```text
+DE89370400440532013000
+```
 
-It translates static data values.
+TI knows:
 
-### Real life example
+```text
+Country = DE
 
-Charge code:
+Total length =22
 
-AJ
+Check digit position=2
 
-English = Inward Clean Collection Amendment
+Bank identifier position=5
+```
 
-French = Equivalent French translation
+If wrong:
 
-### Easy way to remember
-
-**Translation layer for static data.**
-
----
-
-# 7. Address Structure
-
-## What is it?
-
-Defines how addresses should be entered for each country.
-
-Each field can be:
-
-* Mandatory
-* Optional
-* Expected
-* Conditional
-* Not used
-
-Fields include:
-
-* Street
-* Postal Code
-* City
-* State
-* Department
-
-### Real life example
-
-USA:
-
-State = Mandatory
-
-ZIP Code = Mandatory
-
-Different countries can have different address rules.
-
-### Easy way to remember
-
-**Address Structure = How should an address look for each country?**
+Reject.
 
 ---
 
-# 8. Accounting Types
+### Easy note
+
+**IBAN Structure = Validation rules for account numbers.**
+
+---
+
+# 6️⃣ SWIFT Reject Codes
 
 ## What is it?
 
-Defines accounting behaviour for transactions.
-
-Maps transactions to General Ledger (GL) accounts.
+Error codes returned by SWIFT.
 
 Examples:
 
-* Nostro account
-* Vostro account
-* Contingent liability
+```text
+AC01
 
-### Real life example
+Account format wrong
 
-LC issued
+AC02
 
-↓
+Non numeric account
 
-Contingent liability account gets updated.
+AC05
 
-### Easy way to remember
-
-**Accounting Type = Which account should be impacted?**
+Account doesn't exist
+```
 
 ---
 
-# 9. Transaction Codes
+## Real example
+
+Operator enters:
+
+```text
+12345AB
+```
+
+Expected:
+
+```text
+123456789
+```
+
+SWIFT returns:
+
+```text
+AC01
+```
+
+TI displays rejection.
+
+---
+
+### Easy note
+
+**SWIFT Reject Codes = Why SWIFT rejected the transaction.**
+
+---
+
+# 7️⃣ SWIFT Clearing Codes
 
 ## What is it?
 
-Defines financial events happening inside FTI.
+National bank routing systems.
 
-Used to communicate accounting entries to core banking.
+Every country has local codes.
 
 Examples:
 
-* Fee debit
-* Margin debit
-* Collection sent
+India
 
-### Real life example
+```text
+IFSC
+```
 
-LC issuance fee = ₹10,000
+UK
 
-↓
+```text
+Sort Code
+```
 
-Transaction code generated
+US
 
-↓
+```text
+ABA Routing Number
+```
 
-Core banking updates ledger.
+Australia
 
-### Easy way to remember
+```text
+BSB
+```
 
-**Transaction Code = What financial event happened?**
+Hong Kong
+
+```text
+Bank Code
+```
 
 ---
 
-# 10. Deal Types
+## Real example
+
+Customer transfers money within UK.
+
+Instead of SWIFT only:
+
+```text
+Sort code used.
+```
+
+TI validates this.
+
+---
+
+### Easy note
+
+**Clearing Code = Country-specific bank routing code.**
+
+---
+
+# 8️⃣ MX Purpose Codes (ISO 20022)
+
+This is becoming very important globally.
 
 ## What is it?
 
-Classifies trade finance transactions.
+Explains:
 
-Defines processing rules and lifecycle behaviour.
+```text
+WHY is money being transferred?
+```
 
 Examples:
 
-* Financing
-* Foreign Exchange
-* Guarantees
+```text
+SALA = Salary
 
-### Real life example
+LOAN = Loan payment
 
-Pre-export finance application
+INTE = Interest payment
+
+FREX = Foreign exchange
+
+TRAD = Trade finance
+
+BEXP = Business expense
+```
+
+---
+
+## Real example
+
+₹50 Cr payment.
+
+Bank asks:
+
+```text
+Purpose?
+```
+
+Answer:
+
+```text
+TRAD
+
+Trade Finance
+```
+
+Or
+
+```text
+LOAN
+
+Loan repayment
+```
+
+Or
+
+```text
+FREX
+
+Foreign exchange
+```
+
+This helps regulators.
+
+---
+
+### Easy note
+
+**Purpose Code = Reason for payment.**
+
+---
+
+# ⭐ Easy master cheat sheet
+
+| Screen               | One question it answers                        |
+| -------------------- | ---------------------------------------------- |
+| Document of Title    | Who owns the goods?                            |
+| Shipping Guarantee   | Can customer collect goods before BOL arrives? |
+| Sub Guarantee Fields | Any extra local information needed?            |
+| SWIFT BIC            | Which bank?                                    |
+| BIC + IBAN           | Is bank + account combination valid?           |
+| IBAN Structure       | Is account format valid?                       |
+| SWIFT Reject Codes   | Why did SWIFT reject?                          |
+| Clearing Codes       | What's the country's routing code?             |
+| MX Purpose Codes     | Why is the money being sent?                   |
+
+
+Absolutely. Since you're learning **Trade Finance + Finastra TI for Lloyds**, keep **one single-page cheat sheet**.
+
+# Finastra TI Easy Master Cheat Sheet (Remember Business Question)
+
+| Screen/Configuration | Ask yourself this one question                          | Simple answer           | Example                     |
+| -------------------- | ------------------------------------------------------- | ----------------------- | --------------------------- |
+| Countries            | Which country is involved?                              | Country master          | India, UK, Germany          |
+| Currencies           | Which currency is used?                                 | Currency master         | INR, USD, GBP               |
+| Charge Codes         | What fee should bank charge?                            | Fee configuration       | LC issuance fee             |
+| System Parameters    | Which internal account/system rules apply?              | System setup            | Income account, tax account |
+| FX Rate Codes        | Which exchange rate should be used?                     | FX source               | Spot, negotiated            |
+| Base Rate Codes      | Which interest benchmark applies?                       | Interest base           | 5% base rate                |
+| Differential Rates   | What markup/discount should be added?                   | Spread                  | Base +1%                    |
+| Goods Codes          | What goods are being traded?                            | Goods classification    | Machinery, textiles         |
+| Incoterms            | Who pays shipping/insurance?                            | Shipping responsibility | FOB, CIF                    |
+| Document Types       | Which documents are required?                           | Trade documents         | Invoice, BOL                |
+| Collateral Types     | What security protects the bank?                        | Risk protection         | Cash margin                 |
+| Statistics Codes     | What data should regulators track?                      | Reporting data          | Country, amount             |
+| COE Account Types    | Which centralized account should be used?               | Hub accounting          | India hub processing        |
+| Document of Title    | Who legally owns goods?                                 | Ownership document      | Bill of Lading              |
+| Shipping Guarantee   | Can goods be released before original document arrives? | Temporary guarantee     | Port releases cargo         |
+| Sub-Guarantee Fields | Any extra local fields required?                        | Additional data         | Tender ID                   |
+| SWIFT BIC            | Which bank is involved?                                 | Bank identifier         | LOYDGB2L                    |
+| BIC + IBAN           | Is bank + account combination valid?                    | Account validation      | Germany IBAN                |
+| IBAN Structure       | Is account format correct?                              | Country IBAN rules      | DE = 22 chars               |
+| SWIFT Reject Codes   | Why did SWIFT reject payment?                           | Error reason            | AC01                        |
+| SWIFT Clearing Codes | What local routing code is needed?                      | Country routing         | IFSC, Sort Code             |
+| MX Purpose Codes     | Why is money being sent?                                | Payment purpose         | Trade Finance               |
+
+
+
+
+# One End-to-End Flow to Remember
+
+
+
+```text
+Customer wants Trade Finance
 
 ↓
 
-Deal Type = Financing
+Country
+India ↔ Germany
 
 ↓
 
-FTI shows financing-related fields and validations.
+Currency
+INR ↔ EUR
 
-### Easy way to remember
+↓
 
-**Deal Type = What kind of business transaction is this?**
+Goods
+Machinery
 
----
+↓
 
-Perfect. Let's continue with the **same OneNote style**.
+Incoterm
+CIF
 
-These are also under **Static Data → Country category**.
+↓
 
----
+Documents
+Invoice + Bill of Lading
 
-# 📘 Charge Codes
+↓
 
-## What is it?
+LC/Guarantee created
 
-Charge Codes define **what fee the bank is charging** during a trade finance transaction.
+↓
 
-Instead of manually calculating fees every time, TI uses predefined charge codes.
+Charges applied
 
-A charge code contains rules for:
+↓
 
-* Fee name
-* Fee type
-* Calculation method
-* Applicable products
+Collateral checked
 
----
+↓
 
-## Real life example
+FX rate applied
 
-Suppose Lloyds issues a Bank Guarantee.
+↓
 
-Possible charges:
+SWIFT BIC identifies banks
 
-* Issuance fee
-* Amendment fee
-* Courier fee
-* Advising fee
+↓
 
-Instead of typing manually:
+IBAN validates account
 
+↓
+
+Clearing code routes payment
+
+↓
+
+MX purpose code says WHY payment is sent
+
+↓
+
+Statistics captured for reporting
+
+↓
+
+SWIFT reject code returned if something fails
 ```
-CG = Guarantee Issuance Commission
-```
-
-TI automatically knows:
-
-* Which fee to apply
-* When to apply
-* How much to charge
-
----
-
-## Why is this needed?
-
-Without Charge Codes:
-
-❌ Every employee calculates fees manually.
-
-With Charge Codes:
-
-✅ Standardized fee calculations.
-
----
-
-## OneNote Notes
-
-### Charge Codes
-
-**Purpose:** Defines all fees and commissions used in Trade Finance.
-
-Used for:
-
-* Guarantee issuance fee
-* Amendment fee
-* Advising fee
-* Courier fee
-* Collection fee
-
-**Remember:** Charge Code = Which fee should be charged?
-
----
-
-# 📘 System Parameters
-
-## What is it?
-
-System Parameters are global configuration values that control how FTI behaves.
-
-Think of them as application settings.
-
-They tell the system:
-
-* Which internal accounts to use
-* Which default values to use
-* Which accounting rules to apply
-
----
-
-## Real life example
-
-Customer pays ₹10,000 guarantee fee.
-
-TI needs to know:
-
-```
-Where should this money go?
-```
-
-System Parameter says:
-
-```
-Guarantee fee income account = GL 10001
-Tax account = GL 20001
-FX account = GL 30001
-```
-
-TI automatically posts accounting entries.
-
----
-
-## Why is this needed?
-
-Without System Parameters:
-
-❌ System won't know where to book transactions.
-
-With System Parameters:
-
-✅ Automatic accounting and posting.
-
-
----
-
-# ⭐ Quick Revision Table
-
-| Component         | Easy Question                 |
-| ----------------- | ----------------------------- |
-| Countries         | Which country?                |
-| Currencies        | Which money?                  |
-| Calendars         | Which date is valid?          |
-| Languages         | Which language?               |
-| Dictionary        | Which standard text?          |
-| Address Structure | How should address look?      |
-| Accounting Types  | Which account type?           |
-| Transaction Codes | Which accounting event?       |
-| Deal Types        | Which business transaction?   |
-| Charge Codes      | Which fee to charge?          |
-| System Parameters | Which system settings to use? |
 
