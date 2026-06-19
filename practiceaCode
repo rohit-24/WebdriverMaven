@@ -1,254 +1,401 @@
-Absolutely. Since you’re attending company sessions, I would make 1-page revision notes that you can quickly revisit before the next session.
+That’s a better idea. For OneNote, keep it structured, concise and practical. Something that you can keep revising every day.
 
-Trade Finance - Quick Notes (Remember Story: India Buyer ↔ China Seller)
+I’ll create it as FTI Learning Notes - Day 1.
 
-1. Core Idea
+FTI (Fusion Trade Innovation) - Day 1 Notes
 
-Trade = Buying + Selling between two parties/countries.
+Topic 1: Zones
 
-Problem:
+What is a Zone?
 
-Buyer: “I won’t pay before receiving goods.”
+A Zone is a logical processing container inside FTI where trade finance transactions are executed.
 
-Seller: “I won’t ship before getting money.”
+Think of it as an engine or mini-server responsible for processing transactions.
 
-Bank = Trusted middleman
+FTI can have multiple zones for handling different workloads and improving availability.
 
-⸻
+Simple Analogy
 
-2. Letter of Credit (LC)
+FTI = Airport
 
-Definition:
+Zone = Airport Terminal
 
-Conditional promise by a bank to pay the seller if specified documents are submitted correctly.
+JVM = Boarding Gates
 
-Remember:
+Trade Transactions = Passengers
 
-LC = Success scenario product
-
-Simple formula
-
-Goods + Correct Documents = Payment
-
-Banks check:
-
-✅ Documents
-
-❌ Not actual goods
+Users connect to a Zone to perform trade finance operations.
 
 ⸻
 
-3. Four Main Parties (Very Important)
+Components inside a Zone
 
-Applicant = Buyer
-Beneficiary = Seller
-Issuing Bank = Buyer's Bank
-Advising Bank = Seller's Bank
+A Zone typically contains:
 
-Example
+* JVM Server
+* Async Server
+* Scheduler Jobs
+* Workflow Engine
+* Database Connections
+* SWIFT Integrations
 
-ABC India (Buyer)
+All these components work together to process transactions.
+
+⸻
+
+What happens when we click Start?
+
+1. Zone starts.
+2. Database connection is established.
+3. Configurations are loaded.
+4. Business services are initialized.
+5. Async server starts.
+6. External integrations are connected.
+7. Zone status changes to RELEASED.
+
+After this, users can work.
+
+⸻
+
+Important Zone Statuses
+
+ONLINE → Application is available.
+
+RELEASED → Fully operational and ready to use.
+
+INITIALIZING → Starting up.
+
+OFFLINE → Not available.
+
+ERROR → Startup failure.
+
+⸻
+
+Synchronous vs Asynchronous Processing
+
+Synchronous (Immediate response)
+
+User waits for the result.
+
+Examples:
+
+* Login
+* Search Transaction
+* Open LC Screen
+* Save Transaction
+
+Asynchronous (Background processing)
+
+User does not wait.
+
+Examples:
+
+* Generate MT700
+* Send Emails
+* Notifications
+* External System Integrations
+
+⸻
+
+High Level Architecture
+
+User
+
 ↓
-Lloyds India (Issuing Bank)
+
+Browser
+
 ↓
-Bank of China (Advising Bank)
+
+Load Balancer
+
 ↓
-Dragon Electronics China (Seller)
+
+Zone
+
+↓
+
+JVM
+
+↓
+
+Workflow Engine
+
+↓
+
+Database
+
+↓
+
+Async Server
+
+↓
+
+SWIFT / External Systems
 
 ⸻
 
-4. LC Flow (Most important to memorize)
+QA Troubleshooting Flow
 
-1. Buyer places order
-2. Buyer requests LC from bank
-3. Issuing bank creates LC
-4. Advising bank informs seller
-5. Seller ships goods
-6. Seller submits documents
-7. Banks verify documents
-8. Seller gets payment
+Issue: User cannot login
 
-One-line memory:
+Check:
 
-Order → LC → Ship → Documents → Payment
+UI → Zone → JVM → Database
 
-⸻
+Issue: SWIFT not generated
 
-5. UCP600
+Check:
 
-What is it?
+Async Server → SWIFT Integration
 
-International rulebook for LC.
+Issue: Entire application unavailable
 
-Remember:
+Check:
 
-LC → UCP600
+Zone Status → Database → Application Server
 
-⸻
+====================================================
 
-6. ISP98
+Topic 2: Security
 
-Rulebook for Standby LC.
+What is Security?
 
-Remember:
+Security controls WHO can do WHAT inside FTI.
 
-SBLC → ISP98
+It manages:
 
-⸻
+* User access
+* Permissions
+* Roles
+* Approval limits
+* Product access
 
-7. Collections
+Simple Analogy
 
-Bank only transfers documents.
+FTI = Office Building
 
-No payment guarantee.
+Security = Security Guard
 
-Bank = Messenger
+Users = Employees
 
-⸻
+Roles = ID Cards
 
-8. Open Trade (Open Account)
-
-Most trust-based.
-
-Goods first
-Payment later
-
-No bank guarantee.
+Permissions = Door Access
 
 ⸻
 
-9. Failure Scenario Products
+Security Hierarchy
 
-Used when somebody fails to fulfill obligations.
+Users
 
-Examples
+↓
 
-* Bank Guarantee
-* Surety
-* Standby LC
+Teams
 
-Remember:
+↓
 
-Success → LC
-Failure → Guarantee
+Roles
 
-⸻
+↓
 
-10. Direct LC vs Advising Bank
+Capabilities
 
-Direct LC
+↓
 
-Buyer Bank = Seller Bank
+Band Limits
 
-No extra bank.
+↓
 
-Advising Bank
-
-Buyer Bank ≠ Seller Bank
-
-Use intermediary bank.
+Products
 
 ⸻
 
-11. Multi Applicant
+Users
 
-Multiple buyers share responsibility.
+Actual employees who login to FTI.
+
+Examples:
+
+* Rohit
+* Priya
+* Amit
+
+⸻
+
+Teams
+
+Collection of users.
+
+Examples:
+
+* Import LC Team
+* Guarantee Team
+* Collections Team
+
+Teams simplify permission management.
+
+⸻
+
+Roles
+
+Defines responsibilities.
+
+Examples:
+
+Maker
+
+Checker
+
+Authorizer
+
+Administrator
+
+⸻
+
+Capabilities
+
+Capability = Permission to perform an action.
+
+Examples:
+
+* Create Import LC
+* Approve Import LC
+* Amend LC
+* Generate SWIFT
+* Issue Guarantee
+
+Roles are built using capabilities.
+
+⸻
+
+Maker-Checker Concept
+
+Maker
+
+Can:
+
+* Create transactions
+* Edit transactions
+* Submit transactions
+
+Cannot:
+
+* Approve transactions
+
+Checker
+
+Can:
+
+* Approve transactions
+* Reject transactions
+
+Cannot:
+
+* Create transactions
+
+Purpose:
+
+Segregation of duties and fraud prevention.
+
+⸻
+
+Band Limits
+
+Band limits control approval amounts.
 
 Example:
 
-5 companies buy together
-Risk shared among all
+Priya → Approve up to USD 100,000
+
+Amit → Approve up to USD 1 Million
+
+If amount exceeds limit, transaction moves to higher authority.
 
 ⸻
 
-12. Multi Currency
+Event Groups
 
-Trade happens in different currencies.
+Collection of actions.
 
 Example:
 
-Buyer → INR
-Seller → USD
+LC Event Group
+
+* Create LC
+* Approve LC
+* Amend LC
+* Cancel LC
 
 ⸻
 
-13. Participant Deal
+External Applications
 
-Large LC shared by multiple banks.
+Systems integrated with FTI.
 
-Example:
+Examples:
 
-Lloyds 50%
-HSBC 30%
-SCB 20%
-
-⸻
-
-14. Syndication
-
-Multiple banks share loan/risk.
-
-Remember:
-
-Big deal = Many banks
+* SWIFT
+* LDAP
+* Active Directory
+* Email Systems
+* Document Systems
 
 ⸻
 
-15. Transferable LC
+Locales
 
-One LC can be distributed to multiple suppliers.
+Country-specific configurations.
 
-1 LC
-↓
-Supplier A
-Supplier B
-Supplier C
+Examples:
 
-⸻
-
-16. Confirmation
-
-Seller wants extra safety.
-
-Another bank also guarantees payment.
-
-2 banks guarantee payment
+* Date formats
+* Currency formats
+* Language settings
 
 ⸻
 
-17. Silent Confirmation
+QA Mindset
 
-Buyer didn’t ask.
+Whenever you see:
 
-Seller privately arranges additional protection.
+* Menu missing
+* Screen inaccessible
+* Button disabled
+* User cannot approve transaction
 
-Seller usually pays charges.
+Always ask:
 
-⸻
+“Is this an application defect or a Security configuration issue?”
 
-30-second Interview/Revision Cheat Sheet
+Many FTI defects are actually Security configuration issues.
 
-Trade = Buying + Selling
-LC = Conditional bank promise to pay
-UCP600 = LC rulebook
-ISP98 = SBLC rulebook
-Collections = Bank transfers documents
-Open Account = High trust, no guarantee
-Guarantee = Protection if someone fails
-Applicant = Buyer
-Beneficiary = Seller
-Issuing Bank = Buyer's bank
-Advising Bank = Seller's bank
-Confirmation = Extra bank guarantee
-Transferable LC = One LC → multiple beneficiaries
-Syndication = Risk shared among banks
-Banks deal with DOCUMENTS, not GOODS
+====================================================
 
-⭐ Golden sentence to always remember:
+30-Second Revision
 
-Trade Finance = Banks helping buyers and sellers trust each other while reducing payment risk.
-  ]);
+Zone = Where transactions are processed.
 
-  console.log('Final URL:', response.url());
-  console.log('Final Status:', response.status());
-}
+JVM = Runs user requests.
+
+Async = Runs background jobs.
+
+Workflow = Controls approvals.
+
+Security = Controls who can do what.
+
+Capabilities = Permissions.
+
+Band Limits = Approval amount limits.
+
+For your onboarding, I actually suggest creating a OneNote notebook with sections like:
+
+Day 1 → Zones & Security
+
+Day 2 → LC Basics
+
+Day 3 → SWIFT
+
+Day 4 → Undertakings & Guarantees
+
+That will align very well with your Finastra learning journey.
