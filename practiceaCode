@@ -1,401 +1,272 @@
-That’s a better idea. For OneNote, keep it structured, concise and practical. Something that you can keep revising every day.
+FTI Learning Notes - Static Data (General) - Consolidated Notes
 
-I’ll create it as FTI Learning Notes - Day 1.
+Location:
 
-FTI (Fusion Trade Innovation) - Day 1 Notes
+TI Static Data → General
 
-Topic 1: Zones
-
-What is a Zone?
-
-A Zone is a logical processing container inside FTI where trade finance transactions are executed.
-
-Think of it as an engine or mini-server responsible for processing transactions.
-
-FTI can have multiple zones for handling different workloads and improving availability.
-
-Simple Analogy
-
-FTI = Airport
-
-Zone = Airport Terminal
-
-JVM = Boarding Gates
-
-Trade Transactions = Passengers
-
-Users connect to a Zone to perform trade finance operations.
+General Static Data contains master configurations that define how customers, branches, communication, reporting and settlements work throughout FTI.
 
 ⸻
 
-Components inside a Zone
+1. Customer Types
 
-A Zone typically contains:
+What is it?
 
-* JVM Server
-* Async Server
-* Scheduler Jobs
-* Workflow Engine
-* Database Connections
-* SWIFT Integrations
-
-All these components work together to process transactions.
-
-⸻
-
-What happens when we click Start?
-
-1. Zone starts.
-2. Database connection is established.
-3. Configurations are loaded.
-4. Business services are initialized.
-5. Async server starts.
-6. External integrations are connected.
-7. Zone status changes to RELEASED.
-
-After this, users can work.
-
-⸻
-
-Important Zone Statuses
-
-ONLINE → Application is available.
-
-RELEASED → Fully operational and ready to use.
-
-INITIALIZING → Starting up.
-
-OFFLINE → Not available.
-
-ERROR → Startup failure.
-
-⸻
-
-Synchronous vs Asynchronous Processing
-
-Synchronous (Immediate response)
-
-User waits for the result.
+Classifies customers into categories so FTI can apply business rules automatically.
 
 Examples:
 
-* Login
-* Search Transaction
-* Open LC Screen
-* Save Transaction
-
-Asynchronous (Background processing)
-
-User does not wait.
-
-Examples:
-
-* Generate MT700
-* Send Emails
-* Notifications
-* External System Integrations
-
-⸻
-
-High Level Architecture
-
-User
-
-↓
-
-Browser
-
-↓
-
-Load Balancer
-
-↓
-
-Zone
-
-↓
-
-JVM
-
-↓
-
-Workflow Engine
-
-↓
-
-Database
-
-↓
-
-Async Server
-
-↓
-
-SWIFT / External Systems
-
-⸻
-
-QA Troubleshooting Flow
-
-Issue: User cannot login
-
-Check:
-
-UI → Zone → JVM → Database
-
-Issue: SWIFT not generated
-
-Check:
-
-Async Server → SWIFT Integration
-
-Issue: Entire application unavailable
-
-Check:
-
-Zone Status → Database → Application Server
-
-====================================================
-
-Topic 2: Security
-
-What is Security?
-
-Security controls WHO can do WHAT inside FTI.
-
-It manages:
-
-* User access
-* Permissions
-* Roles
-* Approval limits
-* Product access
-
-Simple Analogy
-
-FTI = Office Building
-
-Security = Security Guard
-
-Users = Employees
-
-Roles = ID Cards
-
-Permissions = Door Access
-
-⸻
-
-Security Hierarchy
-
-Users
-
-↓
-
-Teams
-
-↓
-
-Roles
-
-↓
-
-Capabilities
-
-↓
-
-Band Limits
-
-↓
-
-Products
-
-⸻
-
-Users
-
-Actual employees who login to FTI.
-
-Examples:
-
-* Rohit
-* Priya
-* Amit
-
-⸻
-
-Teams
-
-Collection of users.
-
-Examples:
-
-* Import LC Team
-* Guarantee Team
-* Collections Team
-
-Teams simplify permission management.
-
-⸻
-
-Roles
-
-Defines responsibilities.
-
-Examples:
-
-Maker
-
-Checker
-
-Authorizer
-
-Administrator
-
-⸻
-
-Capabilities
-
-Capability = Permission to perform an action.
-
-Examples:
-
-* Create Import LC
-* Approve Import LC
-* Amend LC
-* Generate SWIFT
-* Issue Guarantee
-
-Roles are built using capabilities.
-
-⸻
-
-Maker-Checker Concept
-
-Maker
-
-Can:
-
-* Create transactions
-* Edit transactions
-* Submit transactions
-
-Cannot:
-
-* Approve transactions
-
-Checker
-
-Can:
-
-* Approve transactions
-* Reject transactions
-
-Cannot:
-
-* Create transactions
-
-Purpose:
-
-Segregation of duties and fraud prevention.
-
-⸻
-
-Band Limits
-
-Band limits control approval amounts.
+* Corporate
+* Bank
+* Correspondent Bank
+
+Used for:
+
+* Risk classification
+* Compliance checks
+* Product eligibility
+* Approval workflows
 
 Example:
 
-Priya → Approve up to USD 100,000
-
-Amit → Approve up to USD 1 Million
-
-If amount exceeds limit, transaction moves to higher authority.
+Tata Motors → Corporate Customer
 
 ⸻
 
-Event Groups
+2. Transfer Methods
 
-Collection of actions.
+What is it?
 
-Example:
-
-LC Event Group
-
-* Create LC
-* Approve LC
-* Amend LC
-* Cancel LC
-
-⸻
-
-External Applications
-
-Systems integrated with FTI.
+Defines how FTI communicates with customers, banks or external systems.
 
 Examples:
 
+* Internal
 * SWIFT
-* LDAP
-* Active Directory
-* Email Systems
-* Document Systems
+* Email
+* Mail
+* Gateway
+
+Example:
+
+Issue LC
+
+↓
+
+SWIFT
+
+↓
+
+Generate MT700
+
+↓
+
+Send to Advising Bank
 
 ⸻
 
-Locales
+3. Account Officers
 
-Country-specific configurations.
+What is it?
+
+Internal bank employee (Relationship Manager) responsible for managing a customer.
+
+Used for:
+
+* Customer ownership
+* Alerts
+* Escalations
+* Work queue routing
+
+Example:
+
+Tata Motors → Rohit (RM)
+
+⸻
+
+4. Analysis Codes
+
+What is it?
+
+Reporting labels attached to transactions.
+
+Does NOT affect transaction processing.
+
+Used for:
+
+* MIS Reporting
+* Business Analytics
+* Regulatory Reporting
+
+Example:
+
+Solar Panel LC
+
+↓
+
+Analysis Code = GREEN
+
+⸻
+
+5. Notes Types
+
+What is it?
+
+Categories used to organize comments and notes added to customers or transactions.
 
 Examples:
 
-* Date formats
-* Currency formats
-* Language settings
+* Approval
+* Release
+* Trade Screening
+* Audit Notes
+
+Used for:
+
+* Transaction history
+* Audit trail
+* Internal comments
 
 ⸻
 
-QA Mindset
+6. Charge Groups
 
-Whenever you see:
+What is it?
 
-* Menu missing
-* Screen inaccessible
-* Button disabled
-* User cannot approve transaction
+A bundle of charges applied together.
 
-Always ask:
+Examples:
 
-“Is this an application defect or a Security configuration issue?”
+* Issuance Fee
+* Amendment Fee
+* Courier Charges
+* Commission Charges
 
-Many FTI defects are actually Security configuration issues.
+Example:
 
-====================================================
+VIP Customer
+
+↓
+
+VIP Charge Group
+
+↓
+
+Auto apply charges
+
+⸻
+
+7. Instruction Groups
+
+What is it?
+
+Defines default settlement instructions and accounts used during settlement.
+
+Used for:
+
+* Customer settlement accounts
+* Nostro accounts
+* Payment routing
+
+Example:
+
+Export LC
+
+↓
+
+Instruction Group
+
+↓
+
+Settlement Account Selected
+
+⸻
+
+8. Address Types
+
+What is it?
+
+Classifies multiple addresses for a customer or bank.
+
+Examples:
+
+* Prime Address
+* SWIFT Compatible Address
+
+Example:
+
+Prime Address → Mumbai Office
+
+SWIFT Address → MT700 Communication
+
+⸻
+
+9. Branch Entity Types
+
+What is it?
+
+Classifies various units inside the bank.
+
+Examples:
+
+* Branch
+* Head Office
+* Regional Office
+* Subsidiary
+* Agent
+
+Used for:
+
+* Workflow routing
+* Accounting ownership
+* Operational responsibilities
+
+⸻
+
+Easy Way to Remember (5W Method)
+
+WHO?
+
+* Customer Types
+* Account Officers
+
+WHERE?
+
+* Address Types
+* Branch Entity Types
+
+HOW?
+
+* Transfer Methods
+* Instruction Groups
+
+HOW MUCH?
+
+* Charge Groups
+
+HOW TO REPORT?
+
+* Analysis Codes
+* Notes Types
+
+⸻
 
 30-Second Revision
 
-Zone = Where transactions are processed.
+Customer Type = Who is the customer?
 
-JVM = Runs user requests.
+Transfer Method = How do we communicate?
 
-Async = Runs background jobs.
+Account Officer = Who owns the customer?
 
-Workflow = Controls approvals.
+Analysis Code = How do we report?
 
-Security = Controls who can do what.
+Notes Type = How do we categorize comments?
 
-Capabilities = Permissions.
+Charge Group = What fees apply?
 
-Band Limits = Approval amount limits.
+Instruction Group = Which account is used for settlement?
 
-For your onboarding, I actually suggest creating a OneNote notebook with sections like:
+Address Type = Which address should be used?
 
-Day 1 → Zones & Security
-
-Day 2 → LC Basics
-
-Day 3 → SWIFT
-
-Day 4 → Undertakings & Guarantees
-
-That will align very well with your Finastra learning journey.
+Branch Entity Type = Which bank office is responsible?
