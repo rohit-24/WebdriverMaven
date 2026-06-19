@@ -1,32 +1,252 @@
-async waitForReassignResponse(): Promise<void> {
+Absolutely. Since you’re attending company sessions, I would make 1-page revision notes that you can quickly revisit before the next session.
 
-  const [response] = await Promise.all([
-    page.waitForResponse(resp =>
-      resp.url().includes('/v2/sr/details') &&
-      resp.status() === 200
-    ),
-    page.getByRole('button', { name: 'Submit' }).click()
-  ]);
+Trade Finance - Quick Notes (Remember Story: India Buyer ↔ China Seller)
 
-}
+1. Core Idea
 
+Trade = Buying + Selling between two parties/countries.
 
+Problem:
 
+Buyer: “I won’t pay before receiving goods.”
 
-async waitForReassignResponse(): Promise<void> {
+Seller: “I won’t ship before getting money.”
 
-  // Step 1 - log everything first to debug
-  this.page.on('response', resp => {
-    console.log(`[RESPONSE] ${resp.status()} ${resp.url()}`);
-  });
+Bank = Trusted middleman
 
-  // Step 2 - broad match, no status filter
-  const [response] = await Promise.all([
-    this.page.waitForResponse(resp =>
-      resp.url().includes('/sr/details'),  // broader match
-      { timeout: 30000 }
-    ),
-    this.page.getByRole('button').filter({ hasText: "Submit" }).click()
+⸻
+
+2. Letter of Credit (LC)
+
+Definition:
+
+Conditional promise by a bank to pay the seller if specified documents are submitted correctly.
+
+Remember:
+
+LC = Success scenario product
+
+Simple formula
+
+Goods + Correct Documents = Payment
+
+Banks check:
+
+✅ Documents
+
+❌ Not actual goods
+
+⸻
+
+3. Four Main Parties (Very Important)
+
+Applicant = Buyer
+Beneficiary = Seller
+Issuing Bank = Buyer's Bank
+Advising Bank = Seller's Bank
+
+Example
+
+ABC India (Buyer)
+↓
+Lloyds India (Issuing Bank)
+↓
+Bank of China (Advising Bank)
+↓
+Dragon Electronics China (Seller)
+
+⸻
+
+4. LC Flow (Most important to memorize)
+
+1. Buyer places order
+2. Buyer requests LC from bank
+3. Issuing bank creates LC
+4. Advising bank informs seller
+5. Seller ships goods
+6. Seller submits documents
+7. Banks verify documents
+8. Seller gets payment
+
+One-line memory:
+
+Order → LC → Ship → Documents → Payment
+
+⸻
+
+5. UCP600
+
+What is it?
+
+International rulebook for LC.
+
+Remember:
+
+LC → UCP600
+
+⸻
+
+6. ISP98
+
+Rulebook for Standby LC.
+
+Remember:
+
+SBLC → ISP98
+
+⸻
+
+7. Collections
+
+Bank only transfers documents.
+
+No payment guarantee.
+
+Bank = Messenger
+
+⸻
+
+8. Open Trade (Open Account)
+
+Most trust-based.
+
+Goods first
+Payment later
+
+No bank guarantee.
+
+⸻
+
+9. Failure Scenario Products
+
+Used when somebody fails to fulfill obligations.
+
+Examples
+
+* Bank Guarantee
+* Surety
+* Standby LC
+
+Remember:
+
+Success → LC
+Failure → Guarantee
+
+⸻
+
+10. Direct LC vs Advising Bank
+
+Direct LC
+
+Buyer Bank = Seller Bank
+
+No extra bank.
+
+Advising Bank
+
+Buyer Bank ≠ Seller Bank
+
+Use intermediary bank.
+
+⸻
+
+11. Multi Applicant
+
+Multiple buyers share responsibility.
+
+Example:
+
+5 companies buy together
+Risk shared among all
+
+⸻
+
+12. Multi Currency
+
+Trade happens in different currencies.
+
+Example:
+
+Buyer → INR
+Seller → USD
+
+⸻
+
+13. Participant Deal
+
+Large LC shared by multiple banks.
+
+Example:
+
+Lloyds 50%
+HSBC 30%
+SCB 20%
+
+⸻
+
+14. Syndication
+
+Multiple banks share loan/risk.
+
+Remember:
+
+Big deal = Many banks
+
+⸻
+
+15. Transferable LC
+
+One LC can be distributed to multiple suppliers.
+
+1 LC
+↓
+Supplier A
+Supplier B
+Supplier C
+
+⸻
+
+16. Confirmation
+
+Seller wants extra safety.
+
+Another bank also guarantees payment.
+
+2 banks guarantee payment
+
+⸻
+
+17. Silent Confirmation
+
+Buyer didn’t ask.
+
+Seller privately arranges additional protection.
+
+Seller usually pays charges.
+
+⸻
+
+30-second Interview/Revision Cheat Sheet
+
+Trade = Buying + Selling
+LC = Conditional bank promise to pay
+UCP600 = LC rulebook
+ISP98 = SBLC rulebook
+Collections = Bank transfers documents
+Open Account = High trust, no guarantee
+Guarantee = Protection if someone fails
+Applicant = Buyer
+Beneficiary = Seller
+Issuing Bank = Buyer's bank
+Advising Bank = Seller's bank
+Confirmation = Extra bank guarantee
+Transferable LC = One LC → multiple beneficiaries
+Syndication = Risk shared among banks
+Banks deal with DOCUMENTS, not GOODS
+
+⭐ Golden sentence to always remember:
+
+Trade Finance = Banks helping buyers and sellers trust each other while reducing payment risk.
   ]);
 
   console.log('Final URL:', response.url());
