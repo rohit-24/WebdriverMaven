@@ -1,272 +1,466 @@
-FTI Learning Notes - Static Data (General) - Consolidated Notes
 
-Location:
 
-TI Static Data → General
+---
 
-General Static Data contains master configurations that define how customers, branches, communication, reporting and settlements work throughout FTI.
+# 📘 FTI Learning Notes - Country Category
 
-⸻
+---
 
-1. Customer Types
+# 1. Countries
 
-What is it?
+## What is it?
 
-Classifies customers into categories so FTI can apply business rules automatically.
-
-Examples:
-
-* Corporate
-* Bank
-* Correspondent Bank
+Master list of countries configured in FTI using ISO country codes.
 
 Used for:
 
-* Risk classification
+* Customer addresses
+* Beneficiary details
 * Compliance checks
-* Product eligibility
-* Approval workflows
+* Country risk management
+* Sanctions screening
+* Tax rules
 
-Example:
+### Real life example
 
-Tata Motors → Corporate Customer
+Lloyds issues an LC to a beneficiary in UAE.
 
-⸻
+FTI checks:
 
-2. Transfer Methods
+* Country = UAE
+* Country risk level
+* Sanction rules
+* Applicable country regulations
 
-What is it?
+### Easy way to remember
 
-Defines how FTI communicates with customers, banks or external systems.
+**Country = Which nation is involved in the transaction?**
 
-Examples:
+---
 
-* Internal
-* SWIFT
-* Email
-* Mail
-* Gateway
+# 2. Currencies
 
-Example:
+## What is it?
 
-Issue LC
+Master list of all supported currencies.
 
-↓
+Defines:
 
-SWIFT
-
-↓
-
-Generate MT700
-
-↓
-
-Send to Advising Bank
-
-⸻
-
-3. Account Officers
-
-What is it?
-
-Internal bank employee (Relationship Manager) responsible for managing a customer.
-
-Used for:
-
-* Customer ownership
-* Alerts
-* Escalations
-* Work queue routing
-
-Example:
-
-Tata Motors → Rohit (RM)
-
-⸻
-
-4. Analysis Codes
-
-What is it?
-
-Reporting labels attached to transactions.
-
-Does NOT affect transaction processing.
-
-Used for:
-
-* MIS Reporting
-* Business Analytics
-* Regulatory Reporting
-
-Example:
-
-Solar Panel LC
-
-↓
-
-Analysis Code = GREEN
-
-⸻
-
-5. Notes Types
-
-What is it?
-
-Categories used to organize comments and notes added to customers or transactions.
+* Currency code
+* Decimal places
+* Rounding rules
+* Formatting rules
 
 Examples:
 
-* Approval
-* Release
-* Trade Screening
-* Audit Notes
+* USD
+* GBP
+* INR
+* EUR
+* JPY
 
-Used for:
+### Real life example
 
-* Transaction history
-* Audit trail
-* Internal comments
+If LC amount = 1,000,000 JPY
 
-⸻
+FTI automatically knows:
 
-6. Charge Groups
+* JPY has 0 decimal places
+* Proper formatting rules
 
-What is it?
+### Easy way to remember
 
-A bundle of charges applied together.
+**Currency = Which money is being used?**
 
-Examples:
+---
 
-* Issuance Fee
-* Amendment Fee
-* Courier Charges
-* Commission Charges
+# 3. Calendars
 
-Example:
+## What is it?
 
-VIP Customer
+Stores business days, weekends and holidays.
 
-↓
+Can be configured by:
 
-VIP Charge Group
-
-↓
-
-Auto apply charges
-
-⸻
-
-7. Instruction Groups
-
-What is it?
-
-Defines default settlement instructions and accounts used during settlement.
-
-Used for:
-
-* Customer settlement accounts
-* Nostro accounts
-* Payment routing
-
-Example:
-
-Export LC
-
-↓
-
-Instruction Group
-
-↓
-
-Settlement Account Selected
-
-⸻
-
-8. Address Types
-
-What is it?
-
-Classifies multiple addresses for a customer or bank.
-
-Examples:
-
-* Prime Address
-* SWIFT Compatible Address
-
-Example:
-
-Prime Address → Mumbai Office
-
-SWIFT Address → MT700 Communication
-
-⸻
-
-9. Branch Entity Types
-
-What is it?
-
-Classifies various units inside the bank.
-
-Examples:
-
+* Country
+* Currency
 * Branch
-* Head Office
-* Regional Office
-* Subsidiary
-* Agent
+
+Used to calculate:
+
+* Maturity dates
+* Payment dates
+* Due dates
+
+### Real life example
+
+LC maturity = 15 August
+
+15 August is a holiday.
+
+FTI automatically shifts to the next business day.
+
+### Easy way to remember
+
+**Calendar = When can business happen?**
+
+---
+
+# 4. Languages
+
+## What is it?
+
+Defines languages supported by FTI.
 
 Used for:
 
-* Workflow routing
-* Accounting ownership
-* Operational responsibilities
+* Screen labels
+* Documents
+* Notifications
+* Translations
 
-⸻
+Examples:
 
-Easy Way to Remember (5W Method)
+* English
+* Spanish
+* French
 
-WHO?
+### Real life example
 
-* Customer Types
-* Account Officers
+Customer in Spain
 
-WHERE?
+↓
 
-* Address Types
-* Branch Entity Types
+Generate document in Spanish.
 
-HOW?
+### Easy way to remember
 
-* Transfer Methods
-* Instruction Groups
+**Language = In which language should users see information?**
 
-HOW MUCH?
+---
 
-* Charge Groups
+# 5. Trade Finance Dictionary
 
-HOW TO REPORT?
+## What is it?
 
-* Analysis Codes
-* Notes Types
+Central library of trade finance terms and descriptions.
 
-⸻
+Stores:
 
-30-Second Revision
+* Trade clauses
+* Standard texts
+* Definitions
 
-Customer Type = Who is the customer?
+### Real life example
 
-Transfer Method = How do we communicate?
+Code = 111A
 
-Account Officer = Who owns the customer?
+Description = Set on Release
 
-Analysis Code = How do we report?
+Instead of typing repeatedly, FTI fetches predefined text.
 
-Notes Type = How do we categorize comments?
+### Easy way to remember
 
-Charge Group = What fees apply?
+**Dictionary = Reusable trade finance terminology library.**
 
-Instruction Group = Which account is used for settlement?
+---
 
-Address Type = Which address should be used?
+# 6. Static Data Language Description
 
-Branch Entity Type = Which bank office is responsible?
+## What is it?
+
+Allows descriptions to appear in different languages.
+
+It translates static data values.
+
+### Real life example
+
+Charge code:
+
+AJ
+
+English = Inward Clean Collection Amendment
+
+French = Equivalent French translation
+
+### Easy way to remember
+
+**Translation layer for static data.**
+
+---
+
+# 7. Address Structure
+
+## What is it?
+
+Defines how addresses should be entered for each country.
+
+Each field can be:
+
+* Mandatory
+* Optional
+* Expected
+* Conditional
+* Not used
+
+Fields include:
+
+* Street
+* Postal Code
+* City
+* State
+* Department
+
+### Real life example
+
+USA:
+
+State = Mandatory
+
+ZIP Code = Mandatory
+
+Different countries can have different address rules.
+
+### Easy way to remember
+
+**Address Structure = How should an address look for each country?**
+
+---
+
+# 8. Accounting Types
+
+## What is it?
+
+Defines accounting behaviour for transactions.
+
+Maps transactions to General Ledger (GL) accounts.
+
+Examples:
+
+* Nostro account
+* Vostro account
+* Contingent liability
+
+### Real life example
+
+LC issued
+
+↓
+
+Contingent liability account gets updated.
+
+### Easy way to remember
+
+**Accounting Type = Which account should be impacted?**
+
+---
+
+# 9. Transaction Codes
+
+## What is it?
+
+Defines financial events happening inside FTI.
+
+Used to communicate accounting entries to core banking.
+
+Examples:
+
+* Fee debit
+* Margin debit
+* Collection sent
+
+### Real life example
+
+LC issuance fee = ₹10,000
+
+↓
+
+Transaction code generated
+
+↓
+
+Core banking updates ledger.
+
+### Easy way to remember
+
+**Transaction Code = What financial event happened?**
+
+---
+
+# 10. Deal Types
+
+## What is it?
+
+Classifies trade finance transactions.
+
+Defines processing rules and lifecycle behaviour.
+
+Examples:
+
+* Financing
+* Foreign Exchange
+* Guarantees
+
+### Real life example
+
+Pre-export finance application
+
+↓
+
+Deal Type = Financing
+
+↓
+
+FTI shows financing-related fields and validations.
+
+### Easy way to remember
+
+**Deal Type = What kind of business transaction is this?**
+
+---
+
+Perfect. Let's continue with the **same OneNote style**.
+
+These are also under **Static Data → Country category**.
+
+---
+
+# 📘 Charge Codes
+
+## What is it?
+
+Charge Codes define **what fee the bank is charging** during a trade finance transaction.
+
+Instead of manually calculating fees every time, TI uses predefined charge codes.
+
+A charge code contains rules for:
+
+* Fee name
+* Fee type
+* Calculation method
+* Applicable products
+
+---
+
+## Real life example
+
+Suppose Lloyds issues a Bank Guarantee.
+
+Possible charges:
+
+* Issuance fee
+* Amendment fee
+* Courier fee
+* Advising fee
+
+Instead of typing manually:
+
+```
+CG = Guarantee Issuance Commission
+```
+
+TI automatically knows:
+
+* Which fee to apply
+* When to apply
+* How much to charge
+
+---
+
+## Why is this needed?
+
+Without Charge Codes:
+
+❌ Every employee calculates fees manually.
+
+With Charge Codes:
+
+✅ Standardized fee calculations.
+
+---
+
+## OneNote Notes
+
+### Charge Codes
+
+**Purpose:** Defines all fees and commissions used in Trade Finance.
+
+Used for:
+
+* Guarantee issuance fee
+* Amendment fee
+* Advising fee
+* Courier fee
+* Collection fee
+
+**Remember:** Charge Code = Which fee should be charged?
+
+---
+
+# 📘 System Parameters
+
+## What is it?
+
+System Parameters are global configuration values that control how FTI behaves.
+
+Think of them as application settings.
+
+They tell the system:
+
+* Which internal accounts to use
+* Which default values to use
+* Which accounting rules to apply
+
+---
+
+## Real life example
+
+Customer pays ₹10,000 guarantee fee.
+
+TI needs to know:
+
+```
+Where should this money go?
+```
+
+System Parameter says:
+
+```
+Guarantee fee income account = GL 10001
+Tax account = GL 20001
+FX account = GL 30001
+```
+
+TI automatically posts accounting entries.
+
+---
+
+## Why is this needed?
+
+Without System Parameters:
+
+❌ System won't know where to book transactions.
+
+With System Parameters:
+
+✅ Automatic accounting and posting.
+
+
+---
+
+# ⭐ Quick Revision Table
+
+| Component         | Easy Question                 |
+| ----------------- | ----------------------------- |
+| Countries         | Which country?                |
+| Currencies        | Which money?                  |
+| Calendars         | Which date is valid?          |
+| Languages         | Which language?               |
+| Dictionary        | Which standard text?          |
+| Address Structure | How should address look?      |
+| Accounting Types  | Which account type?           |
+| Transaction Codes | Which accounting event?       |
+| Deal Types        | Which business transaction?   |
+| Charge Codes      | Which fee to charge?          |
+| System Parameters | Which system settings to use? |
+
