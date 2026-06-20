@@ -1,1152 +1,171 @@
-Excellent. You're now moving from **Country static data** into **Trade Finance business static data**.
+Since you've **newly joined Lloyds Technology Centre**, work in the **Trade Finance team**, use **Finastra Trade Innovation (TI)**, and you're a **QA Lead**, your goal isn't to understand every technical detail immediately.
 
-Don't memorize screens. Understand **WHY each one exists**.
+Your goal is to understand **ownership, architecture, release flow, environments, and testing responsibilities**.
 
-I'll explain in the same practical Lloyds/Finastra TI way.
+I'd split the questions into sections.
 
-# First remember this big picture
+# 1. Application understanding (ask these first)
 
-Imagine a customer:
-
-**Tata Steel India imports machinery from Germany for ₹10 Crores.**
-
-TI system needs answers to many questions.
-
-```text
-What goods? → Goods Code
-
-Who pays shipping? → Incoterms
-
-Which documents are required? → Document Types
-
-Customer wants financing? → Base Rate
-
-Which FX rate? → FX Rate Codes
-
-Any spread on interest? → Differential Rates
-
-Any collateral? → Collateral Types
-
-Reporting requirement? → Statistics
-
-Which centralized account? → COE Account Types
-```
+* Which version of Finastra TI are we currently using?
+* Is TI heavily customized by Lloyds or mostly out-of-the-box?
+* Which trade finance modules do we use? (LC, Guarantees, Collections, etc.)
+* What business processes does our squad own?
 
 ---
 
-# 1️⃣ FX Rate Codes
+# 2. Architecture understanding
 
-## What is it?
-
-Defines **which foreign exchange rate to use**.
-
-Examples:
-
-```text
-SPOT = Current market rate
-
-BUY = Bank buying currency
-
-CORP = Corporate negotiated rate
-
-NEGO = Negotiated customer rate
-```
+* Can someone walk me through the end-to-end TI architecture?
+* Where is TI hosted? Lloyds-managed infrastructure, private cloud, or vendor-hosted?
+* Which environments do we have? (DEV, SIT, UAT, PROD)
+* Which database does TI use?
+* Which application server hosts TI?
 
 ---
 
-## Real example
+# 3. Release management (very important since you noticed the ZIP files)
 
-Importer buys machinery.
-
-Amount = $100,000
-
-Customer account = GBP
-
-Today's rates:
-
-```text
-Spot = 1 USD = 0.74 GBP
-
-Corporate = 0.75 GBP
-
-Negotiated = 0.76 GBP
-```
-
-TI needs to know which rate to apply.
-
-It uses FX Rate Code.
+* How do Finastra releases reach our team?
+* What exactly comes inside the Finastra release package?
+* Who reviews the release notes?
+* Who owns deployments?
+* What's the deployment flow after receiving a ZIP?
+* Are deployments manual or automated?
 
 ---
 
-### Easy note
+# 4. Environment questions
 
-**FX Rate Code = Which exchange rate should the bank use?**
-
----
-
-# 2️⃣ Base Rate Codes
-
-## What is it?
-
-Defines the starting interest rate.
-
-Formula:
-
-```text
-Final Interest
-
-=
-
-Base Rate
-
-+
-
-Spread
-```
-
----
-
-## Real example
-
-Trade Loan = ₹10 Crores
-
-Base Rate:
-
-```text
-SOFR = 4%
-
-```
-
-Bank margin:
-
-```text
-+1%
-```
-
-Final:
-
-```text
-5%
-```
-
----
-
-### Easy note
-
-**Base Rate = Starting interest rate**
-
-Examples:
-
-* SOFR
-* SONIA
-* EURIBOR
-* Fixed rate
-
----
-
-# 3️⃣ Differential Rates
-
-## What is it?
-
-Extra percentage added or subtracted.
-
-Formula:
-
-```text
-Final Rate
-
-=
-
-Base Rate
-
-+
-
-Differential
-```
-
----
-
-## Real example
-
-Normal customer:
-
-```text
-Base = 5%
-
-Spread = +2%
-
-Final = 7%
-```
-
-Premium customer:
-
-```text
-Base = 5%
-
-Spread = -0.5%
-
-Final = 4.5%
-```
-
----
-
-### Easy note
-
-**Differential = Extra markup or discount**
-
----
-
-# 4️⃣ Goods Codes
-
-## What is it?
-
-Categorizes what is being traded.
-
-Examples:
-
-```text
-Agriculture
-
-Textiles
-
-Mining
-
-Electronics
-
-Machinery
-
-Food
-```
-
----
-
-## Real example
-
-Import LC
-
-```text
-Goods = Sunflower Oil
-
-Category = Food
-```
-
-or
-
-```text
-Goods = Steel
-
-Category = Manufacturing
-```
-
----
-
-### Why needed?
-
-Risk checks.
-
-Certain goods have restrictions.
-
----
-
-### Easy note
-
-**Goods Code = What product is being traded?**
-
----
-
-# 5️⃣ Incoterms
-
-Very important in Trade Finance.
-
-## What is it?
-
-Defines:
-
-```text
-Who pays?
-
-Who ships?
-
-Who insures?
-
-Who carries risk?
-```
-
----
-
-## Common ones
-
-### FOB
-
-Seller:
-
-```text
-Delivers to ship
-```
-
-Buyer:
-
-```text
-Pays freight
-
-Pays insurance
-```
-
----
-
-### CIF
-
-Seller pays:
-
-```text
-Cost
-
-Insurance
-
-Freight
-```
-
----
-
-## Example
-
-India imports machinery from Germany.
-
-CIF Hamburg:
-
-Seller pays:
-
-✅ Shipping
-
-✅ Insurance
-
-Buyer receives goods.
-
----
-
-### Easy note
-
-**Incoterms = Responsibilities between buyer and seller**
-
-Remember:
-
-```text
-FOB
-
-CIF
-
-CFR
-
-DAP
-
-EXW
-```
-
----
-
-# 6️⃣ Document Types
-
-## What is it?
-
-List of documents accepted by TI.
-
-Examples:
-
-```text
-Invoice
-
-Bill of Lading
-
-Air Waybill
-
-Certificate of Origin
-
-Insurance Certificate
-
-Packing List
-```
-
----
-
-## Real example
-
-LC requires:
-
-```text
-Commercial Invoice
-
-Bill of Lading
-
-Insurance Certificate
-```
-
-TI validates all documents.
-
----
-
-### Easy note
-
-**Document Types = Which papers are needed?**
-
----
-
-# 7️⃣ Collateral Types
-
-## What is it?
-
-Security given to bank.
-
-Examples:
-
-```text
-Cash
-
-Fixed Deposit
-
-Corporate Guarantee
-
-Bank Guarantee
-
-Property
-```
-
----
-
-## Real example
-
-Company requests ₹100 Crore Bank Guarantee.
-
-Bank says:
-
-```text
-Give 20% cash collateral
-```
-
-Customer deposits:
-
-```text
-₹20 Crores
-```
-
----
-
-### Easy note
-
-**Collateral = Security given to bank**
-
----
-
-# 8️⃣ Statistics (Statistical Codes)
-
-## What is it?
-
-Used for reporting and compliance.
-
-Not actual money movement.
-
-Used for:
-
-* RBI reports
-* Country reports
-* Risk reports
-* Regulatory reporting
-
----
-
-## Real example
-
-TI stores:
-
-```text
-Customer = Tata
-
-Country = Germany
-
-Amount = $10 Million
-
-Sector = Manufacturing
-```
-
-Later reports are generated.
-
----
-
-### Easy note
-
-**Statistics = Reporting information**
-
----
-
-# 9️⃣ COE Account Types (Centralized Operating Entity)
-
-This is mostly a Lloyds setup.
-
-## What is it?
-
-Used when one branch processes work for another branch.
-
----
-
-## Real example
-
-```text
-Customer branch = London
-
-Processing center = India
-```
-
-India processes transaction.
-
-Money still belongs to London.
-
-COE account tracks this internally.
-
----
-
-### Easy note
-
-**COE = Internal accounting between branches**
-
----
-
-# ⭐ Master Cheat Sheet
-
-| Screen             | One line memory                  |
-| ------------------ | -------------------------------- |
-| FX Rate Codes      | Which exchange rate?             |
-| Base Rate Codes    | Starting interest rate           |
-| Differential Rates | Extra margin/discount            |
-| Goods Codes        | What goods are traded?           |
-| Incoterms          | Who pays for shipping/insurance? |
-| Document Types     | Which documents are required?    |
-| Collateral Types   | What security is given?          |
-| Statistics         | Reporting data                   |
-
-
-
-Perfect. Rohit, these are mostly **SWIFT, Guarantee and Payment static data screens** in TI/Finastra.
-
-Again, don't memorize screens. Remember **the business question each screen answers**.
-
-I'll explain using one continuous example.
-
-# Example we'll use
-
-**Tata Steel India imports machinery worth $5 million from Siemens Germany using an LC through Lloyds Bank.**
-
----
-
-# 1️⃣ Document of Title (Shipping Guarantees)
-
-## What is it?
-
-A **Document of Title proves ownership of goods**.
-
-Common examples:
-
-```text
-BOL = Bill Of Lading
-
-AWB = Air Waybill
-```
-
----
-
-## Why Shipping Guarantee?
-
-Sometimes:
-
-```text
-Ship reaches India
-
-Goods arrive
-
-Original Bill of Lading hasn't arrived yet
-```
-
-Customer cannot collect goods.
-
-Bank issues a **Shipping Guarantee**.
-
-Port releases goods temporarily.
-
----
-
-## Real example
-
-```text
-Importer = Tata Steel
-
-Exporter = Siemens Germany
-
-Goods arrive at Mumbai port
-
-Original BOL delayed
-```
-
-Lloyds issues Shipping Guarantee.
-
-Customer collects goods.
-
-Later original BOL is returned.
-
----
-
-## Fields shown
-
-```text
-Ship Name
-
-BOL Date
-
-Port of Embarkation
-
-Port of Discharge
-
-Goods Description
-```
-
----
-
-### Easy note
-
-**Document of Title = Ownership proof of shipped goods.**
-
----
-
-# 2️⃣ Sub-Guarantee Data Fields
-
-## What is it?
-
-Additional custom fields for a guarantee.
-
-Think of it as:
-
-```text
-Extra information boxes
-```
-
-Every country needs different data.
-
----
-
-## Real example
-
-Parent Guarantee:
-
-```text
-Lloyds UK → Guarantees ₹50 Cr project
-```
-
-Sub-guarantee:
-
-```text
-Lloyds India issues local guarantee
-```
-
-India may require:
-
-```text
-Tender Number
-
-GST Number
-
-Local Contract ID
-
-Government Approval ID
-```
-
-These extra fields are stored here.
-
----
-
-### Easy note
-
-**Sub-Guarantee Data Fields = Additional country-specific information.**
-
----
-
-# 3️⃣ SWIFT BIC (Bank Identifier Code)
-
-Very important.
-
-## What is it?
-
-Unique identity of a bank.
-
-Like Aadhaar for banks.
-
-Format:
-
-```text
-AAAA BB CC DDD
-
-Bank Country Location Branch
-```
+Ask for a simple environment map.
 
 Example:
 
-```text
-LOYDGB2L
+```text id="0plpkj"
+DEV
+↓
 
-LOYD = Lloyds
-
-GB = UK
-
-2L = London
-```
-
----
-
-## Real example
-
-Tata imports from Germany.
-
-LC chain:
-
-```text
-Lloyds UK
+SIT
 
 ↓
 
-Deutsche Bank Germany
+UAT
+
+↓
+
+PRE-PROD
+
+↓
+
+PROD
 ```
 
-TI uses SWIFT BIC.
+Questions:
+
+* What's the purpose of each environment?
+* Who has access to each environment?
+* Which environment is used for QA testing?
+* How often are environments refreshed?
 
 ---
 
-### Easy note
+# 5. Integration questions (very important for QA)
 
-**SWIFT BIC = Bank's unique global address.**
-
----
-
-# 4️⃣ SWIFT BIC Plus IBAN
-
-## What is it?
-
-Connects:
-
-```text
-Bank
-
-+
-
-Bank Account Structure
-```
+* Which downstream and upstream systems integrate with TI?
+* Which interfaces are business-critical?
+* Do we integrate with SWIFT?
+* Which APIs or messaging systems are used?
+* Are there batch jobs we need to validate?
 
 ---
 
-## Why?
+# 6. Testing-specific questions (most important for a QA Lead)
 
-TI validates:
+* What types of testing do we perform?
 
-```text
-Is this account really valid for this bank?
-```
+  * Functional
+  * Integration
+  * Regression
+  * E2E
+  * SIT
+  * UAT
 
----
+* What is our regression scope?
 
-## Example
+* How are test cases maintained?
 
-Germany:
+* Is there a regression suite already available?
 
-```text
-IBAN
-
-DE89 3704 0044 0532 0130 00
-```
-
-TI checks:
-
-```text
-DE
-
-Belongs to Germany?
-
-Bank exists?
-
-Account format correct?
-```
-
----
-
-### Easy note
-
-**BIC + IBAN = Bank + Account validation.**
-
----
-
-# 5️⃣ SWIFT IBAN Structure
-
-## What is it?
-
-Defines IBAN rules country-wise.
-
-Every country has different lengths.
+* What are the critical business journeys?
 
 Examples:
 
-Germany
+```text id="5dkjlwm"
+Create LC
 
-```text
-22 characters
+↓
+
+Review
+
+↓
+
+Authorise
+
+↓
+
+Release
+
+↓
+
+Complete
 ```
 
-UK
-
-```text
-22 characters
-```
-
-France
-
-```text
-27 characters
-```
+* Which flows are mandatory for every release?
 
 ---
 
-## Real example
+# 7. Automation questions
 
-Germany
-
-```text
-DE89370400440532013000
-```
-
-TI knows:
-
-```text
-Country = DE
-
-Total length =22
-
-Check digit position=2
-
-Bank identifier position=5
-```
-
-If wrong:
-
-Reject.
+* Do we have UI automation?
+* Which tools do we use?
+* Which tests are automated?
+* Which tests remain manual?
+* How is automation triggered?
 
 ---
 
-### Easy note
+# 8. Defect management questions
 
-**IBAN Structure = Validation rules for account numbers.**
-
----
-
-# 6️⃣ SWIFT Reject Codes
-
-## What is it?
-
-Error codes returned by SWIFT.
-
-Examples:
-
-```text
-AC01
-
-Account format wrong
-
-AC02
-
-Non numeric account
-
-AC05
-
-Account doesn't exist
-```
+* Which tool do we use? (Jira, Azure DevOps, etc.)
+* What's the defect lifecycle?
+* How are production defects triaged?
+* Who prioritizes defects?
 
 ---
 
-## Real example
+# 9. Production support questions
 
-Operator enters:
-
-```text
-12345AB
-```
-
-Expected:
-
-```text
-123456789
-```
-
-SWIFT returns:
-
-```text
-AC01
-```
-
-TI displays rejection.
+* Does our team support production?
+* Do we have on-call responsibilities?
+* How are incidents managed?
+* What are the Sev1/Sev2 support processes?
 
 ---
 
-### Easy note
+# 10. Ask these tomorrow (best starter questions)
 
-**SWIFT Reject Codes = Why SWIFT rejected the transaction.**
+You can literally say:
 
----
+> **I'm trying to build my understanding of TI from a QA perspective. Could someone help me understand:**
+>
+> 1. Where TI is hosted?
+> 2. What happens after we receive a Finastra release ZIP?
+> 3. Which environments we own?
+> 4. Which systems integrate with TI?
+> 5. Which business flows are part of our regression suite?
+> 6. Which testing activities our team owns?
 
-# 7️⃣ SWIFT Clearing Codes
+### As a QA Lead, prioritize understanding these 5 things first:
 
-## What is it?
+**Business flow → Architecture → Environments → Release process → Regression scope**
 
-National bank routing systems.
-
-Every country has local codes.
-
-Examples:
-
-India
-
-```text
-IFSC
-```
-
-UK
-
-```text
-Sort Code
-```
-
-US
-
-```text
-ABA Routing Number
-```
-
-Australia
-
-```text
-BSB
-```
-
-Hong Kong
-
-```text
-Bank Code
-```
-
----
-
-## Real example
-
-Customer transfers money within UK.
-
-Instead of SWIFT only:
-
-```text
-Sort code used.
-```
-
-TI validates this.
-
----
-
-### Easy note
-
-**Clearing Code = Country-specific bank routing code.**
-
----
-
-# 8️⃣ MX Purpose Codes (ISO 20022)
-
-This is becoming very important globally.
-
-## What is it?
-
-Explains:
-
-```text
-WHY is money being transferred?
-```
-
-Examples:
-
-```text
-SALA = Salary
-
-LOAN = Loan payment
-
-INTE = Interest payment
-
-FREX = Foreign exchange
-
-TRAD = Trade finance
-
-BEXP = Business expense
-```
-
----
-
-## Real example
-
-₹50 Cr payment.
-
-Bank asks:
-
-```text
-Purpose?
-```
-
-Answer:
-
-```text
-TRAD
-
-Trade Finance
-```
-
-Or
-
-```text
-LOAN
-
-Loan repayment
-```
-
-Or
-
-```text
-FREX
-
-Foreign exchange
-```
-
-This helps regulators.
-
----
-
-### Easy note
-
-**Purpose Code = Reason for payment.**
-
----
-
-# ⭐ Easy master cheat sheet
-
-| Screen               | One question it answers                        |
-| -------------------- | ---------------------------------------------- |
-| Document of Title    | Who owns the goods?                            |
-| Shipping Guarantee   | Can customer collect goods before BOL arrives? |
-| Sub Guarantee Fields | Any extra local information needed?            |
-| SWIFT BIC            | Which bank?                                    |
-| BIC + IBAN           | Is bank + account combination valid?           |
-| IBAN Structure       | Is account format valid?                       |
-| SWIFT Reject Codes   | Why did SWIFT reject?                          |
-| Clearing Codes       | What's the country's routing code?             |
-| MX Purpose Codes     | Why is the money being sent?                   |
-
-
-Absolutely. Since you're learning **Trade Finance + Finastra TI for Lloyds**, keep **one single-page cheat sheet**.
-
-# Finastra TI Easy Master Cheat Sheet (Remember Business Question)
-
-| Screen/Configuration | Ask yourself this one question                          | Simple answer           | Example                     |
-| -------------------- | ------------------------------------------------------- | ----------------------- | --------------------------- |
-| Countries            | Which country is involved?                              | Country master          | India, UK, Germany          |
-| Currencies           | Which currency is used?                                 | Currency master         | INR, USD, GBP               |
-| Charge Codes         | What fee should bank charge?                            | Fee configuration       | LC issuance fee             |
-| System Parameters    | Which internal account/system rules apply?              | System setup            | Income account, tax account |
-| FX Rate Codes        | Which exchange rate should be used?                     | FX source               | Spot, negotiated            |
-| Base Rate Codes      | Which interest benchmark applies?                       | Interest base           | 5% base rate                |
-| Differential Rates   | What markup/discount should be added?                   | Spread                  | Base +1%                    |
-| Goods Codes          | What goods are being traded?                            | Goods classification    | Machinery, textiles         |
-| Incoterms            | Who pays shipping/insurance?                            | Shipping responsibility | FOB, CIF                    |
-| Document Types       | Which documents are required?                           | Trade documents         | Invoice, BOL                |
-| Collateral Types     | What security protects the bank?                        | Risk protection         | Cash margin                 |
-| Statistics Codes     | What data should regulators track?                      | Reporting data          | Country, amount             |
-| COE Account Types    | Which centralized account should be used?               | Hub accounting          | India hub processing        |
-| Document of Title    | Who legally owns goods?                                 | Ownership document      | Bill of Lading              |
-| Shipping Guarantee   | Can goods be released before original document arrives? | Temporary guarantee     | Port releases cargo         |
-| Sub-Guarantee Fields | Any extra local fields required?                        | Additional data         | Tender ID                   |
-| SWIFT BIC            | Which bank is involved?                                 | Bank identifier         | LOYDGB2L                    |
-| BIC + IBAN           | Is bank + account combination valid?                    | Account validation      | Germany IBAN                |
-| IBAN Structure       | Is account format correct?                              | Country IBAN rules      | DE = 22 chars               |
-| SWIFT Reject Codes   | Why did SWIFT reject payment?                           | Error reason            | AC01                        |
-| SWIFT Clearing Codes | What local routing code is needed?                      | Country routing         | IFSC, Sort Code             |
-| MX Purpose Codes     | Why is money being sent?                                | Payment purpose         | Trade Finance               |
-
-
-
-
-# One End-to-End Flow to Remember
-
-
-
-```text
-Customer wants Trade Finance
-
-↓
-
-Country
-India ↔ Germany
-
-↓
-
-Currency
-INR ↔ EUR
-
-↓
-
-Goods
-Machinery
-
-↓
-
-Incoterm
-CIF
-
-↓
-
-Documents
-Invoice + Bill of Lading
-
-↓
-
-LC/Guarantee created
-
-↓
-
-Charges applied
-
-↓
-
-Collateral checked
-
-↓
-
-FX rate applied
-
-↓
-
-SWIFT BIC identifies banks
-
-↓
-
-IBAN validates account
-
-↓
-
-Clearing code routes payment
-
-↓
-
-MX purpose code says WHY payment is sent
-
-↓
-
-Statistics captured for reporting
-
-↓
-
-SWIFT reject code returned if something fails
-```
-
+Once you understand those, everything else in Finastra TI becomes much easier.
