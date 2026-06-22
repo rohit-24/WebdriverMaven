@@ -1,171 +1,345 @@
-Since you've **newly joined Lloyds Technology Centre**, work in the **Trade Finance team**, use **Finastra Trade Innovation (TI)**, and you're a **QA Lead**, your goal isn't to understand every technical detail immediately.
+Yes. Since you're learning this for **Lloyds + Finastra TI**, create **one single reference page**. Don't try to memorize every screen.
 
-Your goal is to understand **ownership, architecture, release flow, environments, and testing responsibilities**.
+Think of **Branch Static Data = Bank Setup Data**.
 
-I'd split the questions into sections.
+# Branch Static Data Master Cheat Sheet
 
-# 1. Application understanding (ask these first)
+> **Purpose:** Configure everything a branch needs before processing trade finance transactions.
 
-* Which version of Finastra TI are we currently using?
-* Is TI heavily customized by Lloyds or mostly out-of-the-box?
-* Which trade finance modules do we use? (LC, Guarantees, Collections, etc.)
-* What business processes does our squad own?
+## 1. Branches 🏦
 
----
+**What:** Bank organizational hierarchy.
 
-# 2. Architecture understanding
-
-* Can someone walk me through the end-to-end TI architecture?
-* Where is TI hosted? Lloyds-managed infrastructure, private cloud, or vendor-hosted?
-* Which environments do we have? (DEV, SIT, UAT, PROD)
-* Which database does TI use?
-* Which application server hosts TI?
-
----
-
-# 3. Release management (very important since you noticed the ZIP files)
-
-* How do Finastra releases reach our team?
-* What exactly comes inside the Finastra release package?
-* Who reviews the release notes?
-* Who owns deployments?
-* What's the deployment flow after receiving a ZIP?
-* Are deployments manual or automated?
-
----
-
-# 4. Environment questions
-
-Ask for a simple environment map.
+```text
+Bank Group
+   ↓
+Bank Business
+   ↓
+Main Banking Entity (MBE)
+   ↓
+Branches
+```
 
 Example:
 
-```text id="0plpkj"
-DEV
-↓
-
-SIT
-
-↓
-
-UAT
-
-↓
-
-PRE-PROD
-
-↓
-
-PROD
+```text
+Lloyds Group
+   ↓
+Lloyds Bank UK
+   ↓
+London Branch
 ```
 
-Questions:
-
-* What's the purpose of each environment?
-* Who has access to each environment?
-* Which environment is used for QA testing?
-* How often are environments refreshed?
+**Used for:** Routing transactions.
 
 ---
 
-# 5. Integration questions (very important for QA)
+## 2. Insurance 📄
 
-* Which downstream and upstream systems integrate with TI?
-* Which interfaces are business-critical?
-* Do we integrate with SWIFT?
-* Which APIs or messaging systems are used?
-* Are there batch jobs we need to validate?
+Stores insurance policy details.
 
----
+Example:
 
-# 6. Testing-specific questions (most important for a QA Lead)
-
-* What types of testing do we perform?
-
-  * Functional
-  * Integration
-  * Regression
-  * E2E
-  * SIT
-  * UAT
-
-* What is our regression scope?
-
-* How are test cases maintained?
-
-* Is there a regression suite already available?
-
-* What are the critical business journeys?
-
-Examples:
-
-```text id="5dkjlwm"
-Create LC
-
-↓
-
-Review
-
-↓
-
-Authorise
-
-↓
-
-Release
-
-↓
-
-Complete
+```text
+Policy = Marine Cargo Insurance
+Coverage = £1M
+Expiry = 31-Dec-2026
 ```
 
-* Which flows are mandatory for every release?
+**Used for:** Trade products needing insurance.
 
 ---
 
-# 7. Automation questions
+## 3. Customer 👤
 
-* Do we have UI automation?
-* Which tools do we use?
-* Which tests are automated?
-* Which tests remain manual?
-* How is automation triggered?
+Stores customer master data.
 
----
+Example:
 
-# 8. Defect management questions
+```text
+ABC Exports Ltd
+Customer ID = C1001
+Country = UK
+```
 
-* Which tool do we use? (Jira, Azure DevOps, etc.)
-* What's the defect lifecycle?
-* How are production defects triaged?
-* Who prioritizes defects?
+**Used everywhere.**
 
 ---
 
-# 9. Production support questions
+## 4. TI SWIFT Details 🌐
 
-* Does our team support production?
-* Do we have on-call responsibilities?
-* How are incidents managed?
-* What are the Sev1/Sev2 support processes?
+Stores SWIFT/BIC settings.
+
+Example:
+
+```text
+Lloyds BIC = LOYDGB2L
+```
+
+**Used for:** MT700, MT707 etc.
 
 ---
 
-# 10. Ask these tomorrow (best starter questions)
+## 5. Customer Address 📍
 
-You can literally say:
+Stores customer addresses.
 
-> **I'm trying to build my understanding of TI from a QA perspective. Could someone help me understand:**
->
-> 1. Where TI is hosted?
-> 2. What happens after we receive a Finastra release ZIP?
-> 3. Which environments we own?
-> 4. Which systems integrate with TI?
-> 5. Which business flows are part of our regression suite?
-> 6. Which testing activities our team owns?
+Example:
 
-### As a QA Lead, prioritize understanding these 5 things first:
+```text
+Head Office
+Billing Address
+SWIFT Address
+```
 
-**Business flow → Architecture → Environments → Release process → Regression scope**
+---
 
-Once you understand those, everything else in Finastra TI becomes much easier.
+## 6. Groups 👥
+
+Groups related customers.
+
+Example:
+
+```text
+Tata Group
+   ↓
+TCS
+Tata Steel
+Tata Motors
+```
+
+---
+
+## 7. Settlement Instructions 💰
+
+Stores payment instructions.
+
+Example:
+
+```text
+GBP Payments
+→ HSBC London
+→ Account XXXXX
+```
+
+**Think:** Where money should go.
+
+---
+
+## 8. Correspondents 🤝
+
+Foreign partner banks.
+
+Example:
+
+```text
+Lloyds ↔ Bank of America
+```
+
+**Used when Lloyds has no branch there.**
+
+---
+
+## 9. Programmes 🏭
+
+Supply Chain Finance programmes.
+
+Example:
+
+```text
+Amazon Supplier Programme
+```
+
+---
+
+## 10. Programme Sub-types
+
+Types of SCF programmes.
+
+```text
+Buyer-centric
+Seller-centric
+Pool factoring
+```
+
+---
+
+## 11. Accounts 🏦
+
+Customer bank accounts.
+
+Example:
+
+```text
+Customer = ABC Ltd
+
+GBP Account
+USD Account
+EUR Account
+```
+
+---
+
+## 12. Nostros 🌎
+
+> Our account with another bank.
+
+Example:
+
+```text
+Lloyds USD account at Citi Bank
+```
+
+**Remember:**
+
+```text
+Our money in their bank
+```
+
+---
+
+## 13. Default Nostros
+
+Default Nostro selection rules.
+
+Example:
+
+```text
+USD → Citi
+EUR → Deutsche Bank
+```
+
+---
+
+## 14. Clearing System IDs 🏛️
+
+Payment network identifiers.
+
+Example:
+
+```text
+TARGET
+CHAPS
+Fedwire
+```
+
+Used for payment routing.
+
+---
+
+## 15. FX Rates 💱
+
+Currency conversion rates.
+
+Example:
+
+```text
+1 GBP = 1.35 USD
+```
+
+---
+
+## 16. Spot Rates 💱
+
+Today's market exchange rate.
+
+Example:
+
+```text
+Today:
+GBP/USD = 1.35
+```
+
+---
+
+## 17. Base Rates 📈
+
+Interest benchmark rates.
+
+Example:
+
+```text
+5%
+SOFR+2%
+```
+
+Used for financing calculations.
+
+---
+
+## 18. Static Data Messages 📩
+
+Notifications when master data changes.
+
+Example:
+
+```text
+Customer added
+Currency updated
+```
+
+---
+
+## 19. Download Static Data ⬇️
+
+Bulk import master data.
+
+Example:
+
+```text
+Core Banking
+      ↓
+Trade Innovation
+```
+
+---
+
+## 20. Take-On 🚚
+
+Migration of existing business.
+
+Example:
+
+```text
+Old system
+    ↓
+Finastra TI
+```
+
+Import customers, accounts, existing deals.
+
+---
+
+# Super Easy Memory Map
+
+```text
+1. Branches → Who are we?
+
+2. Customers → Who are they?
+
+3. Groups → Who belongs together?
+
+4. Accounts → Where is money stored?
+
+5. Nostros → Our accounts abroad
+
+6. Correspondents → Foreign partner banks
+
+7. Settlement → How money moves
+
+8. SWIFT → How messages move
+
+9. FX/Base Rates → How money is valued
+
+10. Insurance → Risk protection
+
+11. Programmes → Supply chain setup
+
+12. Download/Take-On → Data migration
+```
+
+# 30-second interview explanation
+
+> **Branch Static Data is the master configuration layer in Finastra TI. It contains bank hierarchy, customers, accounts, SWIFT settings, settlement instructions, correspondent banks, Nostros, FX rates and supply chain programmes. These are prerequisite configurations required before any trade finance transaction like LC, Guarantee or Collections can be processed.**
+
+⭐ **Memorize this one sentence because you'll hear it repeatedly at Lloyds.**
