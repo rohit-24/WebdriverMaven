@@ -1,70 +1,462 @@
-Excellent. This is actually a very important Lloyds LOTS behaviour. I'll incorporate this into your guide because this explains which products are customer initiated vs bank initiated.
+Yes. Since you're learning **LOTS client-side**, it's useful to have **realistic but fictitious test data** that can be reused across all products.
 
-I'll slightly correct the note.
+**Do not use this in Production. Use only for SIT/UAT/learning purposes.**
 
-LOTS Client Side Trade Services - Updated Reference Guide
-Rule 1: There are 8 active products used by Lloyds
-1. Import Letter of Credit (ILC)
+# Common Master Test Data
 
-2. Export Letter of Credit (ELC)
+## Entity (Customer)
 
-3. Import Collection (IC)
+```text
+Entity Code : ALITTNER01M1
 
-4. Export Collection (EC)
+Company Name : Alex Littner Test Ltd
 
-5. Undertaking Issuance (UI)
+Customer Reference : UI6241A4
 
-6. Undertaking Advised (UA)
+Country : United Kingdom
 
-7. Standby LC Issuance (SBLC-I)
+Address Line 1 : 10 Bishopsgate
 
-8. Standby LC Advised (SBLC-A)
-Rule 2 (Very Important)
-Products customers can initiate from LOTS (Fresh Transaction)
+Address Line 2 : London
 
-These 4 can be created directly by customers.
+Post Code : EC2N 4BQ
 
-✓ Import Letter of Credit
+SWIFT : LOYDGB2LXXX
 
-✓ Export Collection
+Email : trade.finance@testcompany.co.uk
+```
 
-✓ Undertaking Issuance
+---
 
-✓ Standby LC Issuance
+# 1. Import Letter Of Credit (ILC)
 
-Think:
+## Scenario
 
-Customer is requesting Lloyds to do something.
+UK buyer purchasing laptops from Germany.
 
-Example
-Product	Customer says
-Import LC	Please issue an LC for my import
-Export Collection	Please collect payment from buyer
-Undertaking Issuance	Please issue a guarantee
-Standby LC Issuance	Please issue an SBLC
-Products that originate from TI (Back office)
+### General Details
 
-These cannot be freshly initiated from LOTS.
+```text
+Mode Of Transmission : SWIFT
 
-✗ Export Letter of Credit
+Expiry Date : 31/12/2026
 
-✗ Import Collection
+Place Of Expiry : London
 
-✗ Undertaking Advised
+Applicable Rules : UCP Latest Version (UCP600)
 
-✗ Standby LC Advised
+Feature Of LC : Irrevocable, Non Transferable
 
-These start from TI/back-office.
+Customer Reference : ILC-2026-001
 
-Then LOTS customer can view/manage/respond.
+Beneficiary Reference : INV-98765
+```
 
-Think:
+---
 
-Bank is informing the customer.
+## Applicant
 
-Example
-Product	Who initiates?	Customer receives
-Export LC	Other bank/TI	LC received
-Import Collection	Exporter bank/TI	Collection documents received
-Undertaking Advised	Other bank/TI	Guarantee received
-Standby LC Advised	Other bank/TI	SBLC received
+```text
+ABC Retail UK Ltd
+
+10 Bishopsgate
+
+London
+
+EC2N 4BQ
+
+United Kingdom
+```
+
+---
+
+## Beneficiary
+
+```text
+Tech GmbH
+
+Alexanderplatz 5
+
+Berlin
+
+10178
+
+Germany
+```
+
+---
+
+## Bank Details
+
+```text
+Recipient Bank : Lloyds Bank PLC
+
+Issuing Bank : Lloyds Bank PLC
+
+Advising Bank : Deutsche Bank AG
+
+SWIFT : DEUTDEFFXXX
+
+Direct : No
+
+Indirect : Yes
+```
+
+---
+
+## Amount Details
+
+```text
+Currency : USD
+
+LC Amount : 100000
+
+Tolerance : 5%
+
+Confirmation Charges : Applicant
+
+Additional Amount : Freight Included
+```
+
+---
+
+## Payment Details
+
+```text
+Credit Available With : Issuing Bank
+
+Credit Available By : Payment
+
+Payment At : Sight
+```
+
+---
+
+## Shipment Details
+
+```text
+Country Of Origin : Germany
+
+Shipment From : Hamburg
+
+Shipment To : London
+
+Place Of Loading : Hamburg Port
+
+Place Of Discharge : London Gateway Port
+
+Last Shipment Date : 15/11/2026
+
+Partial Shipment : Allowed
+
+Transshipment : Allowed
+
+Incoterms : CIF
+
+Named Place : London Gateway
+```
+
+---
+
+## Narrative Details
+
+### Description Of Goods
+
+```text
+1000 Dell Latitude laptops
+Model 7450
+```
+
+### Documents Required
+
+```text
+Commercial Invoice
+
+Packing List
+
+Bill Of Lading
+
+Insurance Certificate
+```
+
+### Additional Instructions
+
+```text
+Documents must be presented within 21 days after shipment.
+```
+
+---
+
+## Instructions To Bank
+
+```text
+Principal Account : 12345678901
+
+Fee Account : 12345678902
+
+Other Instructions :
+Please process urgently.
+```
+
+---
+
+# 2. Export Collection (EC)
+
+## Scenario
+
+UK exporter selling medical equipment to France.
+
+### General Details
+
+```text
+Collection Type : Regular
+
+Mode : Direct Bank
+
+Customer Reference : EC-2026-001
+```
+
+---
+
+## Drawer (Exporter)
+
+```text
+Health Devices UK Ltd
+
+London
+
+United Kingdom
+```
+
+---
+
+## Drawee (Importer)
+
+```text
+Med Equip SAS
+
+Paris
+
+France
+```
+
+---
+
+## Bank Details
+
+```text
+Remitting Bank :
+Lloyds Bank PLC
+
+Collecting Bank :
+BNP Paribas
+
+SWIFT :
+BNPAFRPPXXX
+```
+
+---
+
+## Payment Details
+
+```text
+Currency : EUR
+
+Collection Amount : 50000
+
+Charges : Drawee
+```
+
+---
+
+## Shipment Details
+
+```text
+Shipment From : London
+
+Shipment To : Paris
+
+Last Shipment Date : 10/10/2026
+```
+
+---
+
+## Collection Instructions
+
+```text
+Release documents against payment (D/P).
+```
+
+---
+
+# 3. Undertaking (Bank Guarantee)
+
+## Scenario
+
+Construction company participating in government project.
+
+### General Details
+
+```text
+Mode Of Transmission : SWIFT
+
+Customer Reference : BG-2026-001
+
+Beneficiary Reference : GOV-ROAD-001
+```
+
+---
+
+## Applicant
+
+```text
+ABC Construction Ltd
+
+20 Canary Wharf
+
+London
+
+E14 5AB
+
+United Kingdom
+```
+
+---
+
+## Beneficiary
+
+```text
+UK Department Of Transport
+
+Great Minster House
+
+London
+
+SW1P 4DR
+
+United Kingdom
+```
+
+---
+
+## Bank Details
+
+```text
+Recipient Bank : Lloyds Bank PLC
+
+Issuing Bank : Lloyds Bank PLC
+
+SWIFT : LOYDGB2LXXX
+
+Direct : Yes
+```
+
+---
+
+## Undertaking Details
+
+```text
+Guarantee Type : Performance Guarantee
+
+Currency : GBP
+
+Guarantee Amount : 1000000
+
+Issue Date : 01/08/2026
+
+Expiry Date : 31/12/2027
+
+Claim Presentation Date : 31/12/2027
+```
+
+---
+
+## Instructions To Bank
+
+```text
+Principal Account : 12345678901
+
+Fee Account : 12345678902
+
+Other Instructions :
+
+Issue guarantee for road construction project.
+```
+
+---
+
+# QA Reusable Negative Test Data
+
+## Invalid Dates
+
+```text
+Expiry Date : 10/10/2026
+
+Shipment Date : 15/10/2026
+
+Expected :
+Validation Error
+```
+
+---
+
+## Invalid Amount
+
+```text
+LC Amount : 0
+
+Expected :
+Amount should be greater than zero
+```
+
+---
+
+## Invalid SWIFT
+
+```text
+ABC123
+
+Expected :
+Invalid SWIFT Code
+```
+
+---
+
+## Applicant Same As Beneficiary
+
+```text
+Applicant :
+ABC Ltd
+
+Beneficiary :
+ABC Ltd
+
+Expected :
+Business Validation Error
+```
+
+# My suggestion for Lloyds onboarding
+
+Create **one reusable fictional company** and use it everywhere.
+
+```text
+Entity : ALITTNER01M1
+
+Company : Alex Littner Test Ltd
+
+Bank : Lloyds Bank PLC
+
+Country : United Kingdom
+```
+
+Then create different transactions:
+
+```text
+ILC-2026-001
+
+EC-2026-001
+
+BG-2026-001
+```
+
+This makes it much easier to understand the end-to-end LOTS flow.
