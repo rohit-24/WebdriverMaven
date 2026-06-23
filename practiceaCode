@@ -1,345 +1,781 @@
-Yes. Since you're learning this for **Lloyds + Finastra TI**, create **one single reference page**. Don't try to memorize every screen.
+Absolutely Rohit. Since you're new to Trade Finance and LOTS, I would not memorize screens individually. Instead, understand it as a story.
 
-Think of **Branch Static Data = Bank Setup Data**.
+# LOTS (Lloyds Online Trade Services) - Client Side Administration Reference Guide
 
-# Branch Static Data Master Cheat Sheet
-
-> **Purpose:** Configure everything a branch needs before processing trade finance transactions.
-
-## 1. Branches 🏦
-
-**What:** Bank organizational hierarchy.
-
-```text
-Bank Group
-   ↓
-Bank Business
-   ↓
-Main Banking Entity (MBE)
-   ↓
-Branches
-```
-
-Example:
-
-```text
-Lloyds Group
-   ↓
-Lloyds Bank UK
-   ↓
-London Branch
-```
-
-**Used for:** Routing transactions.
+**Version 1.0 (Beginner Friendly)**
 
 ---
 
-## 2. Insurance 📄
-
-Stores insurance policy details.
-
-Example:
+# 1. First understand where LOTS fits
 
 ```text
-Policy = Marine Cargo Insurance
-Coverage = £1M
-Expiry = 31-Dec-2026
+Customer (Wipro)
+
+↓
+
+LOTS (Customer Portal)
+
+↓
+
+TACC (Translator/Interface Layer)
+
+↓
+
+TAE (Fusion Trade Innovation)
+
+↓
+
+Lloyds Back Office
 ```
 
-**Used for:** Trade products needing insurance.
+**Simple explanation:**
+
+* Customer logs into LOTS
+* Customer creates Trade Finance transactions
+* LOTS sends data to TACC
+* TACC converts messages into TAE format
+* TAE processes transactions
 
 ---
 
-## 3. Customer 👤
+# 2. Two sides of LOTS
 
-Stores customer master data.
+## Bank Side
 
-Example:
+Used by Lloyds employees.
 
-```text
-ABC Exports Ltd
-Customer ID = C1001
-Country = UK
-```
-
-**Used everywhere.**
-
----
-
-## 4. TI SWIFT Details 🌐
-
-Stores SWIFT/BIC settings.
-
-Example:
+Activities:
 
 ```text
-Lloyds BIC = LOYDGB2L
-```
+Create company
 
-**Used for:** MT700, MT707 etc.
+Create first admin user
 
----
+Assign products
 
-## 5. Customer Address 📍
-
-Stores customer addresses.
-
-Example:
-
-```text
-Head Office
-Billing Address
-SWIFT Address
+Share credentials
 ```
 
 ---
 
-## 6. Groups 👥
+## Client Side ⭐ (your screenshots)
 
-Groups related customers.
-
-Example:
-
-```text
-Tata Group
-   ↓
-TCS
-Tata Steel
-Tata Motors
-```
-
----
-
-## 7. Settlement Instructions 💰
-
-Stores payment instructions.
+Used by customer administrators.
 
 Example:
 
 ```text
-GBP Payments
-→ HSBC London
-→ Account XXXXX
+Customer = Wipro
 ```
 
-**Think:** Where money should go.
+Activities:
+
+```text
+Manage users
+
+Manage alerts
+
+Manage banks
+
+Manage reports
+
+Monitor activities
+```
 
 ---
 
-## 8. Correspondents 🤝
+# 3. Client Side Administration Menu
 
-Foreign partner banks.
+```text
+Administration
+
+├── Change Profile
+├── Entity Maintenance
+├── Jurisdiction Maintenance
+├── User Maintenance
+├── Data Maintenance
+├── Alerts Maintenance
+├── Report Designer
+└── Audit Queries
+```
+
+---
+
+# 4. Change Profile
+
+### Purpose
+
+Update your own profile.
+
+### Practical example
+
+Rajesh changes:
+
+```text
+Phone Number
+
+Email
+
+Preferred Language
+```
+
+### Remember
+
+```text
+My Profile = My Settings
+```
+
+---
+
+# 5. Entity Maintenance
+
+### Purpose
+
+Maintain business entities/departments.
+
+### Example
+
+Wipro has:
+
+```text
+Wipro Imports
+
+Wipro Exports
+
+Wipro Treasury
+```
+
+These become entities.
+
+### Why?
+
+Transactions belong to an entity.
 
 Example:
 
 ```text
-Lloyds ↔ Bank of America
-```
+Import LC
 
-**Used when Lloyds has no branch there.**
+↓
 
----
-
-## 9. Programmes 🏭
-
-Supply Chain Finance programmes.
-
-Example:
-
-```text
-Amazon Supplier Programme
+Entity = Wipro Imports
 ```
 
 ---
 
-## 10. Programme Sub-types
+# 6. Jurisdiction Maintenance
 
-Types of SCF programmes.
+### Purpose
+
+Maintain countries/regions.
+
+### Example
 
 ```text
-Buyer-centric
-Seller-centric
-Pool factoring
+India
+
+USA
+
+Singapore
+
+UK
+```
+
+### Why?
+
+Different countries have different trade rules.
+
+---
+
+# 7. User Maintenance
+
+### Purpose
+
+Create customer users.
+
+### Example
+
+```text
+Rajesh
+
+Priya
+
+Anil
+```
+
+Assign roles.
+
+```text
+Rajesh = Maker
+
+Priya = Checker
+
+Anil = Approver
 ```
 
 ---
 
-## 11. Accounts 🏦
+# 8. Roles
 
-Customer bank accounts.
+### Purpose
 
-Example:
+Control permissions.
+
+### Practical example
+
+| Role         | Permission          |
+| ------------ | ------------------- |
+| Maker        | Create transactions |
+| Checker      | Verify transactions |
+| Release User | Final approval      |
+| Viewer       | Read only           |
+
+---
+
+# 9. Data Maintenance
+
+This contains several modules.
+
+## A. Banks
+
+### Example
 
 ```text
-Customer = ABC Ltd
+Lloyds
 
+HSBC
+
+JP Morgan
+```
+
+Frequently used banks.
+
+---
+
+## B. Counterparties
+
+### What is Counterparty?
+
+Other businesses involved in trade.
+
+### Example
+
+```text
+Wipro (customer)
+
+↓
+
+Dell USA
+
+Apple Singapore
+
+Samsung Korea
+```
+
+---
+
+## C. Accounts
+
+### Example
+
+```text
 GBP Account
+
 USD Account
+
 EUR Account
 ```
 
+These accounts are used during transactions.
+
 ---
 
-## 12. Nostros 🌎
+## D. Phrases
 
-> Our account with another bank.
+Reusable text templates.
+
+### Static Phrase
+
+Always same.
 
 Example:
 
 ```text
-Lloyds USD account at Citi Bank
-```
-
-**Remember:**
-
-```text
-Our money in their bank
+Thank you for your business.
 ```
 
 ---
 
-## 13. Default Nostros
+### Dynamic Phrase
 
-Default Nostro selection rules.
+Changes based on transaction.
 
 Example:
 
 ```text
-USD → Citi
-EUR → Deutsche Bank
+Import LC Number : ${LC_NUMBER}
+```
+
+Output:
+
+```text
+Import LC Number : LC123456
 ```
 
 ---
 
-## 14. Clearing System IDs 🏛️
+# 10. Alerts Maintenance
 
-Payment network identifiers.
+Purpose:
+
+Send automatic email notifications.
+
+---
+
+## Types of alerts
+
+### Submission Alert
+
+Trigger:
+
+```text
+Transaction submitted
+```
 
 Example:
 
 ```text
-TARGET
-CHAPS
-Fedwire
+Import LC submitted
 ```
 
-Used for payment routing.
+Email sent.
 
 ---
 
-## 15. FX Rates 💱
+### Calendar Alert
 
-Currency conversion rates.
+Trigger:
+
+```text
+Issue Date
+
+Expiry Date
+
+Amendment Date
+```
 
 Example:
 
 ```text
-1 GBP = 1.35 USD
+LC expires in 5 days
 ```
+
+Email sent.
 
 ---
 
-## 16. Spot Rates 💱
+### Account Balance Alert
 
-Today's market exchange rate.
+Trigger:
+
+```text
+Balance threshold reached
+```
 
 Example:
 
 ```text
-Today:
-GBP/USD = 1.35
+GBP Account
+
+< 1,000,000 GBP
+```
+
+Email sent.
+
+---
+
+# 11. Alert recipients ⭐
+
+| Recipient        | Meaning                    |
+| ---------------- | -------------------------- |
+| Input User       | Creator                    |
+| Control User     | Checker                    |
+| Release User     | Final Approver             |
+| Custom Recipient | Any email                  |
+| Contact Person   | Registered company contact |
+
+---
+
+# Practical example
+
+```text
+Rajesh creates Import LC
+
+↓
+
+Input User notified
+
+↓
+
+Priya verifies
+
+↓
+
+Control User notified
+
+↓
+
+Anil approves
+
+↓
+
+Release User notified
 ```
 
 ---
 
-## 17. Base Rates 📈
+# 12. Report Designer
 
-Interest benchmark rates.
+Purpose:
+
+Customers create their own reports.
+
+### Example
+
+```text
+Report Name
+
+Monthly Import LC Report
+```
+
+Product:
+
+```text
+Import LC
+```
+
+Entity:
+
+```text
+Wipro Imports
+```
+
+Output:
+
+```text
+All Import LC transactions
+```
+
+---
+
+## Public Report
+
+```text
+Everyone can use
+```
+
+## Private Report
+
+```text
+Only creator can use
+```
+
+---
+
+## Multi-product report
+
+```text
+Import LC
+
+Guarantee
+
+SBLC
+```
+
+Single report.
+
+---
+
+# 13. Audit Queries ⭐
+
+This is extremely important.
+
+Banks always ask:
+
+```text
+Who?
+
+What?
+
+When?
+
+Was it successful?
+```
+
+LOTS stores everything.
+
+---
+
+# Audit Types
+
+## A. Login Audit
+
+Question:
+
+```text
+Who logged into LOTS?
+```
 
 Example:
 
 ```text
-5%
-SOFR+2%
-```
+Rajesh
 
-Used for financing calculations.
+10-Jun
+
+9:00 AM
+
+Successful
+```
 
 ---
 
-## 18. Static Data Messages 📩
+## B. Product Audit
 
-Notifications when master data changes.
+Question:
+
+```text
+What happened to transactions?
+```
 
 Example:
 
 ```text
-Customer added
-Currency updated
+Import LC created
+
+Guarantee approved
+
+SBLC rejected
 ```
 
 ---
 
-## 19. Download Static Data ⬇️
+## C. System Features Audit
 
-Bulk import master data.
+Question:
+
+```text
+What administration activities happened?
+```
 
 Example:
 
 ```text
-Core Banking
-      ↓
-Trade Innovation
+Change profile
+
+Update user
+
+Change preferences
 ```
 
 ---
 
-## 20. Take-On 🚚
-
-Migration of existing business.
-
-Example:
+# 14. LOTS lifecycle (Most important)
 
 ```text
-Old system
-    ↓
-Finastra TI
-```
+Lloyds
 
-Import customers, accounts, existing deals.
+↓
+
+Create company
+
+↓
+
+Create admin user
+
+↓
+
+Share credentials
+
+↓
+
+Customer logs into LOTS
+
+↓
+
+Create users
+
+↓
+
+Assign roles
+
+↓
+
+Configure data
+
+↓
+
+Configure alerts
+
+↓
+
+Create transactions
+
+↓
+
+Generate reports
+
+↓
+
+Monitor audits
+```
 
 ---
 
-# Super Easy Memory Map
+# 15. End-to-end practical story
+
+### Wipro onboarding
+
+### Step 1
+
+Lloyds creates:
 
 ```text
-1. Branches → Who are we?
-
-2. Customers → Who are they?
-
-3. Groups → Who belongs together?
-
-4. Accounts → Where is money stored?
-
-5. Nostros → Our accounts abroad
-
-6. Correspondents → Foreign partner banks
-
-7. Settlement → How money moves
-
-8. SWIFT → How messages move
-
-9. FX/Base Rates → How money is valued
-
-10. Insurance → Risk protection
-
-11. Programmes → Supply chain setup
-
-12. Download/Take-On → Data migration
+Company = Wipro
 ```
 
-# 30-second interview explanation
+---
 
-> **Branch Static Data is the master configuration layer in Finastra TI. It contains bank hierarchy, customers, accounts, SWIFT settings, settlement instructions, correspondent banks, Nostros, FX rates and supply chain programmes. These are prerequisite configurations required before any trade finance transaction like LC, Guarantee or Collections can be processed.**
+### Step 2
 
-⭐ **Memorize this one sentence because you'll hear it repeatedly at Lloyds.**
+Creates admin user:
+
+```text
+admin@wipro.com
+```
+
+---
+
+### Step 3
+
+Admin logs in.
+
+Creates users.
+
+```text
+Rajesh
+
+Priya
+
+Anil
+```
+
+---
+
+### Step 4
+
+Creates entities.
+
+```text
+Wipro Imports
+
+Wipro Exports
+```
+
+---
+
+### Step 5
+
+Configures alerts.
+
+```text
+Notify treasury team if
+
+Import LC > GBP 1M
+```
+
+---
+
+### Step 6
+
+Creates transaction.
+
+```text
+Import LC
+
+↓
+
+Checker
+
+↓
+
+Approver
+
+↓
+
+Lloyds
+```
+
+---
+
+# 16. LOTS cheat sheet (1 page)
+
+```text
+Change Profile
+= My profile
+
+Entity Maintenance
+= Business units
+
+Jurisdiction Maintenance
+= Countries
+
+User Maintenance
+= Users
+
+Data Maintenance
+= Banks, Accounts, Counterparties, Phrases
+
+Alerts Maintenance
+= Email notifications
+
+Report Designer
+= Customer reports
+
+Audit Queries
+= Activity history
+```
+
+# 17. Since you're joining Lloyds, this is the order I recommend learning
+
+```text
+Week 1
+
+✓ LOTS Architecture
+
+✓ Client Side Administration
+
+Week 2
+
+✓ Import LC
+
+✓ Export LC
+
+Week 3
+
+✓ Guarantees
+
+✓ SBLC
+
+Week 4
+
+✓ Collections
+
+✓ End-to-end flow LOTS → TACC → TAE
+```
+
+**My advice: Don't try to memorize every screen. For every new screen, ask only one question:**
+
+> **Is this screen configuring something, creating a transaction, sending a notification, creating a report, or auditing an activity?**
+
+95% of LOTS becomes easy after that.
