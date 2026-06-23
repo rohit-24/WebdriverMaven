@@ -1,781 +1,896 @@
-Absolutely Rohit. Since you're new to Trade Finance and LOTS, I would not memorize screens individually. Instead, understand it as a story.
+Absolutely Rohit. Since you're joining **Lloyds Bank and learning LOTS (Lloyds Online Trade Services)** from a QA Lead perspective, I would create a **single reference document** instead of screen-wise notes.
 
-# LOTS (Lloyds Online Trade Services) - Client Side Administration Reference Guide
-
-**Version 1.0 (Beginner Friendly)**
+This can become your personal Confluence.
 
 ---
 
-# 1. First understand where LOTS fits
+# LOTS (Lloyds Online Trade Services) - Client Side Functional Documentation
+
+# 1. What is LOTS?
+
+LOTS = Lloyds Online Trade Services.
+
+A portal used by corporate customers to initiate and manage trade finance transactions online.
+
+Think of it as:
 
 ```text
-Customer (Wipro)
+Customer
 
 ↓
 
-LOTS (Customer Portal)
+LOTS Portal
 
 ↓
 
-TACC (Translator/Interface Layer)
+Lloyds Trade Finance Team
 
 ↓
 
-TAE (Fusion Trade Innovation)
-
-↓
-
-Lloyds Back Office
+Back-end systems (Finastra TI/FTI)
 ```
 
-**Simple explanation:**
+Customers no longer send paper forms.
 
-* Customer logs into LOTS
-* Customer creates Trade Finance transactions
-* LOTS sends data to TACC
-* TACC converts messages into TAE format
-* TAE processes transactions
+They create transactions online.
 
 ---
 
-# 2. Two sides of LOTS
+# Main Products inside Trade Services
 
-## Bank Side
+| Product                        | Purpose                           | Who uses it |
+| ------------------------------ | --------------------------------- | ----------- |
+| Import Letter of Credit (ILC)  | Buyer requests bank to pay seller | Importer    |
+| Export Collection (EC)         | Seller asks bank to collect money | Exporter    |
+| Import Collection (IC)         | Buyer receives documents and pays | Importer    |
+| Undertaking Issuance (BG/SBLC) | Customer requests bank guarantee  | Applicant   |
 
-Used by Lloyds employees.
+---
 
-Activities:
+# Universal Workflow (applies to almost all products)
 
 ```text
-Create company
+Create Transaction
 
-Create first admin user
+↓
 
-Assign products
+Save Draft
 
-Share credentials
+↓
+
+Submit
+
+↓
+
+Pending Your Approval
+
+↓
+
+Pending At Bank
+
+↓
+
+Live
+
+↓
+
+Closed
 ```
 
 ---
 
-## Client Side ⭐ (your screenshots)
+# Universal Dashboard Tabs
 
-Used by customer administrators.
+| Tab                   | Meaning                        |
+| --------------------- | ------------------------------ |
+| Live                  | Active transactions            |
+| Draft                 | Saved but not submitted        |
+| Actions               | Bank/customer action required  |
+| Pending Your Approval | Awaiting checker approval      |
+| Pending At Bank       | Submitted and under processing |
+| Rejected              | Bank rejected                  |
+| Closed                | Completed/expired/cancelled    |
+
+---
+
+# 1. IMPORT LETTER OF CREDIT (ILC)
+
+# Business Flow
+
+```text
+Buyer (Applicant)
+
+↓
+
+Lloyds Bank
+
+↓
+
+Seller (Beneficiary)
+```
+
+### Example
+
+```text
+India importer buys machinery from Germany.
+
+Importer:
+
+I want bank to guarantee payment.
+
+Lloyds issues LC.
+
+Seller ships goods.
+
+Seller gets paid.
+```
+
+---
+
+# Import LC Screens
+
+# Section 1 : General Details
+
+Purpose:
+
+Basic LC setup.
+
+Fields:
+
+```text
+Mode Of Transmission
+SWIFT/Courier/PDF
+
+Expiry Date
+
+Place Of Expiry
+
+Applicable Rules
+
+Feature Of LC
+
+Confirmation Instruction
+
+Customer Reference
+
+Beneficiary Reference
+```
+
+---
+
+## Important concepts
+
+### SWIFT
+
+Secure banking network.
+
+---
+
+### Feature of LC
+
+Usually:
+
+```text
+Irrevocable
+
+Transferable
+
+Non-transferable
+```
+
+Irrevocable = Cannot cancel without all parties agreeing.
+
+---
+
+### Applicable Rules
+
+Usually:
+
+```text
+UCP600
+
+eUCP
+```
+
+UCP = Global LC rules.
+
+---
+
+# Section 2 : Applicant and Beneficiary
+
+## Applicant
+
+Buyer.
 
 Example:
 
 ```text
-Customer = Wipro
-```
-
-Activities:
-
-```text
-Manage users
-
-Manage alerts
-
-Manage banks
-
-Manage reports
-
-Monitor activities
+ABC India Ltd
 ```
 
 ---
 
-# 3. Client Side Administration Menu
+## Beneficiary
 
-```text
-Administration
-
-├── Change Profile
-├── Entity Maintenance
-├── Jurisdiction Maintenance
-├── User Maintenance
-├── Data Maintenance
-├── Alerts Maintenance
-├── Report Designer
-└── Audit Queries
-```
-
----
-
-# 4. Change Profile
-
-### Purpose
-
-Update your own profile.
-
-### Practical example
-
-Rajesh changes:
-
-```text
-Phone Number
-
-Email
-
-Preferred Language
-```
-
-### Remember
-
-```text
-My Profile = My Settings
-```
-
----
-
-# 5. Entity Maintenance
-
-### Purpose
-
-Maintain business entities/departments.
-
-### Example
-
-Wipro has:
-
-```text
-Wipro Imports
-
-Wipro Exports
-
-Wipro Treasury
-```
-
-These become entities.
-
-### Why?
-
-Transactions belong to an entity.
+Seller.
 
 Example:
 
 ```text
-Import LC
-
-↓
-
-Entity = Wipro Imports
+XYZ Germany GmbH
 ```
 
 ---
 
-# 6. Jurisdiction Maintenance
+# Section 3 : Bank Details
 
-### Purpose
+Fields:
 
-Maintain countries/regions.
+```text
+Recipient Bank
 
-### Example
+Issuing Bank
+
+Advising Bank
+
+Direct
+
+Indirect
+
+SWIFT code
+```
+
+---
+
+## Direct
+
+```text
+Applicant
+
+↓
+
+Lloyds
+
+↓
+
+Beneficiary
+```
+
+---
+
+## Indirect
+
+```text
+Applicant
+
+↓
+
+Lloyds
+
+↓
+
+Advising Bank
+
+↓
+
+Beneficiary
+```
+
+---
+
+# Section 4 : Amount And Confirmation Details
+
+Fields:
+
+```text
+LC Amount
+
+Tolerance %
+
+Currency
+
+Confirmation Charges
+
+Additional Amount Details
+```
+
+---
+
+## Variation In Drawing
+
+Example:
+
+```text
+100,000 USD
+
+5%
+
+Allowed:
+95k -105k
+```
+
+---
+
+## Confirmation Charges
+
+Who pays fees?
+
+```text
+Applicant
+
+Beneficiary
+
+Shared
+```
+
+---
+
+# Section 5 : Payment Details
+
+Fields:
+
+```text
+Credit Available With
+
+Credit Available By
+
+Payment At
+```
+
+---
+
+## Credit Available By
+
+### Payment
+
+Immediate payment.
+
+---
+
+### Acceptance
+
+Pay later after accepted bill.
+
+---
+
+### Deferred Payment
+
+Pay after certain days.
+
+---
+
+### Negotiation
+
+Any nominated bank can pay.
+
+---
+
+### Mixed Payment
+
+Combination.
+
+---
+
+## Payment/Draft At
+
+### Sight
+
+Immediate payment.
+
+### Usance
+
+Future payment.
+
+---
+
+# Section 6 : Shipment Details
+
+Fields:
+
+```text
+Country Of Origin
+
+Shipment From
+
+Shipment To
+
+Port Of Loading
+
+Port Of Discharge
+
+Last Shipment Date
+
+Shipment Narrative
+
+Partial Shipment
+
+Transshipment
+
+Incoterms
+
+Named Place
+```
+
+---
+
+## Partial Shipment
+
+Allowed:
+
+```text
+100 TVs
+
+50 today
+
+50 tomorrow
+```
+
+---
+
+## Transshipment
+
+Goods change vessel.
 
 ```text
 India
 
-USA
+↓
 
 Singapore
+
+↓
 
 UK
 ```
 
-### Why?
+---
 
-Different countries have different trade rules.
+## Incoterms
+
+Very important.
+
+| Incoterm | Meaning                    |
+| -------- | -------------------------- |
+| EXW      | Buyer responsible          |
+| FOB      | Seller loads ship          |
+| CIF      | Seller includes insurance  |
+| DDP      | Seller delivers everything |
 
 ---
 
-# 7. User Maintenance
+# Section 7 : Narrative Details
 
-### Purpose
-
-Create customer users.
-
-### Example
+Tabs:
 
 ```text
-Rajesh
+Description Of Goods
 
-Priya
+Documents Required
 
-Anil
-```
+Additional Instructions
 
-Assign roles.
-
-```text
-Rajesh = Maker
-
-Priya = Checker
-
-Anil = Approver
+Other Details
 ```
 
 ---
 
-# 8. Roles
-
-### Purpose
-
-Control permissions.
-
-### Practical example
-
-| Role         | Permission          |
-| ------------ | ------------------- |
-| Maker        | Create transactions |
-| Checker      | Verify transactions |
-| Release User | Final approval      |
-| Viewer       | Read only           |
-
----
-
-# 9. Data Maintenance
-
-This contains several modules.
-
-## A. Banks
-
-### Example
+## Description Of Goods
 
 ```text
-Lloyds
-
-HSBC
-
-JP Morgan
+1000 laptops
 ```
 
-Frequently used banks.
+---
+
+## Documents Required
+
+```text
+Invoice
+
+Packing list
+
+Bill of lading
+
+Insurance certificate
+```
 
 ---
 
-## B. Counterparties
+## Additional Instructions
 
-### What is Counterparty?
+Special conditions.
 
-Other businesses involved in trade.
+---
 
-### Example
+# Section 8 : Instructions To Bank
+
+Fields:
 
 ```text
-Wipro (customer)
+Principal Account
+
+Fee Account
+
+Other Instructions
+```
+
+---
+
+# Section 9 : Attachments
+
+Upload:
+
+```text
+Invoice
+
+PO
+
+Contract
+
+Certificates
+```
+
+---
+
+# Section 10 : Preview
+
+Read-only summary.
+
+---
+
+# 2. EXPORT COLLECTION (EC)
+
+# Business Flow
+
+```text
+Exporter
 
 ↓
 
-Dell USA
+Lloyds
 
-Apple Singapore
+↓
 
-Samsung Korea
+Importer's Bank
+
+↓
+
+Importer
 ```
+
+Bank does NOT guarantee payment.
+
+Only collects money.
 
 ---
 
-## C. Accounts
+# Sections
 
-### Example
+## 1 General Details
 
 ```text
-GBP Account
+Collection Type
 
-USD Account
+Regular
 
-EUR Account
+Direct Bank
+
+Template
+
+Customer Reference
 ```
-
-These accounts are used during transactions.
 
 ---
 
-## D. Phrases
+## 2 Drawer and Drawee
 
-Reusable text templates.
+### Drawer
 
-### Static Phrase
+Exporter.
 
-Always same.
+### Drawee
+
+Importer.
+
+---
+
+## 3 Bank Details
+
+Remitting bank details.
+
+Collecting bank details.
+
+---
+
+## 4 Payment and Amount Details
+
+```text
+Collection Amount
+
+Currency
+
+Charges
+```
+
+---
+
+## 5 Shipment Details
+
+Same as Import LC.
+
+---
+
+## 6 Collection Instructions
+
+Instructions to collecting bank.
 
 Example:
 
 ```text
-Thank you for your business.
+Release documents against payment.
 ```
 
 ---
 
-### Dynamic Phrase
+## 7 Attachments
 
-Changes based on transaction.
+Upload documents.
 
-Example:
+---
+
+## 8 Preview
+
+Summary.
+
+---
+
+# 3. UNDERTAKING ISSUANCE (Guarantee/SBLC)
+
+# Business Flow
 
 ```text
-Import LC Number : ${LC_NUMBER}
+Applicant
+
+↓
+
+Lloyds
+
+↓
+
+Beneficiary
 ```
 
-Output:
+Bank promises to pay if applicant fails.
+
+---
+
+# Types
 
 ```text
-Import LC Number : LC123456
+Performance Guarantee
+
+Bid Bond
+
+Advance Payment Guarantee
+
+Standby LC
 ```
 
 ---
 
-# 10. Alerts Maintenance
+# Sections
 
-Purpose:
+# 1 General Details
 
-Send automatic email notifications.
+```text
+Transmission
+
+SWIFT
+
+Courier
+
+PDF
+
+Create From
+
+Template
+
+Existing Undertaking
+
+References
+```
 
 ---
 
-## Types of alerts
+# 2 Applicant And Beneficiary
 
-### Submission Alert
+Applicant:
 
-Trigger:
+Customer requesting guarantee.
 
-```text
-Transaction submitted
-```
+Beneficiary:
 
-Example:
-
-```text
-Import LC submitted
-```
-
-Email sent.
+Protected party.
 
 ---
 
-### Calendar Alert
-
-Trigger:
+# 3 Bank Details
 
 ```text
-Issue Date
+Recipient Bank
+
+Issuing Bank
+
+Advising Bank
+
+SWIFT
+
+Direct
+
+Indirect
+```
+
+---
+
+# 4 Undertaking Details
+
+Usually:
+
+```text
+Guarantee Amount
+
+Currency
 
 Expiry Date
 
-Amendment Date
+Claim Expiry
+
+Guarantee Type
+
+Purpose
 ```
+
+---
+
+# 5 Instructions For Bank
+
+```text
+Debit Account
+
+Fee Account
+
+Special Instructions
+```
+
+---
+
+# 6 Attachments
+
+Upload supporting documents.
+
+---
+
+# 7 Preview
+
+Read-only summary.
+
+---
+
+# Undertaking Additional Actions
+
+## Correspondence
+
+Communication.
 
 Example:
 
 ```text
-LC expires in 5 days
-```
+Extend expiry
 
-Email sent.
+Increase amount
 
----
-
-### Account Balance Alert
-
-Trigger:
-
-```text
-Balance threshold reached
-```
-
-Example:
-
-```text
-GBP Account
-
-< 1,000,000 GBP
-```
-
-Email sent.
-
----
-
-# 11. Alert recipients ⭐
-
-| Recipient        | Meaning                    |
-| ---------------- | -------------------------- |
-| Input User       | Creator                    |
-| Control User     | Checker                    |
-| Release User     | Final Approver             |
-| Custom Recipient | Any email                  |
-| Contact Person   | Registered company contact |
-
----
-
-# Practical example
-
-```text
-Rajesh creates Import LC
-
-↓
-
-Input User notified
-
-↓
-
-Priya verifies
-
-↓
-
-Control User notified
-
-↓
-
-Anil approves
-
-↓
-
-Release User notified
+Additional documents
 ```
 
 ---
 
-# 12. Report Designer
+## Cancel
 
-Purpose:
-
-Customers create their own reports.
-
-### Example
-
-```text
-Report Name
-
-Monthly Import LC Report
-```
-
-Product:
-
-```text
-Import LC
-```
-
-Entity:
-
-```text
-Wipro Imports
-```
-
-Output:
-
-```text
-All Import LC transactions
-```
+Close guarantee.
 
 ---
 
-## Public Report
+## View
 
-```text
-Everyone can use
-```
-
-## Private Report
-
-```text
-Only creator can use
-```
+Read-only.
 
 ---
 
-## Multi-product report
+## Set Entity
 
-```text
-Import LC
-
-Guarantee
-
-SBLC
-```
-
-Single report.
+Switch legal company.
 
 ---
 
-# 13. Audit Queries ⭐
+# Important Trade Finance Actors
 
-This is extremely important.
-
-Banks always ask:
-
-```text
-Who?
-
-What?
-
-When?
-
-Was it successful?
-```
-
-LOTS stores everything.
+| Actor          | Meaning                         |
+| -------------- | ------------------------------- |
+| Applicant      | Customer requesting transaction |
+| Beneficiary    | Party receiving benefit         |
+| Issuing Bank   | Bank issuing instrument         |
+| Advising Bank  | Bank forwarding message         |
+| Nominated Bank | Bank authorized to pay          |
+| Drawer         | Exporter                        |
+| Drawee         | Importer                        |
 
 ---
 
-# Audit Types
+# Trade Finance Dictionary (Must Remember)
 
-## A. Login Audit
-
-Question:
-
-```text
-Who logged into LOTS?
-```
-
-Example:
-
-```text
-Rajesh
-
-10-Jun
-
-9:00 AM
-
-Successful
-```
+| Term             | Meaning                       |
+| ---------------- | ----------------------------- |
+| LC               | Letter of Credit              |
+| BG               | Bank Guarantee                |
+| SBLC             | Standby Letter of Credit      |
+| UCP600           | Global LC rules               |
+| SWIFT            | Banking network               |
+| Sight            | Immediate payment             |
+| Usance           | Future payment                |
+| Partial Shipment | Multiple shipments            |
+| Transshipment    | Change vessel                 |
+| Incoterms        | Delivery responsibility rules |
 
 ---
 
-## B. Product Audit
+# QA Lead Cheat Sheet
 
-Question:
+For every LOTS screen verify:
 
-```text
-What happened to transactions?
-```
+### UI
 
-Example:
+* Mandatory fields
+* Field length
+* Dropdown values
+* Date validations
 
-```text
-Import LC created
+### Workflow
 
-Guarantee approved
+* Save draft
+* Submit
+* Approve
+* Reject
+* Cancel
 
-SBLC rejected
-```
+### Business validations
 
----
+* Applicant ≠ Beneficiary
+* Expiry > Shipment date
+* Amount > 0
+* Mandatory documents uploaded
 
-## C. System Features Audit
+### Security
 
-Question:
-
-```text
-What administration activities happened?
-```
-
-Example:
-
-```text
-Change profile
-
-Update user
-
-Change preferences
-```
+* Entity access
+* Role access
+* Maker-checker access
 
 ---
 
-# 14. LOTS lifecycle (Most important)
-
-```text
-Lloyds
-
-↓
-
-Create company
-
-↓
-
-Create admin user
-
-↓
-
-Share credentials
-
-↓
-
-Customer logs into LOTS
-
-↓
-
-Create users
-
-↓
-
-Assign roles
-
-↓
-
-Configure data
-
-↓
-
-Configure alerts
-
-↓
-
-Create transactions
-
-↓
-
-Generate reports
-
-↓
-
-Monitor audits
-```
-
----
-
-# 15. End-to-end practical story
-
-### Wipro onboarding
-
-### Step 1
-
-Lloyds creates:
-
-```text
-Company = Wipro
-```
-
----
-
-### Step 2
-
-Creates admin user:
-
-```text
-admin@wipro.com
-```
-
----
-
-### Step 3
-
-Admin logs in.
-
-Creates users.
-
-```text
-Rajesh
-
-Priya
-
-Anil
-```
-
----
-
-### Step 4
-
-Creates entities.
-
-```text
-Wipro Imports
-
-Wipro Exports
-```
-
----
-
-### Step 5
-
-Configures alerts.
-
-```text
-Notify treasury team if
-
-Import LC > GBP 1M
-```
-
----
-
-### Step 6
-
-Creates transaction.
-
-```text
-Import LC
-
-↓
-
-Checker
-
-↓
-
-Approver
-
-↓
-
-Lloyds
-```
-
----
-
-# 16. LOTS cheat sheet (1 page)
-
-```text
-Change Profile
-= My profile
-
-Entity Maintenance
-= Business units
-
-Jurisdiction Maintenance
-= Countries
-
-User Maintenance
-= Users
-
-Data Maintenance
-= Banks, Accounts, Counterparties, Phrases
-
-Alerts Maintenance
-= Email notifications
-
-Report Designer
-= Customer reports
-
-Audit Queries
-= Activity history
-```
-
-# 17. Since you're joining Lloyds, this is the order I recommend learning
+# Suggested 4-week learning order
 
 ```text
 Week 1
-
-✓ LOTS Architecture
-
-✓ Client Side Administration
+Trade Finance basics + Import LC
 
 Week 2
-
-✓ Import LC
-
-✓ Export LC
+Export Collection + Import Collection
 
 Week 3
-
-✓ Guarantees
-
-✓ SBLC
+Undertakings + Guarantees
 
 Week 4
-
-✓ Collections
-
-✓ End-to-end flow LOTS → TACC → TAE
+End-to-end LOTS workflows + Maker Checker + Status transitions
 ```
 
-**My advice: Don't try to memorize every screen. For every new screen, ask only one question:**
-
-> **Is this screen configuring something, creating a transaction, sending a notification, creating a report, or auditing an activity?**
-
-95% of LOTS becomes easy after that.
+I also recommend creating a **50-60 page "LOTS QA Lead Handbook"** over the next few days because that will be extremely useful for your Lloyds onboarding.
