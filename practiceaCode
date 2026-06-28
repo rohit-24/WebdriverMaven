@@ -132,3 +132,86 @@ Update this Playwright spec to use the new app fixture instead of individual pag
 Keep the test logic identical.
 
 Return only the updated spec.
+
+
+prompt 1
+
+You are a Senior Test Automation Architect specializing in Playwright, JavaScript, SOLID principles, and scalable automation frameworks.
+
+Analyze ONLY the currently opened files.
+
+Current framework:
+
+- We use Playwright fixtures extensively.
+- Each page object is exposed as an individual fixture.
+- Example fixtures:
+    - lotsLoginPage
+    - lotsDashboardPage
+    - lotsImportLetterOfCreditPage
+    - tiPlusLoginPage
+    - tiPlusDashboardPage
+    - tiPlusILCIssuancePage
+    - releaseItemsPage
+
+Each fixture simply creates a page object, for example:
+
+lotsLoginPage: async ({ page }, use) => {
+    await use(new LotsLoginPage(page));
+}
+
+Problem:
+
+Spec files receive 8–15 page fixtures, making them difficult to read and maintain.
+
+Goal:
+
+Introduce a new grouped fixture named "app" without changing any existing business logic.
+
+Expected structure:
+
+app
+ ├── lots
+ │      ├── login
+ │      ├── dashboard
+ │      ├── importLetterOfCredit
+ │      └── ...
+ │
+ ├── tiPlus
+ │      ├── login
+ │      ├── dashboard
+ │      ├── ilcIssuance
+ │      └── ...
+ │
+ └── release
+        └── items
+
+Requirements:
+
+1. Modify ONLY the fixture file (base-test.js).
+2. Do NOT modify any Page Object classes.
+3. Do NOT modify helper classes.
+4. Do NOT modify spec files.
+5. Preserve all existing fixtures for backward compatibility.
+6. Add the new app fixture alongside the existing fixtures.
+7. Reuse the existing page object constructors.
+8. Keep the implementation clean and maintainable.
+9. Ensure no existing tests break.
+
+Return:
+
+1. Updated base-test.js
+2. Complete implementation of the new app fixture
+3. Example of how a future test can use:
+
+test(async ({ app }) => {
+
+    await app.lots.login.login();
+
+    await app.lots.dashboard.openTrade();
+
+    await app.tiPlus.login.login();
+
+});
+
+4. Explain why this design is better and how it supports gradual migration.
+
