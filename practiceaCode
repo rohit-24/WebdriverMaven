@@ -1,102 +1,13 @@
-You are a Senior Test Automation Architect with expertise in Playwright, JavaScript, Page Object Model, SOLID principles, and enterprise automation frameworks.
+You are a Senior Playwright Automation Architect.
 
-Analyze the currently opened Playwright test, fixtures, helper classes, and related page objects.
+The project now contains a new grouped fixture called "app".
 
-Current architecture:
+Analyze ONLY the currently opened files.
 
-- Spec file receives 8-15 fixtures such as:
-  - lotsLoginPage
-  - lotsDashboardPage
-  - lotsImportLetterOfCreditPage
-  - tiPlusLoginPage
-  - tiPlusDashboardPage
-  - tiPlusILCIssuancePage
-  - releaseItemsPage
-  - workerCredentials
-  - page
-  - etc.
+Refactor the spec and helper to use the new app fixture instead of passing individual page object fixtures.
 
-- Spec passes almost all fixtures into a Helper class.
+Current helper constructor accepts many page objects like:
 
-- Helper class is more than 500 lines long and orchestrates the complete business workflow.
-
-- Each fixture simply instantiates a page object:
-  await use(new LotsLoginPage(page));
-
-Problems I want to solve:
-
-1. Reduce the number of fixtures exposed to the spec.
-2. Avoid passing 10-15 constructor parameters.
-3. Group page objects logically.
-4. Improve readability.
-5. Follow SOLID principles.
-6. Keep Page Objects unchanged as much as possible.
-7. Avoid changing business behaviour.
-8. Perform an incremental refactoring, not a complete rewrite.
-
-Refactor using the following architecture:
-
-app
- ├── lots
- │      ├── login
- │      ├── dashboard
- │      ├── importLetterOfCredit
- │      ├── exportCollection
- │      └── ...
- │
- ├── tiPlus
- │      ├── login
- │      ├── dashboard
- │      ├── issuance
- │      ├── amend
- │      └── ...
- │
- └── release
-
-services
- ├── assertions
- ├── commonUtilities
- ├── commonActions
- ├── xray
- └── logger
-
-context
- ├── page
- ├── testInfo
- └── workerCredentials
-
-The spec should become similar to:
-
-test("ILC Issue", async ({ app, services, context, testData }) => {
-
-    const workflow = new ILCIssuanceWorkflow({
-        app,
-        services,
-        context,
-        testData
-    });
-
-    await workflow.execute();
-});
-
-The workflow class should orchestrate only the business flow and should not directly expose many constructor dependencies.
-
-Return:
-
-1. Refactored fixture code
-2. App object implementation
-3. Updated spec
-4. Updated workflow/helper
-5. Folder structure
-6. Explain every design decision
-7. Mention pros and cons
-8. Ensure existing tests continue to work.
-
-
-
-Create an App fixture by grouping all Playwright page object fixtures.
-
-Current fixtures:
 - lotsLoginPage
 - lotsDashboardPage
 - lotsImportLetterOfCreditPage
@@ -105,113 +16,35 @@ Current fixtures:
 - tiPlusILCIssuancePage
 - releaseItemsPage
 
-Return:
-- app.fixture.js
-- App object
-- Example usage
-
-Do not change existing Page Objects.
-
-
-Refactor this helper class to reduce constructor dependencies.
-
-Current constructor accepts 15 parameters.
-
-Group them into:
-- app
-- services
-- context
-- testData
-
-Do not change business logic.
-
-Return the updated helper class.
-
-Update this Playwright spec to use the new app fixture instead of individual page fixtures.
-
-Keep the test logic identical.
-
-Return only the updated spec.
-
-
-prompt 1
-
-You are a Senior Test Automation Architect specializing in Playwright, JavaScript, SOLID principles, and scalable automation frameworks.
-
-Analyze ONLY the currently opened files.
-
-Current framework:
-
-- We use Playwright fixtures extensively.
-- Each page object is exposed as an individual fixture.
-- Example fixtures:
-    - lotsLoginPage
-    - lotsDashboardPage
-    - lotsImportLetterOfCreditPage
-    - tiPlusLoginPage
-    - tiPlusDashboardPage
-    - tiPlusILCIssuancePage
-    - releaseItemsPage
-
-Each fixture simply creates a page object, for example:
-
-lotsLoginPage: async ({ page }, use) => {
-    await use(new LotsLoginPage(page));
-}
-
-Problem:
-
-Spec files receive 8–15 page fixtures, making them difficult to read and maintain.
-
-Goal:
-
-Introduce a new grouped fixture named "app" without changing any existing business logic.
-
-Expected structure:
+Replace these with:
 
 app
- ├── lots
- │      ├── login
- │      ├── dashboard
- │      ├── importLetterOfCredit
- │      └── ...
- │
- ├── tiPlus
- │      ├── login
- │      ├── dashboard
- │      ├── ilcIssuance
- │      └── ...
- │
- └── release
-        └── items
+
+The helper should internally access:
+
+app.lots.login
+app.lots.dashboard
+app.lots.importLetterOfCredit
+
+app.tiPlus.login
+app.tiPlus.dashboard
+app.tiPlus.ilcIssuance
+
+app.release.items
 
 Requirements:
 
-1. Modify ONLY the fixture file (base-test.js).
-2. Do NOT modify any Page Object classes.
-3. Do NOT modify helper classes.
-4. Do NOT modify spec files.
-5. Preserve all existing fixtures for backward compatibility.
-6. Add the new app fixture alongside the existing fixtures.
-7. Reuse the existing page object constructors.
-8. Keep the implementation clean and maintainable.
-9. Ensure no existing tests break.
+- Preserve business logic.
+- Do not change page object methods.
+- Do not modify any page object class.
+- Refactor constructor only.
+- Refactor createILCTransaction().
+- Keep readability high.
+- Reduce constructor dependencies.
 
 Return:
 
-1. Updated base-test.js
-2. Complete implementation of the new app fixture
-3. Example of how a future test can use:
-
-test(async ({ app }) => {
-
-    await app.lots.login.login();
-
-    await app.lots.dashboard.openTrade();
-
-    await app.tiPlus.login.login();
-
-});
-
-4. Explain why this design is better and how it supports gradual migration.
-
+1. Updated spec
+2. Updated helper constructor
+3. Updated createILCTransaction()
+4. Explain all changes.
