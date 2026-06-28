@@ -1,462 +1,134 @@
-Yes. Since you're learning **LOTS client-side**, it's useful to have **realistic but fictitious test data** that can be reused across all products.
+You are a Senior Test Automation Architect with expertise in Playwright, JavaScript, Page Object Model, SOLID principles, and enterprise automation frameworks.
+
+Analyze the currently opened Playwright test, fixtures, helper classes, and related page objects.
+
+Current architecture:
+
+- Spec file receives 8-15 fixtures such as:
+  - lotsLoginPage
+  - lotsDashboardPage
+  - lotsImportLetterOfCreditPage
+  - tiPlusLoginPage
+  - tiPlusDashboardPage
+  - tiPlusILCIssuancePage
+  - releaseItemsPage
+  - workerCredentials
+  - page
+  - etc.
+
+- Spec passes almost all fixtures into a Helper class.
+
+- Helper class is more than 500 lines long and orchestrates the complete business workflow.
+
+- Each fixture simply instantiates a page object:
+  await use(new LotsLoginPage(page));
+
+Problems I want to solve:
+
+1. Reduce the number of fixtures exposed to the spec.
+2. Avoid passing 10-15 constructor parameters.
+3. Group page objects logically.
+4. Improve readability.
+5. Follow SOLID principles.
+6. Keep Page Objects unchanged as much as possible.
+7. Avoid changing business behaviour.
+8. Perform an incremental refactoring, not a complete rewrite.
 
-**Do not use this in Production. Use only for SIT/UAT/learning purposes.**
+Refactor using the following architecture:
 
-# Common Master Test Data
+app
+ ├── lots
+ │      ├── login
+ │      ├── dashboard
+ │      ├── importLetterOfCredit
+ │      ├── exportCollection
+ │      └── ...
+ │
+ ├── tiPlus
+ │      ├── login
+ │      ├── dashboard
+ │      ├── issuance
+ │      ├── amend
+ │      └── ...
+ │
+ └── release
 
-## Entity (Customer)
+services
+ ├── assertions
+ ├── commonUtilities
+ ├── commonActions
+ ├── xray
+ └── logger
 
-```text
-Entity Code : ALITTNER01M1
+context
+ ├── page
+ ├── testInfo
+ └── workerCredentials
 
-Company Name : Alex Littner Test Ltd
+The spec should become similar to:
 
-Customer Reference : UI6241A4
+test("ILC Issue", async ({ app, services, context, testData }) => {
 
-Country : United Kingdom
+    const workflow = new ILCIssuanceWorkflow({
+        app,
+        services,
+        context,
+        testData
+    });
 
-Address Line 1 : 10 Bishopsgate
+    await workflow.execute();
+});
 
-Address Line 2 : London
+The workflow class should orchestrate only the business flow and should not directly expose many constructor dependencies.
 
-Post Code : EC2N 4BQ
+Return:
 
-SWIFT : LOYDGB2LXXX
+1. Refactored fixture code
+2. App object implementation
+3. Updated spec
+4. Updated workflow/helper
+5. Folder structure
+6. Explain every design decision
+7. Mention pros and cons
+8. Ensure existing tests continue to work.
 
-Email : trade.finance@testcompany.co.uk
-```
 
----
 
-# 1. Import Letter Of Credit (ILC)
+Create an App fixture by grouping all Playwright page object fixtures.
 
-## Scenario
+Current fixtures:
+- lotsLoginPage
+- lotsDashboardPage
+- lotsImportLetterOfCreditPage
+- tiPlusLoginPage
+- tiPlusDashboardPage
+- tiPlusILCIssuancePage
+- releaseItemsPage
 
-UK buyer purchasing laptops from Germany.
+Return:
+- app.fixture.js
+- App object
+- Example usage
 
-### General Details
+Do not change existing Page Objects.
 
-```text
-Mode Of Transmission : SWIFT
 
-Expiry Date : 31/12/2026
+Refactor this helper class to reduce constructor dependencies.
 
-Place Of Expiry : London
+Current constructor accepts 15 parameters.
 
-Applicable Rules : UCP Latest Version (UCP600)
+Group them into:
+- app
+- services
+- context
+- testData
 
-Feature Of LC : Irrevocable, Non Transferable
+Do not change business logic.
 
-Customer Reference : ILC-2026-001
+Return the updated helper class.
 
-Beneficiary Reference : INV-98765
-```
+Update this Playwright spec to use the new app fixture instead of individual page fixtures.
 
----
+Keep the test logic identical.
 
-## Applicant
-
-```text
-ABC Retail UK Ltd
-
-10 Bishopsgate
-
-London
-
-EC2N 4BQ
-
-United Kingdom
-```
-
----
-
-## Beneficiary
-
-```text
-Tech GmbH
-
-Alexanderplatz 5
-
-Berlin
-
-10178
-
-Germany
-```
-
----
-
-## Bank Details
-
-```text
-Recipient Bank : Lloyds Bank PLC
-
-Issuing Bank : Lloyds Bank PLC
-
-Advising Bank : Deutsche Bank AG
-
-SWIFT : DEUTDEFFXXX
-
-Direct : No
-
-Indirect : Yes
-```
-
----
-
-## Amount Details
-
-```text
-Currency : USD
-
-LC Amount : 100000
-
-Tolerance : 5%
-
-Confirmation Charges : Applicant
-
-Additional Amount : Freight Included
-```
-
----
-
-## Payment Details
-
-```text
-Credit Available With : Issuing Bank
-
-Credit Available By : Payment
-
-Payment At : Sight
-```
-
----
-
-## Shipment Details
-
-```text
-Country Of Origin : Germany
-
-Shipment From : Hamburg
-
-Shipment To : London
-
-Place Of Loading : Hamburg Port
-
-Place Of Discharge : London Gateway Port
-
-Last Shipment Date : 15/11/2026
-
-Partial Shipment : Allowed
-
-Transshipment : Allowed
-
-Incoterms : CIF
-
-Named Place : London Gateway
-```
-
----
-
-## Narrative Details
-
-### Description Of Goods
-
-```text
-1000 Dell Latitude laptops
-Model 7450
-```
-
-### Documents Required
-
-```text
-Commercial Invoice
-
-Packing List
-
-Bill Of Lading
-
-Insurance Certificate
-```
-
-### Additional Instructions
-
-```text
-Documents must be presented within 21 days after shipment.
-```
-
----
-
-## Instructions To Bank
-
-```text
-Principal Account : 12345678901
-
-Fee Account : 12345678902
-
-Other Instructions :
-Please process urgently.
-```
-
----
-
-# 2. Export Collection (EC)
-
-## Scenario
-
-UK exporter selling medical equipment to France.
-
-### General Details
-
-```text
-Collection Type : Regular
-
-Mode : Direct Bank
-
-Customer Reference : EC-2026-001
-```
-
----
-
-## Drawer (Exporter)
-
-```text
-Health Devices UK Ltd
-
-London
-
-United Kingdom
-```
-
----
-
-## Drawee (Importer)
-
-```text
-Med Equip SAS
-
-Paris
-
-France
-```
-
----
-
-## Bank Details
-
-```text
-Remitting Bank :
-Lloyds Bank PLC
-
-Collecting Bank :
-BNP Paribas
-
-SWIFT :
-BNPAFRPPXXX
-```
-
----
-
-## Payment Details
-
-```text
-Currency : EUR
-
-Collection Amount : 50000
-
-Charges : Drawee
-```
-
----
-
-## Shipment Details
-
-```text
-Shipment From : London
-
-Shipment To : Paris
-
-Last Shipment Date : 10/10/2026
-```
-
----
-
-## Collection Instructions
-
-```text
-Release documents against payment (D/P).
-```
-
----
-
-# 3. Undertaking (Bank Guarantee)
-
-## Scenario
-
-Construction company participating in government project.
-
-### General Details
-
-```text
-Mode Of Transmission : SWIFT
-
-Customer Reference : BG-2026-001
-
-Beneficiary Reference : GOV-ROAD-001
-```
-
----
-
-## Applicant
-
-```text
-ABC Construction Ltd
-
-20 Canary Wharf
-
-London
-
-E14 5AB
-
-United Kingdom
-```
-
----
-
-## Beneficiary
-
-```text
-UK Department Of Transport
-
-Great Minster House
-
-London
-
-SW1P 4DR
-
-United Kingdom
-```
-
----
-
-## Bank Details
-
-```text
-Recipient Bank : Lloyds Bank PLC
-
-Issuing Bank : Lloyds Bank PLC
-
-SWIFT : LOYDGB2LXXX
-
-Direct : Yes
-```
-
----
-
-## Undertaking Details
-
-```text
-Guarantee Type : Performance Guarantee
-
-Currency : GBP
-
-Guarantee Amount : 1000000
-
-Issue Date : 01/08/2026
-
-Expiry Date : 31/12/2027
-
-Claim Presentation Date : 31/12/2027
-```
-
----
-
-## Instructions To Bank
-
-```text
-Principal Account : 12345678901
-
-Fee Account : 12345678902
-
-Other Instructions :
-
-Issue guarantee for road construction project.
-```
-
----
-
-# QA Reusable Negative Test Data
-
-## Invalid Dates
-
-```text
-Expiry Date : 10/10/2026
-
-Shipment Date : 15/10/2026
-
-Expected :
-Validation Error
-```
-
----
-
-## Invalid Amount
-
-```text
-LC Amount : 0
-
-Expected :
-Amount should be greater than zero
-```
-
----
-
-## Invalid SWIFT
-
-```text
-ABC123
-
-Expected :
-Invalid SWIFT Code
-```
-
----
-
-## Applicant Same As Beneficiary
-
-```text
-Applicant :
-ABC Ltd
-
-Beneficiary :
-ABC Ltd
-
-Expected :
-Business Validation Error
-```
-
-# My suggestion for Lloyds onboarding
-
-Create **one reusable fictional company** and use it everywhere.
-
-```text
-Entity : ALITTNER01M1
-
-Company : Alex Littner Test Ltd
-
-Bank : Lloyds Bank PLC
-
-Country : United Kingdom
-```
-
-Then create different transactions:
-
-```text
-ILC-2026-001
-
-EC-2026-001
-
-BG-2026-001
-```
-
-This makes it much easier to understand the end-to-end LOTS flow.
+Return only the updated spec.
