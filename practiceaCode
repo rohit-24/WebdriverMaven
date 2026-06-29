@@ -1,30 +1,45 @@
-Refactor this helper class by extracting the major business steps of `createILCTransaction()` into private helper methods.
+(() => {
+  const all = [...document.querySelectorAll('*')];
 
-Requirements:
-- Do not change any business logic or execution order.
-- Do not modify any assertions or validations.
-- Do not change method signatures used by tests.
-- Keep the existing constructor unchanged.
-- Do not introduce new classes.
-- Do not use destructuring or perform any unrelated refactoring.
+  const getRole = el =>
+    el.getAttribute('role') ||
+    ({
+      BUTTON: 'button',
+      A: el.href ? 'link' : '',
+      INPUT: ({
+        text: 'textbox',
+        email: 'textbox',
+        search: 'textbox',
+        password: 'textbox',
+        checkbox: 'checkbox',
+        radio: 'radio',
+        submit: 'button',
+        button: 'button'
+      })[el.type],
+      TEXTAREA: 'textbox',
+      SELECT: 'combobox',
+      IMG: 'img'
+    })[el.tagName];
 
-The goal is to make `createILCTransaction()` read like a high-level business workflow.
+  const getName = el =>
+    el.getAttribute('aria-label') ||
+    el.labels?.[0]?.innerText ||
+    el.placeholder ||
+    el.innerText?.trim() ||
+    el.value ||
+    el.alt ||
+    '';
 
-Example structure:
+  all.forEach(el => {
+    const role = getRole(el);
+    if (!role) return;
 
-async createILCTransaction() {
-    await this.initializeTransaction();
-    await this.loginToLots();
-    await this.launchImportLetterOfCredit();
-    await this.fillGeneralDetails();
-    await this.fillPartyDetails();
-    await this.fillAmountDetails();
-    await this.submitTransaction();
-    await this.verifyTransaction();
-}
+    const name = getName(el).replace(/\s+/g, ' ').trim();
 
-Move the existing code into appropriately named helper methods without changing any functionality.
-
-Each helper method should contain one logical business operation only.
-
-Return the complete refactored helper class.
+    console.log(
+      name
+        ? `await page.getByRole('${role}', { name: '${name.replace(/'/g, "\\'")}' });`
+        : `await page.getByRole('${role}');`
+    );
+  });
+})();
