@@ -1,43 +1,57 @@
 You are a Senior Playwright Automation Architect.
 
-Analyze ONLY this helper file.
+Analyze ONLY the currently opened helper file.
 
-The helper has already been refactored to use the grouped `app` object.
+The framework has already migrated to the grouped `app` fixture. Backward compatibility is no longer required for this helper.
 
-Currently the helper still creates local aliases such as:
+Refactor this helper by removing all legacy page object dependencies and simplifying the constructor.
 
-const lotsLoginPage = app.lots.login;
-const lotsDashboardPage = app.lots.dashboard;
-const tiPlusLoginPage = app.tiPlus.login;
+Current situation:
+- The constructor still accepts both `app` and individual page objects.
+- `this.app` is initialized using `app ?? { ... }`.
+- The helper already uses `app.lots.*`, `app.tiPlus.*`, and `app.release.*` throughout the workflow.
 
-These aliases are unnecessary.
+Refactoring requirements:
 
-Refactor the helper to use the `app` object directly throughout the class.
+1. Remove all individual page object constructor parameters:
+   - lotsLoginPage
+   - lotsDashboardPage
+   - lotsImportLetterOfCreditPage
+   - tiPlusLoginPage
+   - tiPlusDashboardPage
+   - tiPlusILCIssuancePage
+   - releaseItemsPage
+   - and any other page object parameters that are now represented inside `app`.
 
-For example:
+2. Remove the fallback initialization:
 
-Replace
+```javascript
+this.app = app ?? { ... }
+```
 
-lotsLoginPage.launchLotsApp()
+Replace it with
 
-with
+```javascript
+this.app = app;
+```
 
-app.lots.login.launchLotsApp()
+3. Remove every piece of code that only existed for backward compatibility.
 
-Replace
+4. Keep using the grouped `app` object directly throughout the helper.
 
-lotsDashboardPage.launchImportLetterOfCredit()
+5. Do NOT change business logic.
 
-with
+6. Do NOT rename methods.
 
-app.lots.dashboard.launchImportLetterOfCredit()
+7. Do NOT modify Page Objects.
 
-Requirements:
+8. Do NOT modify test flow.
 
-- Do NOT change business logic.
-- Do NOT rename methods.
-- Do NOT modify Page Objects.
-- Do NOT modify the spec.
-- Only remove unnecessary local alias variables.
-- Keep functionality identical.
-- Explain every change.
+9. Remove any unused variables or imports created by the previous migration.
+
+10. Ensure the helper constructor contains only the dependencies that are still required.
+
+Finally, explain:
+- what was removed,
+- why it is now safe to remove,
+- and how the constructor became simpler.
