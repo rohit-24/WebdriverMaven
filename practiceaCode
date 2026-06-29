@@ -1,50 +1,43 @@
 You are a Senior Playwright Automation Architect.
 
-The project now contains a new grouped fixture called "app".
+Analyze ONLY this helper file.
 
-Analyze ONLY the currently opened files.
+The helper has already been refactored to use the grouped `app` object.
 
-Refactor the spec and helper to use the new app fixture instead of passing individual page object fixtures.
+Currently the helper still creates local aliases such as:
 
-Current helper constructor accepts many page objects like:
+const lotsLoginPage = app.lots.login;
+const lotsDashboardPage = app.lots.dashboard;
+const tiPlusLoginPage = app.tiPlus.login;
 
-- lotsLoginPage
-- lotsDashboardPage
-- lotsImportLetterOfCreditPage
-- tiPlusLoginPage
-- tiPlusDashboardPage
-- tiPlusILCIssuancePage
-- releaseItemsPage
+These aliases are unnecessary.
 
-Replace these with:
+Refactor the helper to use the `app` object directly throughout the class.
 
-app
+For example:
 
-The helper should internally access:
+Replace
 
-app.lots.login
-app.lots.dashboard
-app.lots.importLetterOfCredit
+lotsLoginPage.launchLotsApp()
 
-app.tiPlus.login
-app.tiPlus.dashboard
-app.tiPlus.ilcIssuance
+with
 
-app.release.items
+app.lots.login.launchLotsApp()
+
+Replace
+
+lotsDashboardPage.launchImportLetterOfCredit()
+
+with
+
+app.lots.dashboard.launchImportLetterOfCredit()
 
 Requirements:
 
-- Preserve business logic.
-- Do not change page object methods.
-- Do not modify any page object class.
-- Refactor constructor only.
-- Refactor createILCTransaction().
-- Keep readability high.
-- Reduce constructor dependencies.
-
-Return:
-
-1. Updated spec
-2. Updated helper constructor
-3. Updated createILCTransaction()
-4. Explain all changes.
+- Do NOT change business logic.
+- Do NOT rename methods.
+- Do NOT modify Page Objects.
+- Do NOT modify the spec.
+- Only remove unnecessary local alias variables.
+- Keep functionality identical.
+- Explain every change.
