@@ -1,5 +1,9 @@
 (() => {
-  const all = [...document.querySelectorAll('*')];
+  const container = document.querySelector('.your-class-name');
+  if (!container) {
+    console.error('Container not found');
+    return;
+  }
 
   const getRole = el =>
     el.getAttribute('role') ||
@@ -18,7 +22,13 @@
       })[el.type],
       TEXTAREA: 'textbox',
       SELECT: 'combobox',
-      IMG: 'img'
+      IMG: 'img',
+      H1: 'heading',
+      H2: 'heading',
+      H3: 'heading',
+      H4: 'heading',
+      H5: 'heading',
+      H6: 'heading'
     })[el.tagName];
 
   const getName = el =>
@@ -30,7 +40,7 @@
     el.alt ||
     '';
 
-  all.forEach(el => {
+  [...container.querySelectorAll('*')].forEach(el => {
     const role = getRole(el);
     if (!role) return;
 
