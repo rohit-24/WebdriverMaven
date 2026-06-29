@@ -1,57 +1,123 @@
-You are a Senior Playwright Automation Architect.
+You are a Senior Test Automation Architect specializing in Playwright, JavaScript, SOLID principles and enterprise automation frameworks.
 
-Analyze ONLY the currently opened helper file.
+Analyze ONLY the currently opened files.
 
-The framework has already migrated to the grouped `app` fixture. Backward compatibility is no longer required for this helper.
+Current architecture:
 
-Refactor this helper by removing all legacy page object dependencies and simplifying the constructor.
+- The spec creates the testData object manually.
+- The spec reads JSON using baseTest.jsonUtils.
+- The spec passes the entire testData object to the helper.
+- The helper executes the business workflow.
 
-Current situation:
-- The constructor still accepts both `app` and individual page objects.
-- `this.app` is initialized using `app ?? { ... }`.
-- The helper already uses `app.lots.*`, `app.tiPlus.*`, and `app.release.*` throughout the workflow.
+Problem:
 
-Refactoring requirements:
+The spec has too many responsibilities:
+1. Reading JSON.
+2. Building testData.
+3. Creating the helper.
+4. Executing the business workflow.
 
-1. Remove all individual page object constructor parameters:
-   - lotsLoginPage
-   - lotsDashboardPage
-   - lotsImportLetterOfCreditPage
-   - tiPlusLoginPage
-   - tiPlusDashboardPage
-   - tiPlusILCIssuancePage
-   - releaseItemsPage
-   - and any other page object parameters that are now represented inside `app`.
+The spec should only describe WHAT business scenario is being executed.
 
-2. Remove the fallback initialization:
+Refactor the framework as follows.
 
-```javascript
-this.app = app ?? { ... }
-```
+---------------------------------------
+Step 1
+---------------------------------------
 
-Replace it with
+Modify the helper so that it accepts:
 
-```javascript
-this.app = app;
-```
+- app
+- workerCredentials
+- assertions
+- commonUtilities
+- commonActions
+- testContext
+- testInfo
+- page
 
-3. Remove every piece of code that only existed for backward compatibility.
+instead of
 
-4. Keep using the grouped `app` object directly throughout the helper.
+- testData
 
-5. Do NOT change business logic.
+---------------------------------------
+Step 2
+---------------------------------------
 
-6. Do NOT rename methods.
+Modify the helper method
 
-7. Do NOT modify Page Objects.
+createILCTransaction()
 
-8. Do NOT modify test flow.
+to
 
-9. Remove any unused variables or imports created by the previous migration.
+createILCTransaction(testCaseName)
 
-10. Ensure the helper constructor contains only the dependencies that are still required.
+Example
 
-Finally, explain:
-- what was removed,
-- why it is now safe to remove,
-- and how the constructor became simpler.
+await helper.createILCTransaction("IMP_Issue_001_1");
+
+---------------------------------------
+Step 3
+---------------------------------------
+
+Inside the helper:
+
+Move the entire testData creation logic from the spec into the helper.
+
+The helper should internally:
+
+- Read JSON using the existing baseTest.jsonUtils
+- Use the existing dynamicDataPath.js constants
+- Merge workerCredentials
+- Build the same testData object
+- Continue using the existing workflow
+
+Do NOT change any business logic.
+
+---------------------------------------
+Step 4
+---------------------------------------
+
+Refactor ONLY this spec.
+
+The final spec should look similar to:
+
+test("IMP_Issue_001_1", async ({ workerCredentials, app, page }, testInfo) => {
+
+    const helper = new ILC_Issuance_Create_TestHelper({
+        app,
+        workerCredentials,
+        assertions: Assertions,
+        commonUtilities: CommonUtilities,
+        commonActions: CommonActions,
+        testContext: test,
+        testInfo,
+        page
+    });
+
+    await helper.createILCTransaction("IMP_Issue_001_1");
+
+});
+
+---------------------------------------
+Requirements
+---------------------------------------
+
+- Do NOT modify any Page Object.
+- Do NOT change Playwright fixtures.
+- Do NOT change business logic.
+- Do NOT change assertions.
+- Do NOT change reporting.
+- Do NOT change screenshots.
+- Do NOT change workflow execution.
+- Preserve existing behaviour.
+- Remove duplicated JSON loading from the spec.
+- Remove duplicated testData creation from the spec.
+- Keep the helper responsible for preparing its own testData.
+
+Finally explain:
+
+1. What responsibilities moved from the spec to the helper.
+2. Why this follows the Single Responsibility Principle.
+3. Why future test cases become shorter.
+4. Why maintenance becomes easier.
