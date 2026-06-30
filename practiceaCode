@@ -1,55 +1,176 @@
-(() => {
-  const container = document.querySelector('.your-class-name');
-  if (!container) {
-    console.error('Container not found');
-    return;
-  }
+Act as a Principal SDET / Automation Architect reviewing an enterprise Playwright automation framework.
 
-  const getRole = el =>
-    el.getAttribute('role') ||
-    ({
-      BUTTON: 'button',
-      A: el.href ? 'link' : '',
-      INPUT: ({
-        text: 'textbox',
-        email: 'textbox',
-        search: 'textbox',
-        password: 'textbox',
-        checkbox: 'checkbox',
-        radio: 'radio',
-        submit: 'button',
-        button: 'button'
-      })[el.type],
-      TEXTAREA: 'textbox',
-      SELECT: 'combobox',
-      IMG: 'img',
-      H1: 'heading',
-      H2: 'heading',
-      H3: 'heading',
-      H4: 'heading',
-      H5: 'heading',
-      H6: 'heading'
-    })[el.tagName];
+Your goal is NOT to rewrite the framework.
+Your goal is to perform a complete architecture review exactly as you would during a production code review.
 
-  const getName = el =>
-    el.getAttribute('aria-label') ||
-    el.labels?.[0]?.innerText ||
-    el.placeholder ||
-    el.innerText?.trim() ||
-    el.value ||
-    el.alt ||
-    '';
+Before suggesting improvements:
 
-  [...container.querySelectorAll('*')].forEach(el => {
-    const role = getRole(el);
-    if (!role) return;
+1. Reverse engineer the framework architecture.
+2. Understand the complete execution flow.
+3. Trace the lifecycle of a test from:
+   Test Spec
+   → Fixtures
+   → App Fixture
+   → Test Helper
+   → Page Objects
+   → Utilities
+   → Assertions
+   → Reporting
+4. Understand data flow.
+5. Understand dependency flow.
+6. Identify ownership of responsibilities.
 
-    const name = getName(el).replace(/\s+/g, ' ').trim();
+Only after understanding the framework, perform a review.
 
-    console.log(
-      name
-        ? `await page.getByRole('${role}', { name: '${name.replace(/'/g, "\\'")}' });`
-        : `await page.getByRole('${role}');`
-    );
-  });
-})();
+-----------------------------------------
+Review Areas
+-----------------------------------------
+
+1. Architecture
+- Overall framework design
+- Separation of concerns
+- Layering
+- Coupling
+- Cohesion
+- Dependency direction
+- Object ownership
+
+2. Test Design
+- Spec readability
+- Test maintainability
+- Duplication
+- Reusability
+- Naming conventions
+- Test scalability
+
+3. Helper Classes
+- Business workflow ownership
+- Responsibility overload
+- Methods that belong elsewhere
+- Duplicate logic
+- Large methods
+- Helper coupling
+
+4. Page Objects
+- Proper Page Object Model implementation
+- UI responsibility
+- Business logic leakage
+- Locator organization
+- Reusable components
+- Missing abstractions
+
+5. Fixtures
+- Dependency injection quality
+- Fixture responsibilities
+- Backward compatibility
+- App fixture usage
+- Opportunities to simplify
+
+6. Test Data
+- Data loading
+- JSON organization
+- Scalability
+- Environment handling
+- Duplication
+- Maintainability
+
+7. Utilities
+- Utility responsibility
+- Generic helper quality
+- Duplicate utility methods
+- Static utility overuse
+
+8. Assertions
+- Assertion placement
+- Readability
+- Reusability
+- Reporting quality
+
+9. Performance
+- Unnecessary waits
+- Duplicate page actions
+- Repeated object creation
+- Expensive operations
+- Slow execution patterns
+
+10. Code Quality
+- SOLID principles
+- DRY violations
+- Long methods
+- God classes
+- Magic strings
+- Hardcoded values
+- Naming consistency
+- Error handling
+
+11. Maintainability
+- Areas difficult to extend
+- Areas likely to break
+- High-risk code
+- Refactoring opportunities
+
+-----------------------------------------
+For every issue found provide:
+
+1. Severity
+   Critical / High / Medium / Low
+
+2. File
+
+3. Problem
+
+4. Why it is a problem
+
+5. Recommended solution
+
+6. Expected benefits
+
+7. Estimated implementation effort
+   Small / Medium / Large
+
+8. Risk level
+
+-----------------------------------------
+Prioritize improvements as:
+
+Phase 1
+Safe refactoring
+No functional changes
+
+Phase 2
+Architecture improvements
+
+Phase 3
+Framework modernization
+
+-----------------------------------------
+Important Rules
+
+- Do NOT change functionality.
+- Do NOT rewrite the framework unnecessarily.
+- Do NOT suggest changes without explaining why.
+- Prefer incremental improvements over complete rewrites.
+- Consider this is an enterprise banking automation framework with many existing tests.
+- Recommend only production-grade improvements that are suitable for a real enterprise codebase.
+
+Finally provide:
+
+1. Architecture diagram (text format)
+
+2. Framework strengths
+
+3. Top 10 technical debts
+
+4. Top 10 quick wins
+
+5. Top 10 long-term improvements
+
+6. Overall architecture score (/10)
+
+7. Maintainability score (/10)
+
+8. Scalability score (/10)
+
+9. Test design score (/10)
+
+10. Final recommendation for the team.
