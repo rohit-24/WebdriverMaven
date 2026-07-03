@@ -1,16 +1,40 @@
-Finally prepare a Technical Design Review report suitable for sharing with engineering leads.
+Act as a Principal SDET reviewing a production Playwright automation framework.
 
-The report should contain:
+Refactor ONLY the currently opened helper file.
 
-- Executive Summary (1 page)
-- Current Architecture
-- Positive Findings
-- Risks
-- Code Smells
-- Recommended Refactoring Roadmap
-- Estimated Impact
-- Migration Strategy
-- Suggested PR breakdown
-- Expected Maintainability Improvements
-- Expected Reduction in Code Duplication
-- Suggested Future Architecture
+Requirements:
+
+1. Do NOT change any business logic or test behaviour.
+2. Preserve all existing public methods and method signatures.
+3. Preserve all Playwright test.step descriptions.
+4. Preserve all assertions and validations.
+5. Preserve all page interactions.
+6. Preserve execution order exactly.
+
+Refactor only for maintainability and readability.
+
+Perform the following improvements:
+
+• Break large methods into small private helper methods with meaningful names.
+• Each method should have a single responsibility.
+• Remove duplicated code.
+• Extract repeated logic into reusable helper methods.
+• Group related logic together.
+• Improve method naming.
+• Reduce nesting using guard clauses where appropriate.
+• Keep helper methods in logical order.
+• Improve comments only where they add value.
+• Remove dead code and unnecessary variables.
+• Do not introduce backward compatibility code.
+• Do not introduce new dependencies.
+• Do not use destructuring unless it already exists.
+• Keep using existing page objects.
+• Keep the helper responsible only for orchestration; business actions should remain delegated to page objects or utilities where possible.
+• If a method becomes longer than ~40 lines, split it into smaller methods.
+
+At the end provide:
+
+1. Summary of changes
+2. Duplicate code removed
+3. Remaining improvement opportunities
+4. Any code smells that still exist but were intentionally left unchanged because they require a larger architectural change.
