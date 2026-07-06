@@ -1,382 +1,629 @@
-Absolutely. Based on everything we’ve discussed (LOTS, MT760, ADVI, ACNF, Charges, Errors, and your Excel scenarios), here are concise but comprehensive notes you can use as a quick reference.
-
-⸻
-
-📒 Received Undertaking (RU) - Quick Notes
-
-1. What is a Received Undertaking?
-
-A Received Undertaking is a Bank Guarantee or Standby Letter of Credit received by Lloyds from another bank.
-
-* Lloyds did not issue the guarantee.
-* Lloyds receives it to advise, forward, or acknowledge it.
-
-Incoming SWIFT: MT760
-
-⸻
-
-2. Parties Involved
-
-Party	Role
-Applicant	Customer requesting the guarantee
-Beneficiary	Party receiving protection under the guarantee
-Issuing Bank	Bank issuing the guarantee
-Advising Bank	Bank forwarding/advising the guarantee
-Lloyds Bank	Receives the MT760 and processes it
-
-⸻
-
-3. Simple Flow
-
-Applicant
-      │
-Requests Guarantee
-      │
-Issuing Bank
-      │
-MT760
-      ▼
-Lloyds (Received Undertaking)
-      │
-ADVI / ACNF
-      ▼
-Beneficiary / Next Advising Bank
-
-⸻
-
-4. What is MT760?
-
-* SWIFT message used to Issue a Bank Guarantee.
-* Receipt of an MT760 creates a Received Undertaking in LOTS.
-
-⸻
-
-5. Main Workflows
-
-ADVI (Advise)
-
-Meaning:
-
-Advise or forward the guarantee to the beneficiary (or another bank).
-
-Example:
-
-SBI
-   │
-Lloyds
-   │
-Beneficiary
-
-⸻
-
-ACNF (Advice Confirmation)
-
-Meaning:
-
-Send an acknowledgement/confirmation instead of advising the guarantee onward.
-
-Usually used when confirmation of receipt is required.
-
-⸻
-
-6. Business Scenarios
-
-Scenario 1
-
-Received From → Issuing Bank
-
-Banks After Lloyds → 0
-
-Issuing Bank
-      │
-Lloyds
-      │
-Beneficiary
-
-Action → ADVI
-
-⸻
-
-Scenario 2
-
-Received From → Issuing Bank
-
-Banks After Lloyds → 1
-
-Issuing Bank
-      │
-Lloyds
-      │
-X Bank
-      │
-Beneficiary
-
-Action → ADVI
-
-⸻
-
-Scenario 3
-
-Received From → Issuing Bank
-
-Banks After Lloyds → 2
-
-Issuing Bank
-      │
-Lloyds
-      │
-X Bank
-      │
-Y Bank
-      │
-Beneficiary
-
-Action → ADVI
-
-⸻
-
-Scenario 4
-
-Received From → Advising Bank
-
-Banks After Lloyds → 0
-
-Issuing Bank
-      │
-Advising Bank
-      │
-Lloyds
-      │
-Beneficiary
-
-Action → ADVI
-
-⸻
-
-Scenario 5
-
-Received From → Advising Bank
-
-Banks After Lloyds → 1
-
-Issuing Bank
-      │
-Advising Bank
-      │
-Lloyds
-      │
-X Bank
-      │
-Beneficiary
-
-Action → ADVI
-
-⸻
-
-Scenario 6
-
-Received From → Advising Bank
-
-Banks After Lloyds → 2
-
-Issuing Bank
-      │
-Advising Bank
-      │
-Lloyds
-      │
-X Bank
-      │
-Y Bank
-      │
-Beneficiary
-
-Action → ADVI
-
-⸻
-
-Scenario 7
-
-Received From → Advising Bank
-
-Banks After Lloyds → 0
-
-Action → ACNF
-
-⸻
-
-Scenario 8
-
-Received From → Advising Bank
-
-Banks After Lloyds → 1
-
-Action → ACNF
-
-⸻
-
-7. Our Charges
-
-These are fees charged by Lloyds for processing the guarantee.
-
-Examples:
-
-* Advising Commission
-* Swift Charges
-* Courier Charges
-
-Example:
-
-Advising Commission = GBP 75
-
-Possible payer:
-
-* Applicant
-* Beneficiary
-* Issuing Bank
-
-⸻
-
-8. Other Banks’ Charges
-
-Charges collected by intermediary banks.
-
-Example:
-
-Lloyds → GBP 75
-HSBC → GBP 20
-
-⸻
-
-9. Common Errors & Warnings
-
-MT768 Tag 72 Error
-
-* Problem generating outgoing SWIFT message.
-* Must be fixed before proceeding.
-
-⸻
-
-Narrative Too Long
-
-* SWIFT field length exceeded.
-* Review or truncate the text.
-
-⸻
-
-Booked in LBCM
-
-* Informational message.
-* Transaction will be booked in Lloyds’ accounting system.
-
-⸻
-
-Screening Warning
-
-* Missing AML/Sanctions screening information.
-* Verify before proceeding.
-
-⸻
-
-Country of Origin Blank
-
-* Compliance warning.
-* Populate if required or override if permitted.
-
-⸻
-
-Internal Limit Error
-
-Configuration issue:
-
-* Internal Limit Service disabled.
-* Branch configured to use it.
-* Needs system administrator support.
-
-⸻
-
-10. QA Test Checklist
-
-✔ MT760 received successfully.
-
-✔ Received Undertaking created.
-
-✔ Correct sender (Issuing/Advising Bank).
-
-✔ Correct beneficiary.
-
-✔ Correct workflow (ADVI/ACNF).
-
-✔ Correct routing (0, 1, or 2 banks).
-
-✔ Charges calculated correctly.
-
-✔ SWIFT messages generated correctly.
-
-✔ Errors and warnings behave as expected.
-
-✔ Audit trail created.
-
-⸻
-
-11. Important SWIFT Messages
-
-SWIFT	Purpose
-MT760	Issue Demand Guarantee / Standby LC
-MT767	Amend Guarantee
-MT768	Free-format message related to a guarantee (often used for acknowledgements, narratives, or additional guarantee information depending on the process)
-
-⸻
-
-12. Easy Interview Answers
-
-What is a Received Undertaking?
-
-A guarantee received by Lloyds from another bank for advising, forwarding, or acknowledgment. Lloyds is not the issuing bank.
-
-⸻
-
-What is ADVI?
-
-Advising the guarantee to the beneficiary or another advising bank.
-
-⸻
-
-What is ACNF?
-
-Acknowledging or confirming receipt of the guarantee instead of advising it onward.
-
-⸻
-
-What is MT760?
-
-SWIFT message used to issue a Demand Guarantee or Standby Letter of Credit.
-
-⸻
-
-What are Our Charges?
-
-Charges collected by Lloyds for services like advising the guarantee.
-
-⸻
-
-Difference Between Issued and Received Undertaking
-
-Issued Undertaking	Received Undertaking
-Lloyds issues the guarantee.	Lloyds receives the guarantee from another bank.
-Lloyds is the issuing bank.	Another bank is the issuing bank.
-Outgoing MT760.	Incoming MT760.
-
-⸻
-
-🧠 Memory Trick
-
-Think of Lloyds as a courier hub:
-
-* 📥 Received Undertaking = Lloyds receives the parcel (MT760).
-* 📨 ADVI = Lloyds delivers or forwards the parcel.
-* ✅ ACNF = Lloyds sends an acknowledgment that it received the parcel.
-* 💷 Our Charges = Lloyds’ service fee.
-* 🏦 Other Banks’ Charges = Fees from other courier hubs (intermediary banks).
-
-These notes cover about 80–90% of the Received Undertaking concepts you’ll encounter in LOTS and are a good reference for both functional understanding and QA testing.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Locator Forge — Playwright Locator Generator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F5F4;
+    --panel:#FFFFFF;
+    --panel-2:#F0F2F1;
+    --border:#DCE1DE;
+    --border-soft:#E6E9E7;
+    --text:#231F20;
+    --muted:#5C6360;
+    --muted-2:#8A908C;
+    --mint:#00864F;
+    --sky:#2D8259;
+    --amber:#B8720A;
+    --coral:#C4281B;
+    --violet:#024731;
+    --ink:#231F20;
+    --green-deep:#024731;
+    --green-primary:#00864F;
+    --green-sage:#2D8259;
+    --lime:#9AC44D;
+    --red:#C4281B;
+    --amber-brand:#B8720A;
+    --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: 'Inter', -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1000px 500px at 10% -10%, rgba(0,134,79,0.06), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    padding:0 0 60px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px;}
+
+  /* masthead */
+  .masthead{
+    background:var(--ink);
+    padding:0;
+    margin:0 0 24px;
+  }
+  .masthead-inner{
+    max-width:1180px;margin:0 auto;padding:0 20px;
+    display:flex;align-items:center;justify-content:space-between;
+    flex-wrap:wrap;gap:14px;
+  }
+  .brandbar{display:flex;align-items:stretch;height:56px;}
+  .brandbox{
+    background:var(--green-primary);
+    display:flex;flex-direction:column;justify-content:center;
+    padding:0 16px;
+  }
+  .brandbox .word{
+    font-family:var(--sans);font-weight:800;font-size:16px;color:#fff;
+    letter-spacing:.02em;line-height:1;
+  }
+  .brandbox .sub{
+    font-family:var(--sans);font-weight:600;font-size:9.5px;color:rgba(255,255,255,0.85);
+    letter-spacing:.09em;text-transform:uppercase;margin-top:3px;
+  }
+  .toolname{
+    display:flex;flex-direction:column;justify-content:center;padding:0 16px;height:56px;
+    border-left:1px solid rgba(255,255,255,0.12);
+  }
+  .toolname .name{font-family:var(--mono);font-size:13px;color:#fff;font-weight:600;}
+  .toolname .desc{font-family:var(--mono);font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px;}
+  .env-badge{
+    font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--lime);
+    border:1px solid rgba(154,196,77,0.4);background:rgba(154,196,77,0.1);
+    padding:5px 10px;border-radius:5px;letter-spacing:.03em;
+  }
+  header.legend-row{display:flex;align-items:center;justify-content:flex-end;margin-bottom:16px;}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;font-family:var(--mono);color:var(--muted);align-items:center;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+
+  /* layout */
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:16px;}
+  @media (max-width:920px){.grid{grid-template-columns:1fr;}}
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    display:flex;flex-direction:column;
+    overflow:hidden;
+    box-shadow:0 1px 2px rgba(2,71,49,0.04);
+  }
+  .panel-head{
+    padding:11px 14px;border-bottom:1px solid var(--border-soft);
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--panel-2);
+  }
+  .panel-head h2{font-size:12px;margin:0;font-weight:700;color:var(--green-deep);letter-spacing:.04em;text-transform:uppercase;}
+  .sorttoggle{display:flex;gap:4px;background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:2px;}
+  .sortbtn{
+    font-family:var(--sans);font-size:11px;font-weight:600;color:var(--muted);
+    background:transparent;border:0;padding:4px 9px;border-radius:5px;cursor:pointer;transition:.15s;
+  }
+  .sortbtn:hover{color:var(--text);}
+  .sortbtn.active{background:var(--green-primary);color:#fff;}
+
+  textarea{
+    width:100%;flex:1;min-height:420px;resize:vertical;
+    background:transparent;border:0;outline:0;color:var(--text);
+    font-family:var(--mono);font-size:12.5px;line-height:1.6;
+    padding:14px;
+  }
+  textarea::placeholder{color:var(--muted-2);}
+
+  .toolbar{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--border-soft);background:var(--panel-2);}
+  button.btn{
+    font-family:var(--sans);font-weight:600;font-size:12.5px;
+    padding:8px 14px;border-radius:7px;border:1px solid var(--border);
+    background:var(--panel);color:var(--text);cursor:pointer;
+    transition:.15s ease;
+  }
+  button.btn:hover{border-color:var(--muted-2);background:var(--panel-2);}
+  button.btn.primary{
+    background:var(--green-primary);color:#fff;border-color:var(--green-primary);
+  }
+  button.btn.primary:hover{background:var(--green-deep);}
+  button.btn.ghost{background:transparent;}
+
+  /* results */
+  #results{flex:1;overflow-y:auto;max-height:640px;}
+  .empty-state{
+    padding:60px 24px;text-align:center;color:var(--muted-2);
+    font-family:var(--mono);font-size:12.5px;line-height:1.8;
+  }
+  .empty-state .glyph{font-size:26px;margin-bottom:10px;display:block;color:var(--green-primary);}
+
+  .elcard{border-bottom:1px solid var(--border-soft);padding:13px 14px;}
+  .elcard:last-child{border-bottom:0;}
+  .elhead{display:flex;align-items:center;gap:8px;margin-bottom:9px;flex-wrap:wrap;}
+  .eltag{
+    font-family:var(--mono);font-size:11.5px;color:var(--green-deep);
+    background:rgba(0,134,79,0.08);border:1px solid rgba(0,134,79,0.2);
+    padding:2px 7px;border-radius:5px;
+  }
+  .elpreview{font-family:var(--mono);font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:80px;}
+
+  .locrow{
+    display:flex;align-items:center;gap:9px;
+    background:var(--panel-2);border:1px solid var(--border-soft);
+    border-radius:8px;padding:8px 9px;margin-bottom:6px;
+  }
+  .locrow.best{border-color:rgba(0,134,79,0.35);background:rgba(0,134,79,0.05);}
+  .tier{
+    font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.03em;
+    padding:2.5px 6px;border-radius:4px;flex-shrink:0;text-transform:uppercase;
+    width:70px;text-align:center;
+  }
+  .tier.t1{background:rgba(0,134,79,0.14);color:var(--green-primary);}
+  .tier.t2{background:rgba(45,130,89,0.14);color:var(--green-sage);}
+  .tier.t3{background:rgba(184,114,10,0.14);color:var(--amber-brand);}
+  .tier.t4{background:rgba(196,40,27,0.13);color:var(--red);}
+
+  .loccode{
+    font-family:var(--mono);font-size:12px;color:var(--text);
+    flex:1;overflow-x:auto;white-space:nowrap;
+  }
+  .loccode .kw{color:var(--green-deep);}
+  .loccode .str{color:var(--green-primary);}
+  .loccode .fn{color:var(--green-sage);}
+
+  .copybtn{
+    flex-shrink:0;font-family:var(--sans);font-size:11px;font-weight:600;
+    background:transparent;border:1px solid var(--border);color:var(--muted);
+    padding:4px 9px;border-radius:6px;cursor:pointer;transition:.15s;
+  }
+  .copybtn:hover{color:var(--green-primary);border-color:var(--green-primary);}
+  .copybtn.copied{color:var(--green-primary);border-color:var(--green-primary);background:rgba(0,134,79,0.08);}
+
+  .altlabel{font-family:var(--mono);font-size:10px;color:var(--muted-2);margin:8px 0 5px 2px;letter-spacing:.03em;text-transform:uppercase;}
+  .note{font-family:var(--mono);font-size:10.5px;color:var(--red);margin-top:4px;padding-left:2px;}
+
+  .summary-bar{
+    font-family:var(--mono);font-size:11px;color:var(--muted);
+    padding:9px 14px;border-bottom:1px solid var(--border-soft);
+    display:flex;justify-content:space-between;background:var(--panel-2);
+  }
+  .summary-bar b{color:var(--green-deep);}
+
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--muted-2);}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="masthead-inner">
+    <div class="brandbar">
+      <div class="brandbox">
+        <div class="word">LLOYDS</div>
+        <div class="sub">Banking Group</div>
+      </div>
+      <div class="toolname">
+        <div class="name">Locator Forge</div>
+        <div class="desc">QA Engineering — internal tooling</div>
+      </div>
+    </div>
+    <div class="env-badge">INTERNAL USE ONLY</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header class="legend-row">
+    <div class="legend">
+      <span><i class="dot" style="background:var(--green-primary)"></i>test id</span>
+      <span><i class="dot" style="background:var(--green-sage)"></i>role / label</span>
+      <span><i class="dot" style="background:var(--amber-brand)"></i>text / placeholder</span>
+      <span><i class="dot" style="background:var(--red)"></i>css fallback</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-head"><h2>Paste HTML</h2></div>
+      <textarea id="input" spellcheck="false" placeholder="Paste a DOM snippet here, e.g.
+
+<button data-testid='submit-order' class='btn-primary'>
+  Place order
+</button>
+
+<input type='email' id='email' placeholder='you@company.com' />
+<label for='email'>Email address</label>"></textarea>
+      <div class="toolbar">
+        <button class="btn primary" id="genBtn">Generate locators</button>
+        <button class="btn ghost" id="exampleBtn">Load example</button>
+        <button class="btn ghost" id="clearBtn">Clear</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Suggested locators</h2>
+        <div class="sorttoggle" id="sortToggle" style="display:none;">
+          <button class="sortbtn active" data-mode="dom">DOM order</button>
+          <button class="sortbtn" data-mode="quality">Best first</button>
+        </div>
+      </div>
+      <div class="summary-bar" id="summaryBar" style="display:none;">
+        <span>elements scanned: <b id="scanCount">0</b></span>
+        <span>best-practice matches: <b id="goodCount">0</b></span>
+      </div>
+      <div id="results">
+        <div class="empty-state">
+          <span class="glyph">⌁</span>
+          Paste a DOM snippet on the left and hit<br>"Generate locators" to see ranked results here.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const EXAMPLE = `<div class="checkout-form">
+  <label for="email">Email address</label>
+  <input type="email" id="email" placeholder="you@company.com" />
+
+  <button data-testid="submit-order" class="btn btn-primary rounded-lg">
+    Place order
+  </button>
+
+  <a href="/cart" class="nav-link">View cart</a>
+
+  <img src="/logo.png" alt="Acme company logo" />
+
+  <h2>Shipping details</h2>
+
+  <div id="ember482-toast" class="toast-notification">Item added to cart</div>
+
+  <input type="checkbox" id="terms" />
+  <label for="terms">I agree to the terms</label>
+
+  <select id="country" aria-label="Country">
+    <option>India</option>
+    <option>USA</option>
+  </select>
+</div>`;
+
+const input = document.getElementById('input');
+const results = document.getElementById('results');
+const summaryBar = document.getElementById('summaryBar');
+const scanCount = document.getElementById('scanCount');
+const goodCount = document.getElementById('goodCount');
+
+document.getElementById('exampleBtn').addEventListener('click', () => {
+  input.value = EXAMPLE;
+  generate();
+});
+document.getElementById('clearBtn').addEventListener('click', () => {
+  input.value = '';
+  showEmpty();
+  lastData = null;
+  document.getElementById('sortToggle').style.display = 'none';
+});
+document.getElementById('genBtn').addEventListener('click', generate);
+
+let sortMode = 'dom';
+let lastData = null; // { el, tag, sugg, preview }[]
+
+document.getElementById('sortToggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('.sortbtn');
+  if(!btn) return;
+  sortMode = btn.getAttribute('data-mode');
+  document.querySelectorAll('.sortbtn').forEach(b => b.classList.toggle('active', b === btn));
+  if(lastData) render(lastData);
+});
+
+function showEmpty(){
+  summaryBar.style.display = 'none';
+  results.innerHTML = `<div class="empty-state"><span class="glyph">⌁</span>Paste a DOM snippet on the left and hit<br>"Generate locators" to see ranked results here.</div>`;
+}
+
+function esc(s){
+  return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,' ').trim();
+}
+function collapseWs(s){
+  return (s||'').replace(/\s+/g,' ').trim();
+}
+function htmlEscape(s){
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function looksUnstable(id){
+  if(!id) return false;
+  if(/\d{4,}/.test(id)) return true;
+  if(/^(ember|react|mui|css-|radix-|v-)/i.test(id)) return true;
+  if(/^[0-9a-f]{6,}$/i.test(id)) return true;
+  return false;
+}
+
+const TESTID_ATTRS = ['data-testid','data-test-id','data-test','data-cy','data-qa'];
+
+const ROLE_MAP = {
+  a: el => el.hasAttribute('href') ? 'link' : null,
+  button: () => 'button',
+  textarea: () => 'textbox',
+  select: () => 'combobox',
+  img: () => 'img',
+  h1:()=>'heading', h2:()=>'heading', h3:()=>'heading', h4:()=>'heading', h5:()=>'heading', h6:()=>'heading',
+  nav: () => 'navigation',
+  main: () => 'main',
+  header: () => 'banner',
+  footer: () => 'contentinfo',
+  input: el => {
+    const t = (el.getAttribute('type')||'text').toLowerCase();
+    const map = {
+      text:'textbox', search:'searchbox', email:'textbox', url:'textbox', tel:'textbox',
+      password:'textbox', number:'spinbutton', checkbox:'checkbox', radio:'radio',
+      button:'button', submit:'button', reset:'button', range:'slider'
+    };
+    return map[t] || null;
+  }
+};
+
+function getAccessibleName(el){
+  const aria = el.getAttribute('aria-label');
+  if(aria) return collapseWs(aria);
+  const tag = el.tagName.toLowerCase();
+  if(tag === 'img') return collapseWs(el.getAttribute('alt')||'');
+  if(tag === 'input'){
+    const t = (el.getAttribute('type')||'').toLowerCase();
+    if(['submit','button','reset'].includes(t)) return collapseWs(el.getAttribute('value')||'');
+    return '';
+  }
+  let direct = '';
+  el.childNodes.forEach(n => { if(n.nodeType === 3) direct += n.textContent; });
+  direct = collapseWs(direct);
+  if(direct) return direct;
+  const full = collapseWs(el.textContent);
+  return full.length <= 60 ? full : '';
+}
+
+function findLabelFor(el, root){
+  const id = el.getAttribute('id');
+  if(id){
+    const lbl = root.querySelector(`label[for="${CSS.escape(id)}"]`);
+    if(lbl) return collapseWs(lbl.textContent);
+  }
+  const parentLabel = el.closest('label');
+  if(parentLabel) return collapseWs(parentLabel.textContent);
+  return null;
+}
+
+function code(html){ return `<span class="loccode">${html}</span>`; }
+function fmt(fn, argStr){
+  return `<span class="kw">page</span>.<span class="fn">${fn}</span>(${argStr})`;
+}
+function strArg(s){ return `<span class="str">'${htmlEscape(esc(s))}'</span>`; }
+
+function buildSuggestions(el, root){
+  const tag = el.tagName.toLowerCase();
+  const sugg = [];
+
+  // 1. test id attrs
+  for(const attr of TESTID_ATTRS){
+    if(el.hasAttribute(attr)){
+      const val = el.getAttribute(attr);
+      const fn = attr === 'data-testid' ? 'getByTestId' : 'getByTestId'; // playwright default reads data-testid; note others below
+      sugg.push({
+        tier:1, tierLabel:'Test ID',
+        codeHtml: fmt('getByTestId', strArg(val)),
+        note: attr !== 'data-testid' ? `uses ${attr} — set testIdAttribute in playwright.config if this isn't data-testid` : null
+      });
+      break;
+    }
+  }
+
+  // 2. role + accessible name
+  const roleFn = ROLE_MAP[tag];
+  const explicitRole = el.getAttribute('role');
+  const role = explicitRole || (roleFn ? roleFn(el) : null);
+  if(role){
+    const name = getAccessibleName(el);
+    if(name){
+      sugg.push({
+        tier:2, tierLabel:'Role',
+        codeHtml: fmt('getByRole', `${strArg(role)}, <span class="loccode">{ name: ${strArg(name)} }</span>`)
+      });
+    } else {
+      sugg.push({
+        tier:2, tierLabel:'Role',
+        codeHtml: fmt('getByRole', strArg(role)),
+        note:'no accessible name found — add aria-label for a stronger match'
+      });
+    }
+  }
+
+  // 3. label (form controls)
+  if(['input','textarea','select'].includes(tag)){
+    const labelText = findLabelFor(el, root);
+    if(labelText){
+      sugg.push({
+        tier:2, tierLabel:'Label',
+        codeHtml: fmt('getByLabel', strArg(labelText))
+      });
+    }
+  }
+
+  // 4. placeholder
+  const placeholder = el.getAttribute('placeholder');
+  if(placeholder){
+    sugg.push({
+      tier:3, tierLabel:'Placeholder',
+      codeHtml: fmt('getByPlaceholder', strArg(placeholder))
+    });
+  }
+
+  // 5. text (non-form, visible text elements)
+  if(!['input','textarea','select','script','style'].includes(tag)){
+    const text = getAccessibleName(el) || collapseWs(el.textContent);
+    if(text && text.length <= 60 && !role){
+      sugg.push({
+        tier:3, tierLabel:'Text',
+        codeHtml: fmt('getByText', strArg(text))
+      });
+    }
+  }
+
+  // 6. title attr
+  const title = el.getAttribute('title');
+  if(title){
+    sugg.push({ tier:3, tierLabel:'Title', codeHtml: fmt('getByTitle', strArg(title)) });
+  }
+
+  // 7. CSS fallback
+  const id = el.getAttribute('id');
+  if(id){
+    sugg.push({
+      tier:4, tierLabel:'CSS (id)',
+      codeHtml: fmt('locator', strArg('#'+id)),
+      note: looksUnstable(id) ? `"#${id}" looks auto-generated — likely to change between renders` : null
+    });
+  } else {
+    const cls = (el.getAttribute('class')||'').trim().split(/\s+/).filter(Boolean)[0];
+    if(cls){
+      sugg.push({
+        tier:4, tierLabel:'CSS (class)',
+        codeHtml: fmt('locator', strArg('.'+cls)),
+        note:'class-based locators are brittle — prefer role/testid above if available'
+      });
+    }
+  }
+
+  sugg.sort((a,b)=>a.tier-b.tier);
+  return sugg;
+}
+
+function isCandidate(el){
+  const tag = el.tagName.toLowerCase();
+  if(['script','style','html','head','body','meta','link','br','hr'].includes(tag)) return false;
+  const interactive = ['a','button','input','select','textarea','img','label','option'].includes(tag);
+  const heading = /^h[1-6]$/.test(tag);
+  const hasTestId = TESTID_ATTRS.some(a => el.hasAttribute(a));
+  const hasRole = el.hasAttribute('role');
+  const hasAria = el.hasAttribute('aria-label');
+  if(interactive || heading || hasTestId || hasRole || hasAria) return true;
+  // generic container: only include if it has direct meaningful text and no element children
+  if(tag === 'div' || tag === 'span'){
+    let hasElChild = false;
+    el.childNodes.forEach(n=>{ if(n.nodeType===1) hasElChild = true; });
+    const text = collapseWs(el.textContent);
+    if(!hasElChild && text.length > 0 && text.length <= 60) return true;
+  }
+  return false;
+}
+
+function generate(){
+  const html = input.value.trim();
+  if(!html){ showEmpty(); lastData = null; document.getElementById('sortToggle').style.display='none'; return; }
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(`<div id="__root__">${html}</div>`, 'text/html');
+  const root = doc.getElementById('__root__');
+
+  const all = Array.from(root.querySelectorAll('*'));
+  const candidates = all.filter(isCandidate);
+
+  if(candidates.length === 0){
+    results.innerHTML = `<div class="empty-state"><span class="glyph">∅</span>No locator-worthy elements found.<br>Try pasting buttons, inputs, links, or elements with data-testid / role / aria-label.</div>`;
+    summaryBar.style.display = 'none';
+    document.getElementById('sortToggle').style.display = 'none';
+    lastData = null;
+    return;
+  }
+
+  // build data once, in original DOM order — re-sorted later at render time
+  lastData = candidates.map((el, idx) => {
+    const tag = el.tagName.toLowerCase();
+    const sugg = buildSuggestions(el, root);
+    const preview = collapseWs(el.outerHTML).slice(0, 90);
+    return { domIndex: idx, tag, sugg, preview };
+  }).filter(d => d.sugg.length > 0);
+
+  document.getElementById('sortToggle').style.display = 'flex';
+  render(lastData);
+}
+
+function render(data){
+  let ordered = data;
+  if(sortMode === 'quality'){
+    // best tier first; ties broken by original DOM order
+    ordered = [...data].sort((a,b) => (a.sugg[0].tier - b.sugg[0].tier) || (a.domIndex - b.domIndex));
+  }
+
+  let goodMatches = 0;
+  const cards = ordered.map(d => {
+    const { tag, sugg, preview } = d;
+    if(sugg[0].tier <= 2) goodMatches++;
+
+    const best = sugg[0];
+    const rest = sugg.slice(1);
+
+    const bestRow = `
+      <div class="locrow best">
+        <span class="tier t${best.tier}">${best.tierLabel}</span>
+        ${code(best.codeHtml)}
+        <button class="copybtn" data-code="${htmlEscape(`page.${extractPlain(best.codeHtml)}`)}">Copy</button>
+      </div>
+      ${best.note ? `<div class="note">⚠ ${htmlEscape(best.note)}</div>` : ''}
+    `;
+
+    const restRows = rest.length ? `
+      <div class="altlabel">alternatives</div>
+      ${rest.map(s => `
+        <div class="locrow">
+          <span class="tier t${s.tier}">${s.tierLabel}</span>
+          ${code(s.codeHtml)}
+          <button class="copybtn" data-code="${htmlEscape(`page.${extractPlain(s.codeHtml)}`)}">Copy</button>
+        </div>
+        ${s.note ? `<div class="note">⚠ ${htmlEscape(s.note)}</div>` : ''}
+      `).join('')}
+    ` : '';
+
+    return `
+      <div class="elcard">
+        <div class="elhead">
+          <span class="eltag">&lt;${tag}&gt;</span>
+          <span class="elpreview">${htmlEscape(preview)}</span>
+        </div>
+        ${bestRow}
+        ${restRows}
+      </div>
+    `;
+  });
+
+  results.innerHTML = cards.join('');
+  summaryBar.style.display = 'flex';
+  scanCount.textContent = data.length;
+  goodCount.textContent = goodMatches;
+
+  results.querySelectorAll('.copybtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const text = btn.getAttribute('data-code');
+      navigator.clipboard.writeText(text).then(() => {
+        const original = btn.textContent;
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1200);
+      });
+    });
+  });
+}
+
+// strip html tags from codeHtml to get plain copyable text
+function extractPlain(html){
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent;
+}
+</script>
+</body>
+</html>
