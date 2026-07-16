@@ -5,102 +5,65 @@
 <title>Playwright Locator Finder</title>
 <style>
   :root{
-    --bg:#0f1115;
-    --panel:#161922;
-    --panel2:#1c202b;
-    --border:#2a2f3d;
-    --text:#dfe3ee;
-    --dim:#8890a4;
-    --accent:#5eb1ff;
-    --good:#4fd68a;
-    --warn:#e8b34a;
-    --bad:#f16565;
-    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --bg:#0f1115; --panel:#161922; --panel2:#1c202b; --border:#2a2f3d;
+    --text:#dfe3ee; --dim:#8890a4; --accent:#5eb1ff; --good:#4fd68a;
+    --warn:#e8b34a; --bad:#f16565; --purple:#b389f0;
+    --mono: ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box;}
-  body{
-    margin:0; background:var(--bg); color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    font-size:14px;
-  }
-  header{
-    padding:14px 20px; border-bottom:1px solid var(--border);
-    display:flex; align-items:baseline; gap:10px;
-  }
-  header h1{font-size:16px; margin:0; font-weight:600; letter-spacing:.2px;}
+  body{ margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; font-size:14px; }
+  header{ padding:14px 20px; border-bottom:1px solid var(--border); display:flex; align-items:baseline; gap:10px; }
+  header h1{font-size:16px; margin:0; font-weight:600;}
   header span{color:var(--dim); font-size:12px;}
-  .layout{
-    display:grid;
-    grid-template-columns: 380px 1fr 340px;
-    height: calc(100vh - 49px);
-  }
+  .layout{ display:grid; grid-template-columns: 360px 1fr 380px; height: calc(100vh - 49px); }
   .col{ border-right:1px solid var(--border); overflow:auto; padding:14px; }
   .col:last-child{border-right:none;}
-  h2{
-    font-size:11px; text-transform:uppercase; letter-spacing:.08em;
-    color:var(--dim); margin:0 0 8px 0; font-weight:600;
-  }
-  textarea{
-    width:100%; height:160px; background:var(--panel2); color:var(--text);
-    border:1px solid var(--border); border-radius:6px; padding:10px;
-    font-family:var(--mono); font-size:12px; resize:vertical;
-  }
-  button{
-    background:var(--accent); color:#08111c; border:none; border-radius:6px;
-    padding:8px 12px; font-size:12.5px; font-weight:600; cursor:pointer;
-    margin-top:8px;
-  }
-  button.secondary{
-    background:var(--panel2); color:var(--text); border:1px solid var(--border);
-    font-weight:500;
-  }
-  button:hover{filter:brightness(1.08);}
-  .row{display:flex; gap:8px; flex-wrap:wrap;}
-  #tree{ font-family:var(--mono); font-size:12.5px; line-height:1.6; margin-top:12px;}
-  .node{ white-space:nowrap; cursor:pointer; padding:1px 4px; border-radius:4px; }
+  h2{ font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); margin:14px 0 8px 0; font-weight:600; }
+  h2:first-child{margin-top:0;}
+  textarea{ width:100%; height:150px; background:var(--panel2); color:var(--text);
+    border:1px solid var(--border); border-radius:6px; padding:10px; font-family:var(--mono); font-size:12px; resize:vertical; }
+  button{ background:var(--accent); color:#08111c; border:none; border-radius:6px;
+    padding:7px 11px; font-size:12.5px; font-weight:600; cursor:pointer; }
+  button.secondary{ background:var(--panel2); color:var(--text); border:1px solid var(--border); font-weight:500; }
+  button.tiny{ padding:3px 8px; font-size:11px; }
+  button:hover{filter:brightness(1.1);}
+  button:disabled{opacity:.4; cursor:not-allowed;}
+  .row{display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;}
+  #tree{ font-family:var(--mono); font-size:12.5px; line-height:1.6; margin-top:10px;}
+  .node{ white-space:nowrap; cursor:pointer; padding:1px 4px; border-radius:4px; display:flex; align-items:center; gap:4px;}
   .node:hover{ background:var(--panel2); }
   .node.selected{ background:rgba(94,177,255,0.18); outline:1px solid var(--accent); }
-  .tag{color:var(--accent);}
-  .attr{color:var(--warn);}
-  .attrval{color:var(--good);}
+  .node .tagline{overflow:hidden; text-overflow:ellipsis;}
+  .badge{ font-size:9px; padding:0 4px; border-radius:4px; font-weight:700; flex-shrink:0;}
+  .badge.anchor{ background:var(--purple); color:#1a0f2e; }
+  .badge.target{ background:var(--good); color:#06251a; }
+  .tag{color:var(--accent);} .attr{color:var(--warn);} .attrval{color:#9fe0a0;}
+  .cls-generated{color:var(--bad); text-decoration:line-through;}
+  .cls-state{color:var(--warn);}
+  .cls-framework{color:#7fc7ff;}
+  .cls-custom{color:var(--good);}
   .txt{color:var(--dim); font-style:italic;}
-  .unstable{ color:var(--bad); }
-  .empty-hint{ color:var(--dim); font-size:12.5px; margin-top:10px; line-height:1.5;}
-  .selected-path{
-    font-family:var(--mono); font-size:11.5px; color:var(--dim);
-    margin-bottom:10px; word-break:break-all;
-  }
-  .cand{
-    background:var(--panel); border:1px solid var(--border); border-radius:8px;
-    padding:10px 12px; margin-bottom:10px;
-  }
+  .empty-hint{ color:var(--dim); font-size:12.5px; margin-top:8px; line-height:1.5;}
+  .selected-path{ font-family:var(--mono); font-size:11.5px; color:var(--dim); margin-bottom:10px; word-break:break-all;}
+  .cand{ background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:10px;}
   .cand .top{ display:flex; justify-content:space-between; align-items:center; gap:8px;}
   .cand .label{ font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--dim); font-weight:600;}
-  .score{
-    font-size:11px; font-weight:700; padding:2px 7px; border-radius:20px;
-    font-family:var(--mono);
-  }
+  .score{ font-size:11px; font-weight:700; padding:2px 7px; border-radius:20px; font-family:var(--mono); }
   .score.s-high{ background:rgba(79,214,138,0.15); color:var(--good); }
   .score.s-mid{ background:rgba(232,179,74,0.15); color:var(--warn); }
   .score.s-low{ background:rgba(241,101,101,0.15); color:var(--bad); }
-  .code{
-    font-family:var(--mono); font-size:12px; background:var(--panel2);
-    border:1px solid var(--border); border-radius:6px; padding:8px 10px;
-    margin-top:6px; word-break:break-all; position:relative;
-  }
-  .copybtn{
-    position:absolute; top:6px; right:6px; font-size:10.5px; padding:3px 7px;
-    margin:0;
-  }
-  .traverse-btns{ margin-top:14px; }
-  .traverse-btns h2{margin-top:16px;}
-  .note{
-    font-size:11.5px; color:var(--dim); margin-top:4px; line-height:1.4;
-  }
-  .anchor-tag{
-    display:inline-block; font-size:10.5px; padding:2px 6px; border-radius:5px;
-    background:rgba(94,177,255,0.15); color:var(--accent); margin-left:6px;
-  }
+  .code{ font-family:var(--mono); font-size:12px; background:var(--panel2); border:1px solid var(--border);
+    border-radius:6px; padding:8px 34px 8px 10px; margin-top:6px; word-break:break-all; position:relative;}
+  .copybtn{ position:absolute; top:6px; right:6px; font-size:10.5px; padding:3px 7px; margin:0;}
+  .note{ font-size:11.5px; color:var(--dim); margin-top:4px; line-height:1.4;}
+  .anchor-target-bar{ background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:6px;}
+  .at-row{ display:flex; align-items:center; justify-content:space-between; gap:6px; padding:5px 0; font-size:12.5px;}
+  .at-row .lab{ color:var(--dim); font-size:11px; text-transform:uppercase; letter-spacing:.05em; width:56px; flex-shrink:0;}
+  .at-row .val{ font-family:var(--mono); font-size:11.5px; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .legend{ display:flex; flex-wrap:wrap; gap:10px; font-size:11px; color:var(--dim); margin-top:6px;}
+  .legend span{display:flex; align-items:center; gap:4px;}
+  .dot{width:8px; height:8px; border-radius:50%; display:inline-block;}
   ::-webkit-scrollbar{width:10px; height:10px;}
   ::-webkit-scrollbar-thumb{background:#333a4a; border-radius:6px;}
   ::-webkit-scrollbar-track{background:transparent;}
@@ -110,386 +73,304 @@
 
 <header>
   <h1>Playwright Locator Finder</h1>
-  <span>Paste HTML → click an element → get ranked, Angular-aware locator suggestions</span>
+  <span>Set an anchor + target while walking the tree → get a chained, stability-ranked locator</span>
 </header>
 
 <div class="layout">
 
-  <!-- LEFT: input + tree -->
   <div class="col">
     <h2>1. Paste HTML snippet</h2>
-    <textarea id="htmlInput" placeholder="Paste the outer HTML of your component or page (right-click element in DevTools → Copy → Copy outerHTML)"></textarea>
+    <textarea id="htmlInput" placeholder="Paste outer HTML from DevTools (right-click element → Copy → Copy outerHTML)"></textarea>
     <div class="row">
       <button id="parseBtn">Parse DOM</button>
       <button id="sampleBtn" class="secondary">Load sample</button>
     </div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--good)"></i>custom (best)</span>
+      <span><i class="dot" style="background:#7fc7ff"></i>framework class</span>
+      <span><i class="dot" style="background:var(--warn)"></i>state (avoid)</span>
+      <span><i class="dot" style="background:var(--bad)"></i>generated (never)</span>
+    </div>
 
-    <h2 style="margin-top:18px;">2. Click an element</h2>
-    <div id="tree"><div class="empty-hint">Tree will appear here after parsing.</div></div>
+    <h2>2. Click elements to inspect</h2>
+    <div id="tree"><div class="empty-hint">Tree appears here after parsing.</div></div>
   </div>
 
-  <!-- MIDDLE: candidates -->
   <div class="col">
-    <h2>3. Suggested locators</h2>
+    <h2>3. Locators for selected element</h2>
     <div id="selectedPath" class="selected-path"></div>
-    <div id="candidates">
-      <div class="empty-hint">Select an element on the left to see ranked Playwright locators here — highest confidence first, with unstable Angular-generated selectors flagged.</div>
-    </div>
+    <div id="candidates"><div class="empty-hint">Select an element on the left.</div></div>
   </div>
 
-  <!-- RIGHT: traversal -->
   <div class="col">
-    <h2>4. Traverse the DOM</h2>
-    <div id="traversal">
-      <div class="empty-hint">Select an element first, then walk up/down/sideways from it. Each step regenerates locators relative to a stable ancestor.</div>
+    <h2>4. Anchor → Target chain</h2>
+    <div class="anchor-target-bar">
+      <div class="at-row">
+        <span class="lab">Anchor</span>
+        <span class="val" id="anchorVal">none set</span>
+        <button class="tiny secondary" id="setAnchorBtn" disabled>Set</button>
+        <button class="tiny secondary" id="clearAnchorBtn" disabled>×</button>
+      </div>
+      <div class="at-row">
+        <span class="lab">Target</span>
+        <span class="val" id="targetVal">none set</span>
+        <button class="tiny secondary" id="setTargetBtn" disabled>Set</button>
+        <button class="tiny secondary" id="clearTargetBtn" disabled>×</button>
+      </div>
     </div>
+    <div id="chainResult"><div class="empty-hint">Select an element, click "Set" next to Anchor, select another element, click "Set" next to Target. The tool walks the path between them and builds the chained locator.</div></div>
+
+    <h2>Quick traversal from selection</h2>
+    <div id="traversal"><div class="empty-hint">Select an element to see its parent / children / siblings here.</div></div>
   </div>
 
 </div>
 
 <script>
-const UNSTABLE_PATTERNS = [/^ng-tns-/, /^ng-star/, /^mat-mdc-/, /^cdk-/, /^_ngcontent/, /^_nghost/, /^ember\d/, /^css-[a-z0-9]{5,}/i, /^[a-z]{1,2}\d{3,}$/i];
+// ---------- CLASS STABILITY CLASSIFICATION ----------
+const GENERATED_PATTERNS = [/^ng-tns-/, /^_ngcontent/, /^_nghost/, /^css-[a-z0-9]{5,}$/i, /^[a-z]{1,2}\d{4,}$/i, /^jss\d+$/];
+const STATE_PATTERNS = [/^ng-(valid|invalid|pristine|dirty|touched|untouched|star-inserted)$/, /^(active|disabled|selected|open|expanded|collapsed|hover|focused?)$/i, /-focus(ed)?$/i, /^cdk-(focused|program-focused|keyboard-focused|high-contrast)/, /^mat-focus-indicator$/];
+const FRAMEWORK_PREFIXES = [/^mat-mdc-/, /^mat-/, /^cdk-/, /^ui-/, /^p-/, /^mdc-/, /^ant-/, /^el-/, /^v-/];
 
-function isUnstableClass(cls){
-  return UNSTABLE_PATTERNS.some(re => re.test(cls));
+function classify(cls){
+  if(GENERATED_PATTERNS.some(re=>re.test(cls))) return 'generated';
+  if(STATE_PATTERNS.some(re=>re.test(cls))) return 'state';
+  if(FRAMEWORK_PREFIXES.some(re=>re.test(cls))) return 'framework';
+  return 'custom';
+}
+function classesByTier(el){
+  const out = {generated:[], state:[], framework:[], custom:[]};
+  [...el.classList].forEach(c => out[classify(c)].push(c));
+  return out;
+}
+function bestClassSelector(el){
+  const t = classesByTier(el);
+  if(t.custom.length) return {classes:t.custom, tier:'custom'};
+  if(t.framework.length) return {classes:t.framework, tier:'framework'};
+  return null;
 }
 
-function stableClasses(el){
-  return [...el.classList].filter(c => !isUnstableClass(c));
-}
-
-let doc = null;
-let selectedEl = null;
+let selectedEl = null, anchorEl = null, targetEl = null, elCounter = 0;
 
 function escAttr(s){ return (s||'').replace(/"/g,'&quot;'); }
 function escText(s){ return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-// ---------- TREE RENDERING ----------
-function buildTree(root, depth){
-  const container = document.createElement('div');
-  const skipTags = new Set(['SCRIPT','STYLE']);
-  function render(el, depth, parentEl){
-    if(skipTags.has(el.tagName)) return;
-    const line = document.createElement('div');
-    line.className = 'node';
-    line.style.paddingLeft = (depth*14)+'px';
-    line.dataset.depth = depth;
-    el.__elRef = el;
-
-    let attrHtml = '';
-    for(const a of el.attributes){
-      if(a.name === 'style') continue;
-      const unstable = a.name === 'class' && a.value.split(/\s+/).some(isUnstableClass);
-      attrHtml += ` <span class="attr">${a.name}</span>="<span class="attrval ${unstable?'unstable':''}">${escAttr(a.value)}</span>"`;
-    }
-    line.innerHTML = `&lt;<span class="tag">${el.tagName.toLowerCase()}</span>${attrHtml}&gt;`;
-    line.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      document.querySelectorAll('.node.selected').forEach(n=>n.classList.remove('selected'));
-      line.classList.add('selected');
-      selectElement(el);
-    });
-    container.appendChild(line);
-
-    for(const child of el.children){
-      render(child, depth+1, el);
-    }
-    // show direct text if meaningful
-    const directText = [...el.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent.trim()).join(' ').trim();
-    if(directText && el.children.length === 0){
-      const t = document.createElement('div');
-      t.className = 'txt';
-      t.style.paddingLeft = ((depth+1)*14)+'px';
-      t.textContent = '"' + directText.slice(0,60) + (directText.length>60?'…':'') + '"';
-      container.appendChild(t);
-    }
-  }
-  render(root, 0, null);
-  return container;
-}
-
-document.getElementById('parseBtn').addEventListener('click', ()=>{
-  const html = document.getElementById('htmlInput').value;
-  if(!html.trim()){ return; }
-  const parser = new DOMParser();
-  doc = parser.parseFromString(`<div id="__root__">${html}</div>`, 'text/html');
-  const root = doc.getElementById('__root__');
-  const treeEl = document.getElementById('tree');
-  treeEl.innerHTML = '';
-  treeEl.appendChild(buildTree(root, 0));
-  document.getElementById('candidates').innerHTML = '<div class="empty-hint">Select an element to see locator suggestions.</div>';
-  document.getElementById('traversal').innerHTML = '<div class="empty-hint">Select an element first.</div>';
-});
-
-document.getElementById('sampleBtn').addEventListener('click', ()=>{
-  document.getElementById('htmlInput').value =
-`<div class="mat-mdc-card ng-tns-c123-4" formGroupName="shippingAddress">
-  <div class="mat-mdc-form-field ng-star-inserted">
-    <label>City</label>
-    <input class="mat-mdc-input-element cdk-focused" formControlName="city" type="text">
-  </div>
-  <div class="mat-mdc-form-field">
-    <label>State</label>
-    <select formControlName="state" class="ng-tns-c123-9">
-      <option value="CA">California</option>
-    </select>
-  </div>
-  <div class="button-row">
-    <button class="mat-mdc-button ng-tns-c123-15" aria-label="Save address">
-      <span class="mdc-button__label">Save</span>
-    </button>
-    <button class="mat-mdc-button" disabled>Cancel</button>
-  </div>
-</div>`;
-  document.getElementById('parseBtn').click();
-});
-
-// ---------- SELECTION ----------
-function selectElement(el){
-  selectedEl = el;
-  renderPath(el);
-  renderCandidates(el);
-  renderTraversal(el);
-}
-
-function pathOf(el){
-  const parts = [];
-  let cur = el;
-  while(cur && cur.id !== '__root__' && cur.tagName){
-    let seg = cur.tagName.toLowerCase();
-    if(cur.id) seg += `#${cur.id}`;
-    parts.unshift(seg);
-    cur = cur.parentElement;
-  }
-  return parts.join(' > ');
-}
-
-function renderPath(el){
-  document.getElementById('selectedPath').textContent = 'Selected: ' + pathOf(el);
-}
-
-// ---------- LOCATOR CANDIDATE GENERATION ----------
-function attr(el,name){ return el.getAttribute(name); }
-
-function textOf(el){
-  const t = el.textContent.trim().replace(/\s+/g,' ');
-  return t.length && t.length < 60 ? t : null;
-}
+function attr(el,n){ return el.getAttribute(n); }
+function textOf(el){ const t=el.textContent.trim().replace(/\s+/g,' '); return t.length && t.length<60 ? t : null; }
 
 function roleGuess(el){
   const tag = el.tagName.toLowerCase();
   const explicit = attr(el,'role');
   if(explicit) return explicit;
-  const map = {
-    button:'button', a:'link', input:'textbox', select:'combobox',
-    textarea:'textbox', h1:'heading', h2:'heading', h3:'heading',
-    table:'table', ul:'list', li:'listitem', img:'img'
-  };
-  if(tag === 'input'){
-    const type = (attr(el,'type')||'text').toLowerCase();
-    if(type === 'checkbox') return 'checkbox';
-    if(type === 'radio') return 'radio';
-    if(type === 'button' || type === 'submit') return 'button';
+  const map = {button:'button',a:'link',select:'combobox',textarea:'textbox',h1:'heading',h2:'heading',h3:'heading',table:'table',ul:'list',li:'listitem',img:'img'};
+  if(tag==='input'){
+    const type=(attr(el,'type')||'text').toLowerCase();
+    if(type==='checkbox') return 'checkbox';
+    if(type==='radio') return 'radio';
+    if(type==='button'||type==='submit') return 'button';
     return 'textbox';
   }
   return map[tag] || null;
 }
+function accessibleName(el){ return attr(el,'aria-label') || textOf(el) || attr(el,'placeholder') || attr(el,'title') || null; }
 
-function accessibleName(el){
-  return attr(el,'aria-label') || textOf(el) || attr(el,'placeholder') || attr(el,'title') || null;
+// ---------- TREE ----------
+function buildTree(root){
+  const container = document.createElement('div');
+  const skip = new Set(['SCRIPT','STYLE']);
+  function classSpans(el){
+    return [...el.classList].map(c=>`<span class="cls-${classify(c)}">${c}</span>`).join(' ');
+  }
+  function render(el, depth){
+    if(skip.has(el.tagName)) return;
+    el.__uid = el.__uid || ('el'+(elCounter++));
+    const line = document.createElement('div');
+    line.className = 'node';
+    line.style.paddingLeft = (depth*14)+'px';
+    line.dataset.uid = el.__uid;
+    let attrHtml = '';
+    for(const a of el.attributes){
+      if(a.name==='style') continue;
+      if(a.name==='class'){ attrHtml += ` <span class="attr">class</span>="${classSpans(el)}"`; continue; }
+      attrHtml += ` <span class="attr">${a.name}</span>="<span class="attrval">${escAttr(a.value)}</span>"`;
+    }
+    const badges = `${el===anchorEl?'<span class="badge anchor">A</span>':''}${el===targetEl?'<span class="badge target">T</span>':''}`;
+    line.innerHTML = `${badges}<span class="tagline">&lt;<span class="tag">${el.tagName.toLowerCase()}</span>${attrHtml}&gt;</span>`;
+    if(el===selectedEl) line.classList.add('selected');
+    line.addEventListener('click', (e)=>{ e.stopPropagation(); selectElement(el); });
+    container.appendChild(line);
+    for(const child of el.children) render(child, depth+1);
+    const directText = [...el.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent.trim()).join(' ').trim();
+    if(directText && el.children.length===0){
+      const t=document.createElement('div'); t.className='txt';
+      t.style.paddingLeft=((depth+1)*14)+'px';
+      t.textContent = '"' + directText.slice(0,60) + (directText.length>60?'…':'') + '"';
+      container.appendChild(t);
+    }
+  }
+  render(root,0);
+  return container;
 }
 
+function refreshTree(){
+  const treeEl = document.getElementById('tree');
+  const root = window.__rootEl;
+  if(!root) return;
+  treeEl.innerHTML = '';
+  treeEl.appendChild(buildTree(root));
+}
+
+document.getElementById('parseBtn').addEventListener('click', ()=>{
+  const html = document.getElementById('htmlInput').value;
+  if(!html.trim()) return;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(`<div id="__root__">${html}</div>`,'text/html');
+  window.__rootEl = doc.getElementById('__root__');
+  selectedEl = anchorEl = targetEl = null;
+  elCounter = 0;
+  refreshTree();
+  updateAnchorTargetUI();
+  document.getElementById('candidates').innerHTML = '<div class="empty-hint">Select an element to see locator suggestions.</div>';
+  document.getElementById('traversal').innerHTML = '<div class="empty-hint">Select an element first.</div>';
+  document.getElementById('chainResult').innerHTML = '<div class="empty-hint">Select an element, click "Set" next to Anchor, select another element, click "Set" next to Target.</div>';
+});
+
+document.getElementById('sampleBtn').addEventListener('click', ()=>{
+  document.getElementById('htmlInput').value =
+`<p-dropdown _ngcontent-wlp-c838 id="currency" class="ng-tns-c122-261 ng-invalid ng-untouched ng-pristine ui-dropdown ui-widget ui-state-default ui-corner-all">
+  <div class="ui-helper-hidden-accessible ng-tns-c122-261"></div>
+  <div class="ui-dropdown-label-container ng-tns-c122-261">
+    <span class="ui-dropdown-label ng-tns-c122-261">Select Currency</span>
+  </div>
+  <div role="button" aria-haspopup="listbox" class="ui-dropdown-trigger ui-state-default ui-corner-right ng-tns-c122-261">
+    <span class="ui-dropdown-trigger-icon ui-clickable ng-tns-c122-261 pi pi-caret-down"></span>
+  </div>
+</p-dropdown>`;
+  document.getElementById('parseBtn').click();
+});
+
+// ---------- SELECTION ----------
+function pathOf(el){
+  const parts=[]; let cur=el;
+  while(cur && cur.id!=='__root__' && cur.tagName){
+    let seg=cur.tagName.toLowerCase();
+    if(cur.id) seg+=`#${cur.id}`;
+    parts.unshift(seg); cur=cur.parentElement;
+  }
+  return parts.join(' > ');
+}
+
+function selectElement(el){
+  selectedEl = el;
+  document.getElementById('selectedPath').textContent = 'Selected: ' + pathOf(el);
+  renderCandidates(el);
+  renderTraversal(el);
+  refreshTree();
+  updateAnchorTargetUI();
+}
+
+function updateAnchorTargetUI(){
+  document.getElementById('anchorVal').textContent = anchorEl ? shortDesc(anchorEl) : 'none set';
+  document.getElementById('targetVal').textContent = targetEl ? shortDesc(targetEl) : 'none set';
+  document.getElementById('setAnchorBtn').disabled = !selectedEl;
+  document.getElementById('setTargetBtn').disabled = !selectedEl;
+  document.getElementById('clearAnchorBtn').disabled = !anchorEl;
+  document.getElementById('clearTargetBtn').disabled = !targetEl;
+  renderChain();
+}
+
+document.getElementById('setAnchorBtn').addEventListener('click', ()=>{ if(selectedEl){ anchorEl = selectedEl; refreshTree(); updateAnchorTargetUI(); }});
+document.getElementById('setTargetBtn').addEventListener('click', ()=>{ if(selectedEl){ targetEl = selectedEl; refreshTree(); updateAnchorTargetUI(); }});
+document.getElementById('clearAnchorBtn').addEventListener('click', ()=>{ anchorEl=null; refreshTree(); updateAnchorTargetUI(); });
+document.getElementById('clearTargetBtn').addEventListener('click', ()=>{ targetEl=null; refreshTree(); updateAnchorTargetUI(); });
+
+// ---------- SINGLE-ELEMENT CANDIDATE LOCATORS ----------
 function buildCandidates(el){
   const candidates = [];
   const tag = el.tagName.toLowerCase();
 
-  // 1. data-testid family
   for(const name of ['data-testid','data-test-id','data-test','data-cy','data-qa']){
     const v = attr(el,name);
-    if(v){
-      candidates.push({
-        score: 100,
-        label: 'Test ID',
-        code: `page.getByTestId('${v}')`,
-        note: `Uses ${name}. Most stable option — prefer this whenever it exists.`
-      });
-    }
+    if(v) candidates.push({score:100, label:'Test ID', code:`page.getByTestId('${v}')`, note:`Uses ${name}. Most stable — prefer whenever present.`});
   }
+  if(el.id && !/^(cdk-|mat-|ng-)/.test(el.id)){
+    candidates.push({score:95, label:'Hand-set id', code:`page.locator('#${el.id}')`, note:`Looks like a real, developer-assigned id (not framework-generated) — very stable.`});
+  }
+  const role = roleGuess(el), name = accessibleName(el);
+  if(role && name) candidates.push({score:90, label:'Role + Name', code:`page.getByRole('${role}', { name: '${name.replace(/'/g,"\\'")}' })`, note:`Survives class churn entirely. Recommended default without a test id.`});
+  else if(role) candidates.push({score:55, label:'Role only', code:`page.getByRole('${role}')`, note:`No accessible name found — may match multiple elements; narrow with an ancestor or .filter().`});
 
-  // 2. role + accessible name
-  const role = roleGuess(el);
-  const name = accessibleName(el);
-  if(role && name){
-    candidates.push({
-      score: 90,
-      label: 'Role + Name',
-      code: `page.getByRole('${role}', { name: '${name.replace(/'/g,"\\'")}' })`,
-      note: `Survives Angular Material class churn. Recommended default when no test id exists.`
-    });
-  } else if(role){
-    candidates.push({
-      score: 55,
-      label: 'Role only',
-      code: `page.getByRole('${role}')`,
-      note: `No accessible name found — will match multiple elements if more than one ${role} exists. Consider narrowing with .filter() or an ancestor.`
-    });
-  }
+  const fcn = attr(el,'formcontrolname');
+  if(fcn) candidates.push({score:85, label:'formControlName', code:`page.locator('[formControlName="${fcn}"]')`, note:`Angular reactive-forms attribute, tied to the form model not styling.`});
+  const fgn = attr(el,'formgroupname');
+  if(fgn) candidates.push({score:80, label:'formGroupName (ancestor)', code:`page.locator('[formGroupName="${fgn}"]')`, note:`Good anchor for scoping further locators inside this group.`});
 
-  // 3. formControlName (Angular reactive forms — very common even without testids)
-  const fcn = attr(el,'formcontrolname') || attr(el,'formControlName');
-  if(fcn){
-    candidates.push({
-      score: 85,
-      label: 'formControlName',
-      code: `page.locator('[formControlName="${fcn}"]')`,
-      note: `Angular reactive-forms attribute — usually stable across refactors since it's tied to the form model, not styling.`
-    });
-  }
-  const fgn = attr(el,'formgroupname') || attr(el,'formGroupName');
-  if(fgn){
-    candidates.push({
-      score: 80,
-      label: 'formGroupName (ancestor)',
-      code: `page.locator('[formGroupName="${fgn}"]')`,
-      note: `Good anchor for scoping a getByRole()/getByLabel() call inside this group.`
-    });
-  }
-
-  // 4. aria-label direct
   const aria = attr(el,'aria-label');
-  if(aria && !(role && name === aria)){
-    candidates.push({
-      score: 82,
-      label: 'aria-label',
-      code: `page.locator('[aria-label="${aria.replace(/"/g,'\\"')}"]')`,
-      note: `Direct attribute match. Stable if the label copy doesn't change often.`
-    });
-  }
+  if(aria && !(role && name===aria)) candidates.push({score:82, label:'aria-label', code:`page.locator('[aria-label="${aria.replace(/"/g,'\\"')}"]')`, note:`Direct attribute match.`});
 
-  // 5. name / placeholder
-  const nameAttr = attr(el,'name');
-  if(nameAttr){
-    candidates.push({
-      score: 70,
-      label: 'name attribute',
-      code: `page.locator('[name="${nameAttr}"]')`,
-      note: `Common on native form controls.`
-    });
-  }
   const ph = attr(el,'placeholder');
-  if(ph){
-    candidates.push({
-      score: 65,
-      label: 'Placeholder',
-      code: `page.getByPlaceholder('${ph.replace(/'/g,"\\'")}')`,
-      note: `Fine for inputs, but breaks if placeholder copy changes.`
-    });
-  }
+  if(ph) candidates.push({score:65, label:'Placeholder', code:`page.getByPlaceholder('${ph.replace(/'/g,"\\'")}')`, note:`Breaks if placeholder copy changes.`});
 
-  // 6. text content (for buttons/links/labels without other anchors)
   const txt = textOf(el);
-  if(txt && ['button','a','span','label','td','th','li'].includes(tag)){
-    candidates.push({
-      score: 60,
-      label: 'Text content',
-      code: `page.getByText('${txt.replace(/'/g,"\\'")}', { exact: true })`,
-      note: `Fragile if copy changes or text repeats elsewhere on the page.`
-    });
+  if(txt && ['button','a','span','label','td','th','li'].includes(tag)) candidates.push({score:60, label:'Text content', code:`page.getByText('${txt.replace(/'/g,"\\'")}', { exact: true })`, note:`Fragile if copy changes or repeats elsewhere.`});
+
+  const best = bestClassSelector(el);
+  if(best){
+    const score = best.tier==='custom' ? 70 : 50;
+    candidates.push({score, label: best.tier==='custom' ? 'Custom class' : 'Framework class', code:`page.locator('${tag}.${best.classes.join('.')}')`, note: best.tier==='custom' ? `App-authored class — reasonably stable.` : `Belongs to the UI library itself (e.g. PrimeNG "p-*"/"ui-*", Material "mat-*"). Stable within a library version, but re-check after upgrades.`});
+  }
+  const t = classesByTier(el);
+  if(!best && t.generated.length){
+    candidates.push({score:10, label:'Generated class (avoid)', code:`page.locator('${tag}.${t.generated[0]}') /* ⚠ do not use */`, note:`All classes here look framework-generated (${t.generated.slice(0,3).join(', ')}) — they change on every rebuild.`});
+  }
+  if(t.state.length && !t.generated.length && !t.custom.length && !t.framework.length){
+    candidates.push({score:20, label:'State class (avoid)', code:`page.locator('${tag}.${t.state[0]}') /* ⚠ toggles at runtime */`, note:`These classes (${t.state.join(', ')}) reflect interaction/validation state — they appear and disappear as the user interacts.`});
   }
 
-  // 7. stable class-based CSS
-  const sClasses = stableClasses(el);
-  const unstable = [...el.classList].filter(isUnstableClass);
-  if(sClasses.length){
-    candidates.push({
-      score: 45,
-      label: 'Stable class',
-      code: `page.locator('${tag}.${sClasses.join('.')}')`,
-      note: unstable.length
-        ? `Filtered out ${unstable.length} Angular-generated class(es) (${unstable.slice(0,2).join(', ')}${unstable.length>2?'…':''}) — do not use those, they change on rebuild.`
-        : `No generated classes detected on this element.`
-    });
-  } else if(unstable.length){
-    candidates.push({
-      score: 15,
-      label: 'Class-based (unstable)',
-      code: `page.locator('${tag}.${unstable[0]}') /* ⚠ avoid */`,
-      note: `Every class on this element looks Angular/Material-generated (${unstable.join(', ')}). Do not rely on this — it will change between builds.`
-    });
-  }
-
-  // 8. nth-child structural fallback
   if(el.parentElement){
-    const idx = [...el.parentElement.children].indexOf(el) + 1;
-    candidates.push({
-      score: 10,
-      label: 'Structural (nth-child)',
-      code: `page.locator('${pathOf(el.parentElement).split(' > ').pop()} > ${tag}:nth-child(${idx})')`,
-      note: `Last resort — breaks the moment sibling order or count changes. Only use combined with a stable ancestor.`
-    });
+    const idx = [...el.parentElement.children].indexOf(el)+1;
+    candidates.push({score:10, label:'Structural (nth-child)', code:`page.locator('${tag}:nth-child(${idx})')`, note:`Last resort — pair with a stable ancestor, never use alone.`});
   }
-
   candidates.sort((a,b)=>b.score-a.score);
   return candidates;
 }
 
-function scoreClass(score){
-  if(score >= 75) return 's-high';
-  if(score >= 40) return 's-mid';
-  return 's-low';
+function scoreClass(score){ if(score>=75) return 's-high'; if(score>=40) return 's-mid'; return 's-low'; }
+
+function candHtml(c){
+  return `<div class="cand">
+    <div class="top"><span class="label">${c.label}</span><span class="score ${scoreClass(c.score)}">${c.score}</span></div>
+    <div class="code">${escText(c.code)}<button class="copybtn secondary" data-code="${escAttr(c.code)}">Copy</button></div>
+    <div class="note">${c.note}</div>
+  </div>`;
+}
+function wireCopyButtons(container){
+  container.querySelectorAll('.copybtn').forEach(btn=>{
+    btn.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      navigator.clipboard.writeText(btn.dataset.code);
+      btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy',1000);
+    });
+  });
 }
 
 function renderCandidates(el){
   const list = buildCandidates(el);
   const wrap = document.getElementById('candidates');
-  wrap.innerHTML = '';
-  if(!list.length){
-    wrap.innerHTML = '<div class="empty-hint">No usable attributes found on this element. Try selecting a parent, or check the traversal panel to anchor from an ancestor.</div>';
-    return;
-  }
-  list.forEach(c=>{
-    const div = document.createElement('div');
-    div.className = 'cand';
-    div.innerHTML = `
-      <div class="top">
-        <span class="label">${c.label}</span>
-        <span class="score ${scoreClass(c.score)}">${c.score}</span>
-      </div>
-      <div class="code">${escText(c.code)}<button class="copybtn secondary" data-code="${escAttr(c.code)}">Copy</button></div>
-      <div class="note">${c.note}</div>
-    `;
-    wrap.appendChild(div);
-  });
-  wrap.querySelectorAll('.copybtn').forEach(btn=>{
-    btn.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      navigator.clipboard.writeText(btn.dataset.code);
-      btn.textContent = 'Copied!';
-      setTimeout(()=>btn.textContent='Copy', 1000);
-    });
-  });
+  wrap.innerHTML = list.length ? list.map(candHtml).join('') : '<div class="empty-hint">No usable attributes on this element — try a parent, or use the Anchor→Target chain builder.</div>';
+  wireCopyButtons(wrap);
 }
 
-// ---------- TRAVERSAL PANEL ----------
-function findStableAncestor(el){
-  let cur = el.parentElement;
-  while(cur && cur.id !== '__root__'){
-    if(attr(cur,'data-testid') || attr(cur,'formgroupname') || attr(cur,'formGroupName') || (attr(cur,'aria-label')) || stableClasses(cur).length){
-      return cur;
-    }
-    cur = cur.parentElement;
-  }
-  return null;
-}
-
+// ---------- QUICK TRAVERSAL PANEL ----------
 function shortDesc(el){
   if(!el) return null;
   const tag = el.tagName.toLowerCase();
+  const best = bestClassSelector(el);
   const id = attr(el,'data-testid') ? `[testid=${attr(el,'data-testid')}]`
+    : (el.id && !/^(cdk-|mat-|ng-)/.test(el.id)) ? `#${el.id}`
     : attr(el,'formcontrolname') ? `[fcn=${attr(el,'formcontrolname')}]`
     : attr(el,'formgroupname') ? `[fgn=${attr(el,'formgroupname')}]`
     : attr(el,'aria-label') ? `[aria=${attr(el,'aria-label')}]`
-    : stableClasses(el).length ? `.${stableClasses(el)[0]}`
+    : best ? `.${best.classes[0]}`
     : null;
   return `<${tag}${id?' '+id:''}>`;
 }
@@ -497,80 +378,102 @@ function shortDesc(el){
 function renderTraversal(el){
   const wrap = document.getElementById('traversal');
   wrap.innerHTML = '';
-
-  const parent = el.parentElement && el.parentElement.id !== '__root__' ? el.parentElement : null;
+  const parent = el.parentElement && el.parentElement.id!=='__root__' ? el.parentElement : null;
   const children = [...el.children];
   const siblings = parent ? [...parent.children].filter(c=>c!==el) : [];
-  const anchor = findStableAncestor(el);
 
-  const section = (title, items, onClick, emptyText) => {
-    const h = document.createElement('h2');
-    h.textContent = title;
-    wrap.appendChild(h);
-    if(!items.length){
-      const p = document.createElement('div');
-      p.className = 'empty-hint';
-      p.textContent = emptyText;
-      wrap.appendChild(p);
-      return;
-    }
+  const section = (title, items, emptyText) => {
+    const h=document.createElement('h2'); h.textContent=title; wrap.appendChild(h);
+    if(!items.length){ const p=document.createElement('div'); p.className='empty-hint'; p.textContent=emptyText; wrap.appendChild(p); return; }
     items.forEach(item=>{
-      const b = document.createElement('button');
-      b.className = 'secondary';
-      b.style.display = 'block';
-      b.style.width = '100%';
-      b.style.textAlign = 'left';
-      b.style.marginBottom = '6px';
+      const b=document.createElement('button'); b.className='secondary';
+      b.style.cssText='display:block;width:100%;text-align:left;margin-bottom:6px;font-family:var(--mono);font-size:11.5px;';
       b.innerHTML = shortDesc(item);
-      b.addEventListener('click', ()=>{
-        selectElement(item);
-        highlightInTree(item);
-      });
+      b.addEventListener('click', ()=>selectElement(item));
       wrap.appendChild(b);
     });
   };
-
-  section('↑ Parent', parent ? [parent] : [], null, 'No parent (this is the root element).');
-  section('↓ Children', children, null, 'This element has no children.');
-  section('↔ Siblings', siblings, null, 'No sibling elements.');
-
-  // Anchor + relative locator suggestion
-  const h = document.createElement('h2');
-  h.textContent = 'Suggested anchor';
-  wrap.appendChild(h);
-  if(anchor){
-    const box = document.createElement('div');
-    box.className = 'cand';
-    const role = roleGuess(el);
-    const name = accessibleName(el);
-    const anchorSel = attr(anchor,'data-testid') ? `page.getByTestId('${attr(anchor,'data-testid')}')`
-      : attr(anchor,'formgroupname') ? `page.locator('[formGroupName="${attr(anchor,'formgroupname')}"]')`
-      : attr(anchor,'aria-label') ? `page.locator('[aria-label="${attr(anchor,'aria-label')}"]')`
-      : `page.locator('${anchor.tagName.toLowerCase()}.${stableClasses(anchor)[0]}')`;
-    const rel = role && name ? `.getByRole('${role}', { name: '${name.replace(/'/g,"\\'")}' })`
-      : `.locator('${el.tagName.toLowerCase()}')`;
-    box.innerHTML = `
-      <div class="top"><span class="label">Relative locator</span></div>
-      <div class="code">${escText(anchorSel + rel)}<button class="copybtn secondary" data-code="${escAttr(anchorSel+rel)}">Copy</button></div>
-      <div class="note">Anchored at nearest stable ancestor ${shortDesc(anchor)}, then scoped down. This is usually the most refactor-resistant option in an Angular app with sparse test ids.</div>
-    `;
-    wrap.appendChild(box);
-    box.querySelector('.copybtn').addEventListener('click', (e)=>{
-      navigator.clipboard.writeText(e.target.dataset.code);
-      e.target.textContent='Copied!';
-      setTimeout(()=>e.target.textContent='Copy',1000);
-    });
-  } else {
-    const p = document.createElement('div');
-    p.className = 'empty-hint';
-    p.textContent = 'No stable ancestor found above this element — every attribute up the chain looks Angular-generated. Consider asking the dev team to add a data-testid here.';
-    wrap.appendChild(p);
-  }
+  section('↑ Parent', parent?[parent]:[], 'No parent (root element).');
+  section('↓ Children', children, 'No children.');
+  section('↔ Siblings', siblings, 'No siblings.');
 }
 
-function highlightInTree(el){
-  // best-effort: re-render tree isn't tracked by ref easily since we rebuilt DOM;
-  // selection sync across panels is handled by object identity already (el is live in `doc`)
+// ---------- ANCHOR → TARGET CHAIN ----------
+function ancestorsOf(el){
+  const chain=[]; let cur=el;
+  while(cur && cur.id!=='__root__'){ chain.push(cur); cur=cur.parentElement; }
+  return chain; // [el, parent, grandparent, ...]
+}
+
+function bestSelectorForHop(el, isFinal){
+  // Returns {code, tier, label} for a single element, used as one hop in a chain.
+  const testid = attr(el,'data-testid');
+  if(testid) return {code:`getByTestId('${testid}')`, label:'testid', tier:'custom'};
+  if(el.id && !/^(cdk-|mat-|ng-)/.test(el.id)) return {code:`locator('#${el.id}')`, label:'id', tier:'custom'};
+  const fcn = attr(el,'formcontrolname');
+  if(fcn) return {code:`locator('[formControlName="${fcn}"]')`, label:'formControlName', tier:'custom'};
+  const fgn = attr(el,'formgroupname');
+  if(fgn) return {code:`locator('[formGroupName="${fgn}"]')`, label:'formGroupName', tier:'custom'};
+  const role = roleGuess(el), name = accessibleName(el);
+  if(isFinal && role && name) return {code:`getByRole('${role}', { name: '${name.replace(/'/g,"\\'")}' })`, label:'role+name', tier:'custom'};
+  const aria = attr(el,'aria-label');
+  if(aria) return {code:`locator('[aria-label="${aria.replace(/"/g,'\\"')}"]')`, label:'aria-label', tier:'custom'};
+  if(isFinal && role) return {code:`getByRole('${role}')`, label:'role', tier:'framework'};
+  const best = bestClassSelector(el);
+  if(best) return {code:`locator('${el.tagName.toLowerCase()}.${best.classes.join('.')}')`, label: best.tier+' class', tier: best.tier};
+  return {code:`locator('${el.tagName.toLowerCase()}')`, label:'tag only', tier:'weak'};
+}
+
+function renderChain(){
+  const wrap = document.getElementById('chainResult');
+  if(!anchorEl || !targetEl){
+    wrap.innerHTML = '<div class="empty-hint">Select an element, click "Set" next to Anchor, select another element, click "Set" next to Target.</div>';
+    return;
+  }
+  const targetChain = ancestorsOf(targetEl); // target ... root
+  const anchorIdx = targetChain.indexOf(anchorEl);
+
+  if(anchorIdx === -1){
+    wrap.innerHTML = `<div class="empty-hint">Target is not a descendant of the anchor in this snippet. Pick an anchor that is an ancestor of the target (e.g. a wrapping card, form group, or the component root), or swap which one you set as anchor.</div>`;
+    return;
+  }
+  if(anchorIdx === 0){
+    wrap.innerHTML = `<div class="empty-hint">Anchor and target are the same element — pick a different target descendant.</div>`;
+    return;
+  }
+
+  // hops between anchor(exclusive) down to target(inclusive), anchor itself is hop 0
+  const anchorHop = bestSelectorForHop(anchorEl, false);
+  const hops = [{el:anchorEl, sel:anchorHop}];
+  for(let i=anchorIdx-1; i>=0; i--){
+    const node = targetChain[i];
+    const isFinal = i===0;
+    hops.push({el:node, sel: bestSelectorForHop(node, isFinal)});
+  }
+
+  // Build chain code: page.<anchorSel>.<hop1Sel>.<hop2Sel>...
+  // Skip intermediate hops that only offer a weak "tag only" selector — chain straight through with a combinator instead.
+  let code = 'page.' + hops[0].sel.code;
+  let usedHops = 1;
+  for(let i=1;i<hops.length;i++){
+    if(hops[i].sel.tier==='weak' && i!==hops.length-1) continue; // skip uninformative middle hop
+    code += '.' + hops[i].sel.code;
+    usedHops++;
+  }
+
+  const weakCount = hops.filter(h=>h.sel.tier==='weak').length;
+  const genCount = hops.reduce((n,h)=> n + [...h.el.classList].filter(c=>classify(c)==='generated').length, 0);
+
+  wrap.innerHTML = `
+    <div class="cand">
+      <div class="top"><span class="label">Chained locator</span><span class="score ${scoreClass(100-weakCount*20)}">${hops.length} hop${hops.length>1?'s':''}</span></div>
+      <div class="code">${escText(code)}<button class="copybtn secondary" data-code="${escAttr(code)}">Copy</button></div>
+      <div class="note">Path: ${hops.map(h=>shortDesc(h.el)+` <span style="color:var(--dim)">(${h.sel.label})</span>`).join(' → ')}</div>
+      ${genCount ? `<div class="note" style="color:var(--bad)">Ignored ${genCount} framework-generated class(es) along this path — they were not used in the locator.</div>` : ''}
+    </div>
+    <div class="empty-hint">Click × next to Anchor or Target above to redo the pick.</div>
+  `;
+  wireCopyButtons(wrap);
 }
 </script>
 </body>
