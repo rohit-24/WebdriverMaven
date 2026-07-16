@@ -2,575 +2,576 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Locator Doctor — Playwright Selector Stability Bench</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>Playwright Locator Finder</title>
 <style>
   :root{
-    --bg: #10131a;
-    --panel: #161a24;
-    --panel-2: #1c212e;
-    --line: #2a3040;
-    --text: #dfe4ee;
-    --muted: #7d8598;
-    --accent: #7fd8c4;      /* signal teal */
-    --accent-dim: #3c5850;
-    --amber: #e8a54b;
-    --red: #e8615f;
-    --blue: #6ea8fe;
-    --mono: 'JetBrains Mono', ui-monospace, monospace;
-    --display: 'Space Grotesk', ui-sans-serif, sans-serif;
+    --bg:#0f1115;
+    --panel:#161922;
+    --panel2:#1c202b;
+    --border:#2a2f3d;
+    --text:#dfe3ee;
+    --dim:#8890a4;
+    --accent:#5eb1ff;
+    --good:#4fd68a;
+    --warn:#e8b34a;
+    --bad:#f16565;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   }
   *{box-sizing:border-box;}
   body{
-    margin:0; background:
-      radial-gradient(1200px 600px at 90% -10%, #182034 0%, transparent 60%),
-      var(--bg);
-    color:var(--text); font-family:var(--mono); line-height:1.5;
-    padding:32px 20px 80px;
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    font-size:14px;
   }
-  .wrap{max-width:1120px; margin:0 auto;}
-
-  header{margin-bottom:28px;}
-  .eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); margin-bottom:10px; display:flex; align-items:center; gap:8px;}
-  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--accent); box-shadow:0 0 8px var(--accent);}
-  h1{font-family:var(--display); font-weight:700; font-size:clamp(28px,4vw,40px); margin:0 0 8px; letter-spacing:-0.01em;}
-  .sub{color:var(--muted); max-width:640px; font-size:14.5px;}
-
-  .grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:26px;}
-  @media (max-width:820px){.grid{grid-template-columns:1fr;}}
-
-  .panel{background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; display:flex; flex-direction:column;}
-  .panel-head{display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--line); background:var(--panel-2);}
-  .panel-head h2{font-family:var(--display); font-size:13.5px; font-weight:600; margin:0; color:var(--text); text-transform:uppercase; letter-spacing:.06em;}
-  .panel-head span{font-size:11.5px; color:var(--muted);}
+  header{
+    padding:14px 20px; border-bottom:1px solid var(--border);
+    display:flex; align-items:baseline; gap:10px;
+  }
+  header h1{font-size:16px; margin:0; font-weight:600; letter-spacing:.2px;}
+  header span{color:var(--dim); font-size:12px;}
+  .layout{
+    display:grid;
+    grid-template-columns: 380px 1fr 340px;
+    height: calc(100vh - 49px);
+  }
+  .col{ border-right:1px solid var(--border); overflow:auto; padding:14px; }
+  .col:last-child{border-right:none;}
+  h2{
+    font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--dim); margin:0 0 8px 0; font-weight:600;
+  }
   textarea{
-    width:100%; min-height:230px; resize:vertical; background:transparent; color:var(--text);
-    border:none; outline:none; padding:14px 16px; font-family:var(--mono); font-size:13px; tab-size:2;
+    width:100%; height:160px; background:var(--panel2); color:var(--text);
+    border:1px solid var(--border); border-radius:6px; padding:10px;
+    font-family:var(--mono); font-size:12px; resize:vertical;
   }
-  textarea::placeholder{color:#4a5164;}
-
-  .controls{display:flex; align-items:center; gap:12px; margin-top:18px; flex-wrap:wrap;}
   button{
-    font-family:var(--mono); font-size:13px; font-weight:600; cursor:pointer;
-    border-radius:7px; border:1px solid var(--line); background:var(--panel-2); color:var(--text);
-    padding:10px 16px; transition:border-color .15s, transform .1s, background .15s;
+    background:var(--accent); color:#08111c; border:none; border-radius:6px;
+    padding:8px 12px; font-size:12.5px; font-weight:600; cursor:pointer;
+    margin-top:8px;
   }
-  button:hover{border-color:var(--accent); background:#1d2938;}
-  button:active{transform:scale(.98);}
-  .primary{background:var(--accent); color:#0b1512; border-color:var(--accent);}
-  .primary:hover{background:#8fe2cf; border-color:#8fe2cf;}
-  .ghost{background:transparent;}
-  .hint{color:var(--muted); font-size:12px;}
-
-  #results{margin-top:34px;}
-  .results-head{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:16px;}
-  .results-title{font-family:var(--display); font-size:18px; font-weight:600;}
-  .chips{display:flex; gap:8px; flex-wrap:wrap;}
-  .chip{
-    font-size:11.5px; padding:6px 11px; border-radius:999px; border:1px solid var(--line); color:var(--muted);
-    cursor:pointer; user-select:none; background:var(--panel-2);
+  button.secondary{
+    background:var(--panel2); color:var(--text); border:1px solid var(--border);
+    font-weight:500;
   }
-  .chip.active{color:#0b1512; background:var(--accent); border-color:var(--accent); font-weight:600;}
-
-  .card{
-    background:var(--panel); border:1px solid var(--line); border-radius:10px; margin-bottom:12px; overflow:hidden;
+  button:hover{filter:brightness(1.08);}
+  .row{display:flex; gap:8px; flex-wrap:wrap;}
+  #tree{ font-family:var(--mono); font-size:12.5px; line-height:1.6; margin-top:12px;}
+  .node{ white-space:nowrap; cursor:pointer; padding:1px 4px; border-radius:4px; }
+  .node:hover{ background:var(--panel2); }
+  .node.selected{ background:rgba(94,177,255,0.18); outline:1px solid var(--accent); }
+  .tag{color:var(--accent);}
+  .attr{color:var(--warn);}
+  .attrval{color:var(--good);}
+  .txt{color:var(--dim); font-style:italic;}
+  .unstable{ color:var(--bad); }
+  .empty-hint{ color:var(--dim); font-size:12.5px; margin-top:10px; line-height:1.5;}
+  .selected-path{
+    font-family:var(--mono); font-size:11.5px; color:var(--dim);
+    margin-bottom:10px; word-break:break-all;
   }
-  .card-top{display:flex; align-items:center; gap:14px; padding:14px 16px; border-bottom:1px solid var(--line); flex-wrap:wrap;}
-  .var-name{font-family:var(--display); font-weight:600; font-size:14.5px; color:var(--text);}
-  .badge{
-    font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; font-weight:700; padding:3px 9px; border-radius:5px;
+  .cand{
+    background:var(--panel); border:1px solid var(--border); border-radius:8px;
+    padding:10px 12px; margin-bottom:10px;
   }
-  .badge.excellent{color:#0b1512; background:var(--accent);}
-  .badge.good{color:#0b1512; background:var(--blue);}
-  .badge.fair{color:#221a09; background:var(--amber);}
-  .badge.risky{color:#221a09; background:var(--amber);}
-  .badge.bad{color:#fff; background:var(--red);}
-
-  .meter{flex:1; min-width:120px; height:6px; border-radius:4px; background:#252b3a; position:relative; overflow:hidden;}
-  .meter i{position:absolute; left:0; top:0; bottom:0; border-radius:4px; display:block;}
-  .score{font-size:11.5px; color:var(--muted); min-width:34px; text-align:right;}
-
-  .card-body{padding:14px 16px 16px;}
-  .row{display:grid; grid-template-columns:90px 1fr; gap:10px; margin-bottom:8px; font-size:12.5px;}
-  .row .k{color:var(--muted); text-transform:uppercase; letter-spacing:.06em; font-size:10.5px; padding-top:2px;}
+  .cand .top{ display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .cand .label{ font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--dim); font-weight:600;}
+  .score{
+    font-size:11px; font-weight:700; padding:2px 7px; border-radius:20px;
+    font-family:var(--mono);
+  }
+  .score.s-high{ background:rgba(79,214,138,0.15); color:var(--good); }
+  .score.s-mid{ background:rgba(232,179,74,0.15); color:var(--warn); }
+  .score.s-low{ background:rgba(241,101,101,0.15); color:var(--bad); }
   .code{
-    background:var(--panel-2); border:1px solid var(--line); border-radius:6px; padding:8px 10px; font-size:12.8px;
-    white-space:pre-wrap; word-break:break-word; color:var(--text);
+    font-family:var(--mono); font-size:12px; background:var(--panel2);
+    border:1px solid var(--border); border-radius:6px; padding:8px 10px;
+    margin-top:6px; word-break:break-all; position:relative;
   }
-  .code.suggest{border-color:var(--accent-dim); color:#c9f5ea;}
-  .issues{margin:10px 0 0; padding-left:18px; color:var(--amber); font-size:12px;}
-  .issues li{margin-bottom:4px;}
-  .issues.none{color:var(--muted); list-style:none; padding-left:0;}
-  .row-actions{display:flex; justify-content:flex-end; margin-top:10px;}
-  .copy-btn{padding:6px 12px; font-size:11.5px;}
-
-  footer{margin-top:40px; color:var(--muted); font-size:12px; border-top:1px solid var(--line); padding-top:16px;}
-  .empty{color:var(--muted); font-size:13.5px; padding:30px 0; text-align:center;}
-  .toast{
-    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); opacity:0;
-    background:var(--accent); color:#0b1512; font-weight:600; font-size:13px; padding:10px 18px; border-radius:8px;
-    transition:opacity .2s, transform .2s; pointer-events:none; font-family:var(--mono);
+  .copybtn{
+    position:absolute; top:6px; right:6px; font-size:10.5px; padding:3px 7px;
+    margin:0;
   }
-  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .traverse-btns{ margin-top:14px; }
+  .traverse-btns h2{margin-top:16px;}
+  .note{
+    font-size:11.5px; color:var(--dim); margin-top:4px; line-height:1.4;
+  }
+  .anchor-tag{
+    display:inline-block; font-size:10.5px; padding:2px 6px; border-radius:5px;
+    background:rgba(94,177,255,0.15); color:var(--accent); margin-left:6px;
+  }
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-thumb{background:#333a4a; border-radius:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="eyebrow"><span class="dot"></span>Locator Doctor</div>
-    <h1>Selector stability bench</h1>
-    <div class="sub">Paste your page object (or a raw list of locators) on the left, optionally the page's rendered DOM on the right. Every locator gets scored for stability and, where possible, an exact replacement — cross-checked against the real markup, not guessed.</div>
-  </header>
 
-  <div class="grid">
-    <div class="panel">
-      <div class="panel-head">
-        <h2>Locators / Page Object</h2>
-        <span>.locator · .getByRole · .getByText …</span>
-      </div>
-      <textarea id="inputCode" placeholder="applicableRulesDropdown = this.page.locator(&quot;#applicableRulesOptions&quot;);
-radioButtonConfirm = this.page.locator(&quot;#confirmationOptions_01 > label > span.mat-radio-label-content&quot;);
-previewCustomerReference = this.page.locator(&quot;.beneficiaryReference&quot;).first();"></textarea>
+<header>
+  <h1>Playwright Locator Finder</h1>
+  <span>Paste HTML → click an element → get ranked, Angular-aware locator suggestions</span>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT: input + tree -->
+  <div class="col">
+    <h2>1. Paste HTML snippet</h2>
+    <textarea id="htmlInput" placeholder="Paste the outer HTML of your component or page (right-click element in DevTools → Copy → Copy outerHTML)"></textarea>
+    <div class="row">
+      <button id="parseBtn">Parse DOM</button>
+      <button id="sampleBtn" class="secondary">Load sample</button>
     </div>
-    <div class="panel">
-      <div class="panel-head">
-        <h2>Page DOM <span style="color:var(--muted); text-transform:none; font-weight:400;">(optional)</span></h2>
-        <span>enables exact suggestions</span>
-      </div>
-      <textarea id="inputDom" placeholder="Paste the rendered HTML of the page here (View Source / Copy outerHTML on the element or page). Without this, you still get stability scoring and general advice — with it, you get exact getByTestId/getByRole/getByLabel replacements pulled from the real markup."></textarea>
+
+    <h2 style="margin-top:18px;">2. Click an element</h2>
+    <div id="tree"><div class="empty-hint">Tree will appear here after parsing.</div></div>
+  </div>
+
+  <!-- MIDDLE: candidates -->
+  <div class="col">
+    <h2>3. Suggested locators</h2>
+    <div id="selectedPath" class="selected-path"></div>
+    <div id="candidates">
+      <div class="empty-hint">Select an element on the left to see ranked Playwright locators here — highest confidence first, with unstable Angular-generated selectors flagged.</div>
     </div>
   </div>
 
-  <div class="controls">
-    <button class="primary" id="analyzeBtn">Analyze locators →</button>
-    <button class="ghost" id="loadSample">Load sample</button>
-    <button class="ghost" id="clearBtn">Clear</button>
-    <span class="hint">Everything runs locally in this page — nothing is sent anywhere.</span>
+  <!-- RIGHT: traversal -->
+  <div class="col">
+    <h2>4. Traverse the DOM</h2>
+    <div id="traversal">
+      <div class="empty-hint">Select an element first, then walk up/down/sideways from it. Each step regenerates locators relative to a stable ancestor.</div>
+    </div>
   </div>
 
-  <div id="results"></div>
-
-  <footer>Scoring model: data-testid / getByTestId highest · id and stable attributes good · text and label locators good · deep CSS chains, nth-child, and framework-generated classes (mat-*, css hashes) penalized.</footer>
 </div>
-
-<div class="toast" id="toast">Copied</div>
 
 <script>
-const $ = (s, el=document) => el.querySelector(s);
-const $$ = (s, el=document) => Array.from(el.querySelectorAll(s));
+const UNSTABLE_PATTERNS = [/^ng-tns-/, /^ng-star/, /^mat-mdc-/, /^cdk-/, /^_ngcontent/, /^_nghost/, /^ember\d/, /^css-[a-z0-9]{5,}/i, /^[a-z]{1,2}\d{3,}$/i];
 
-function showToast(msg){
-  const t = $('#toast'); t.textContent = msg || 'Copied';
-  t.classList.add('show');
-  clearTimeout(showToast._t);
-  showToast._t = setTimeout(()=>t.classList.remove('show'), 1400);
+function isUnstableClass(cls){
+  return UNSTABLE_PATTERNS.some(re => re.test(cls));
 }
 
-// ---------- Parsing ----------
-const METHODS = ['getByTestId','getByRole','getByText','getByLabel','getByPlaceholder','getByTitle','getByAltText','locator'];
+function stableClasses(el){
+  return [...el.classList].filter(c => !isUnstableClass(c));
+}
 
-function extractCalls(src){
-  const results = [];
-  const callRegex = /(?:([A-Za-z_$][\w$]*)\s*=\s*)?(?:this\s*\.\s*)?page\s*\.\s*(getByTestId|getByRole|getByText|getByLabel|getByPlaceholder|getByTitle|getByAltText|locator)\s*\(/g;
-  let m;
-  while ((m = callRegex.exec(src)) !== null){
-    const varName = m[1] || null;
-    const method = m[2];
-    const startParen = callRegex.lastIndex - 1;
-    let depth = 0, end = -1;
-    for (let i = startParen; i < src.length; i++){
-      if (src[i] === '(') depth++;
-      else if (src[i] === ')'){ depth--; if (depth === 0){ end = i; break; } }
+let doc = null;
+let selectedEl = null;
+
+function escAttr(s){ return (s||'').replace(/"/g,'&quot;'); }
+function escText(s){ return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ---------- TREE RENDERING ----------
+function buildTree(root, depth){
+  const container = document.createElement('div');
+  const skipTags = new Set(['SCRIPT','STYLE']);
+  function render(el, depth, parentEl){
+    if(skipTags.has(el.tagName)) return;
+    const line = document.createElement('div');
+    line.className = 'node';
+    line.style.paddingLeft = (depth*14)+'px';
+    line.dataset.depth = depth;
+    el.__elRef = el;
+
+    let attrHtml = '';
+    for(const a of el.attributes){
+      if(a.name === 'style') continue;
+      const unstable = a.name === 'class' && a.value.split(/\s+/).some(isUnstableClass);
+      attrHtml += ` <span class="attr">${a.name}</span>="<span class="attrval ${unstable?'unstable':''}">${escAttr(a.value)}</span>"`;
     }
-    if (end === -1) continue;
-    const argsRaw = src.slice(startParen+1, end).trim();
-    const rest = src.slice(end+1);
-    const chainMatch = rest.match(/^\s*\.(first|last)\(\s*\)|^\s*\.nth\(\s*(\d+)\s*\)/);
-    const chain = chainMatch ? chainMatch[0].replace(/\s+/g,'') : '';
-    results.push({ varName, method, argsRaw, chain });
-    callRegex.lastIndex = end + 1;
-  }
-  if (results.length === 0){
-    // Fallback: treat each non-empty line as a raw CSS selector
-    src.split('\n').map(l=>l.trim()).filter(Boolean).forEach(line=>{
-      const cleaned = line.replace(/;$/,'').replace(/^['"`]|['"`]$/g,'');
-      if (cleaned) results.push({ varName:null, method:'locator', argsRaw:`'${cleaned}'`, chain:'' });
+    line.innerHTML = `&lt;<span class="tag">${el.tagName.toLowerCase()}</span>${attrHtml}&gt;`;
+    line.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      document.querySelectorAll('.node.selected').forEach(n=>n.classList.remove('selected'));
+      line.classList.add('selected');
+      selectElement(el);
     });
-  }
-  return results;
-}
+    container.appendChild(line);
 
-function firstStringArg(argsRaw){
-  const m = argsRaw.match(/^['"`]([\s\S]*?)['"`]/);
-  return m ? m[1] : argsRaw;
-}
-
-// ---------- Scoring ----------
-function analyze(call){
-  const { method, argsRaw, chain } = call;
-  const selectorStr = firstStringArg(argsRaw);
-  let score = 60;
-  const issues = [];
-
-  if (method === 'getByTestId'){
-    score = 98;
-  } else if (method === 'getByRole'){
-    score = 92;
-    if (!/name\s*:/.test(argsRaw)) { score -= 18; issues.push('No accessible "name" option — may match more than one element with this role.'); }
-  } else if (['getByLabel','getByPlaceholder','getByAltText','getByTitle'].includes(method)){
-    score = 84;
-  } else if (method === 'getByText'){
-    score = 74;
-    issues.push('Text locators break whenever copy changes — fine for stable, non-marketing strings.');
-  } else if (method === 'locator'){
-    if (/data-testid|data-test-id|data-qa|data-cy/.test(selectorStr)){
-      score = 96;
-    } else if (/^#[\w-]+$/.test(selectorStr.trim())){
-      score = 80;
-    } else if (/^\[(aria-label|name|role|title)=/.test(selectorStr.trim())){
-      score = 76;
-    } else if (/:has-text|:text\(/.test(selectorStr)){
-      score = 68;
-      issues.push('Playwright text-matching pseudo-class — consider the equivalent getByText() for readability.');
-    } else {
-      score = 58;
-      const chainDepth = (selectorStr.match(/>|\s(?=[.#\[a-zA-Z])/g) || []).length;
-      if (chainDepth > 0){
-        score -= chainDepth * 9;
-        issues.push(`Selector reaches ${chainDepth + 1} level${chainDepth>0?'s':''} deep (uses combinators) — breaks if any intermediate element changes.`);
-      }
-      if (/:nth-child|:nth-of-type/.test(selectorStr)){
-        score -= 25;
-        issues.push('Positional selector (nth-child / nth-of-type) — breaks the moment sibling order or count changes.');
-      }
-      if (/\bmat-[\w-]+\b/.test(selectorStr)){
-        score -= 12;
-        issues.push('Targets an Angular Material internal class (mat-*) — an implementation detail the library can change on upgrade.');
-      }
-      if (/\b[a-z0-9]+-[0-9a-f]{5,}\b/.test(selectorStr) || /\bcss-[a-z0-9]+\b/.test(selectorStr)){
-        score -= 20;
-        issues.push('Looks like a generated/hashed class name (CSS-in-JS or build output) — will change on the next rebuild.');
-      }
+    for(const child of el.children){
+      render(child, depth+1, el);
+    }
+    // show direct text if meaningful
+    const directText = [...el.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent.trim()).join(' ').trim();
+    if(directText && el.children.length === 0){
+      const t = document.createElement('div');
+      t.className = 'txt';
+      t.style.paddingLeft = ((depth+1)*14)+'px';
+      t.textContent = '"' + directText.slice(0,60) + (directText.length>60?'…':'') + '"';
+      container.appendChild(t);
     }
   }
-
-  if (/^\.first\(\)/.test(chain)){
-    score -= 10;
-    issues.push('Uses .first() — a sign the selector is ambiguous (matches multiple elements). Narrowing the selector is usually better than truncating the list.');
-  }
-  if (/^\.nth\(/.test(chain)){
-    score -= 15;
-    issues.push('Uses .nth(n) — positional and will silently point at the wrong element if the list reorders.');
-  }
-
-  score = Math.max(2, Math.min(100, Math.round(score)));
-  let category;
-  if (score >= 90) category = 'excellent';
-  else if (score >= 75) category = 'good';
-  else if (score >= 55) category = 'fair';
-  else if (score >= 35) category = 'risky';
-  else category = 'bad';
-
-  return { score, category, issues, selectorStr };
+  render(root, 0, null);
+  return container;
 }
 
-// ---------- DOM cross-check ----------
-function buildDoc(domText){
-  if (!domText || !domText.trim()) return null;
-  try{
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(domText, 'text/html');
-    return doc;
-  } catch(e){ return null; }
+document.getElementById('parseBtn').addEventListener('click', ()=>{
+  const html = document.getElementById('htmlInput').value;
+  if(!html.trim()){ return; }
+  const parser = new DOMParser();
+  doc = parser.parseFromString(`<div id="__root__">${html}</div>`, 'text/html');
+  const root = doc.getElementById('__root__');
+  const treeEl = document.getElementById('tree');
+  treeEl.innerHTML = '';
+  treeEl.appendChild(buildTree(root, 0));
+  document.getElementById('candidates').innerHTML = '<div class="empty-hint">Select an element to see locator suggestions.</div>';
+  document.getElementById('traversal').innerHTML = '<div class="empty-hint">Select an element first.</div>';
+});
+
+document.getElementById('sampleBtn').addEventListener('click', ()=>{
+  document.getElementById('htmlInput').value =
+`<div class="mat-mdc-card ng-tns-c123-4" formGroupName="shippingAddress">
+  <div class="mat-mdc-form-field ng-star-inserted">
+    <label>City</label>
+    <input class="mat-mdc-input-element cdk-focused" formControlName="city" type="text">
+  </div>
+  <div class="mat-mdc-form-field">
+    <label>State</label>
+    <select formControlName="state" class="ng-tns-c123-9">
+      <option value="CA">California</option>
+    </select>
+  </div>
+  <div class="button-row">
+    <button class="mat-mdc-button ng-tns-c123-15" aria-label="Save address">
+      <span class="mdc-button__label">Save</span>
+    </button>
+    <button class="mat-mdc-button" disabled>Cancel</button>
+  </div>
+</div>`;
+  document.getElementById('parseBtn').click();
+});
+
+// ---------- SELECTION ----------
+function selectElement(el){
+  selectedEl = el;
+  renderPath(el);
+  renderCandidates(el);
+  renderTraversal(el);
 }
 
-function guessRole(el){
+function pathOf(el){
+  const parts = [];
+  let cur = el;
+  while(cur && cur.id !== '__root__' && cur.tagName){
+    let seg = cur.tagName.toLowerCase();
+    if(cur.id) seg += `#${cur.id}`;
+    parts.unshift(seg);
+    cur = cur.parentElement;
+  }
+  return parts.join(' > ');
+}
+
+function renderPath(el){
+  document.getElementById('selectedPath').textContent = 'Selected: ' + pathOf(el);
+}
+
+// ---------- LOCATOR CANDIDATE GENERATION ----------
+function attr(el,name){ return el.getAttribute(name); }
+
+function textOf(el){
+  const t = el.textContent.trim().replace(/\s+/g,' ');
+  return t.length && t.length < 60 ? t : null;
+}
+
+function roleGuess(el){
   const tag = el.tagName.toLowerCase();
-  const type = (el.getAttribute('type')||'').toLowerCase();
-  if (el.getAttribute('role')) return el.getAttribute('role');
-  if (tag === 'button') return 'button';
-  if (tag === 'a' && el.hasAttribute('href')) return 'link';
-  if (tag === 'input'){
-    if (type === 'radio') return 'radio';
-    if (type === 'checkbox') return 'checkbox';
-    if (type === 'button' || type === 'submit') return 'button';
+  const explicit = attr(el,'role');
+  if(explicit) return explicit;
+  const map = {
+    button:'button', a:'link', input:'textbox', select:'combobox',
+    textarea:'textbox', h1:'heading', h2:'heading', h3:'heading',
+    table:'table', ul:'list', li:'listitem', img:'img'
+  };
+  if(tag === 'input'){
+    const type = (attr(el,'type')||'text').toLowerCase();
+    if(type === 'checkbox') return 'checkbox';
+    if(type === 'radio') return 'radio';
+    if(type === 'button' || type === 'submit') return 'button';
     return 'textbox';
   }
-  if (tag === 'select') return 'combobox';
-  if (tag === 'textarea') return 'textbox';
-  return null;
+  return map[tag] || null;
 }
 
-function accessibleName(el, doc){
-  const aria = el.getAttribute('aria-label');
-  if (aria) return aria.trim();
-  if (el.id){
-    const lbl = doc.querySelector(`label[for="${CSS.escape(el.id)}"]`);
-    if (lbl && lbl.textContent.trim()) return lbl.textContent.trim();
-  }
-  const text = el.textContent && el.textContent.trim();
-  if (text && text.length <= 60) return text;
-  return null;
+function accessibleName(el){
+  return attr(el,'aria-label') || textOf(el) || attr(el,'placeholder') || attr(el,'title') || null;
 }
 
-function domSuggestion(doc, selectorStr){
-  if (!doc || !selectorStr) return null;
-  let el = null;
-  try { el = doc.querySelector(selectorStr); } catch(e){ return { notFound:true, error:true }; }
-  if (!el) return { notFound:true };
+function buildCandidates(el){
+  const candidates = [];
+  const tag = el.tagName.toLowerCase();
 
-  const testid = el.getAttribute('data-testid') || el.getAttribute('data-test-id') || el.getAttribute('data-qa') || el.getAttribute('data-cy');
-  const role = guessRole(el);
-  const name = accessibleName(el, doc);
-  const ariaLabel = el.getAttribute('aria-label');
-  const nameAttr = el.getAttribute('name');
-  const id = el.id;
-
-  if (testid) return { method:'getByTestId', arg:testid, code: `page.getByTestId('${esc(testid)}')`, why: 'Element (or the correct target) carries a data-testid in the real DOM — the most stable option available.' };
-  if (role && name) return { method:'getByRole', arg:name, role, code: `page.getByRole('${role}', { name: '${esc(name)}' })`, why: `Matched element has role "${role}" and an accessible name in the DOM — mirrors how a user/screen-reader finds it.` };
-  if (ariaLabel) return { method:'getByLabel', arg:ariaLabel, code: `page.getByLabel('${esc(ariaLabel)}')`, why: 'Element has an aria-label in the DOM.' };
-  if (id && /^[a-zA-Z][\w-]*$/.test(id) && !/^[a-f0-9]{6,}$/i.test(id)) return { method:'locator', arg:`#${id}`, code: `page.locator('#${id}')`, why: 'Element itself has a semantic, human-readable id — simpler and just as stable as the current chain.' };
-  if (nameAttr) return { method:'locator', arg:`[name="${nameAttr}"]`, code: `page.locator('[name="${nameAttr}"]')`, why: 'Element has a stable name attribute in the DOM.' };
-  return { code: null, why: 'No data-testid, aria-label, role+name, or stable id found on this element in the provided DOM — worth adding a data-testid here.' };
-}
-
-function esc(s){ return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
-
-// Build a self-contained Chrome DevTools console snippet that mimics a Playwright
-// locator strategy against the live DOM, logs the match count, and highlights matches.
-function devtoolsSnippet(method, arg, opts){
-  opts = opts || {};
-  const HI = "el.style.outline='3px solid #7fd8c4'; el.style.outlineOffset='2px';";
-  const argJson = JSON.stringify(arg == null ? '' : arg);
-  switch(method){
-    case 'getByTestId':
-      return `(() => { const els=[...document.querySelectorAll('[data-testid="${esc(arg)}"],[data-test-id="${esc(arg)}"],[data-qa="${esc(arg)}"],[data-cy="${esc(arg)}"]')]; console.log('Matches:', els.length); els.forEach(el=>{${HI}}); return els; })();`;
-    case 'locator':
-      return `(() => { const els=[...document.querySelectorAll('${arg.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')]; console.log('Matches:', els.length); els.forEach(el=>{${HI}}); return els; })();`;
-    case 'getByRole': {
-      const roleMap = {
-        button: 'button, [role="button"], input[type="submit"], input[type="button"]',
-        link: 'a[href], [role="link"]',
-        radio: 'input[type="radio"], [role="radio"]',
-        checkbox: 'input[type="checkbox"], [role="checkbox"]',
-        textbox: 'input, textarea, [role="textbox"]',
-        combobox: 'select, [role="combobox"]'
-      };
-      const sel = roleMap[opts.role] || `[role="${opts.role || ''}"]`;
-      return `(() => { const name=${argJson}; const els=[...document.querySelectorAll('${sel}')].filter(el => (el.getAttribute('aria-label')||el.textContent||'').trim().includes(name)); console.log('Matches:', els.length); els.forEach(el=>{${HI}}); return els; })();`;
+  // 1. data-testid family
+  for(const name of ['data-testid','data-test-id','data-test','data-cy','data-qa']){
+    const v = attr(el,name);
+    if(v){
+      candidates.push({
+        score: 100,
+        label: 'Test ID',
+        code: `page.getByTestId('${v}')`,
+        note: `Uses ${name}. Most stable option — prefer this whenever it exists.`
+      });
     }
-    case 'getByText':
-      return `(() => { const target=${argJson}; const els=[...document.querySelectorAll('body *')].filter(el => el.children.length===0 && el.textContent.trim() === target); console.log('Matches:', els.length); els.forEach(el=>{${HI}}); return els; })();`;
-    case 'getByLabel':
-      return `(() => { const target=${argJson}; const lbl=[...document.querySelectorAll('label')].find(l=>l.textContent.trim()===target); const input = lbl ? (lbl.control || (lbl.getAttribute('for') && document.getElementById(lbl.getAttribute('for')))) : document.querySelector('[aria-label="'+target+'"]'); console.log(input ? 'Match found' : 'No match'); if(input){ input.style.outline='3px solid #7fd8c4'; input.style.outlineOffset='2px'; } return input; })();`;
-    case 'getByPlaceholder':
-      return `(() => { const els=[...document.querySelectorAll('[placeholder="${esc(arg)}"]')]; console.log('Matches:', els.length); els.forEach(el=>{${HI}}); return els; })();`;
-    case 'getByTitle':
-      return `(() => { const els=[...document.querySelectorAll('[title="${esc(arg)}"]')]; console.log('Matches:', els.length); els.forEach(el=>{${HI}}); return els; })();`;
-    case 'getByAltText':
-      return `(() => { const els=[...document.querySelectorAll('[alt="${esc(arg)}"]')]; console.log('Matches:', els.length); els.forEach(el=>{${HI}}); return els; })();`;
-    default:
-      return `document.querySelectorAll('${String(arg).replace(/'/g,"\\'")}')`;
   }
+
+  // 2. role + accessible name
+  const role = roleGuess(el);
+  const name = accessibleName(el);
+  if(role && name){
+    candidates.push({
+      score: 90,
+      label: 'Role + Name',
+      code: `page.getByRole('${role}', { name: '${name.replace(/'/g,"\\'")}' })`,
+      note: `Survives Angular Material class churn. Recommended default when no test id exists.`
+    });
+  } else if(role){
+    candidates.push({
+      score: 55,
+      label: 'Role only',
+      code: `page.getByRole('${role}')`,
+      note: `No accessible name found — will match multiple elements if more than one ${role} exists. Consider narrowing with .filter() or an ancestor.`
+    });
+  }
+
+  // 3. formControlName (Angular reactive forms — very common even without testids)
+  const fcn = attr(el,'formcontrolname') || attr(el,'formControlName');
+  if(fcn){
+    candidates.push({
+      score: 85,
+      label: 'formControlName',
+      code: `page.locator('[formControlName="${fcn}"]')`,
+      note: `Angular reactive-forms attribute — usually stable across refactors since it's tied to the form model, not styling.`
+    });
+  }
+  const fgn = attr(el,'formgroupname') || attr(el,'formGroupName');
+  if(fgn){
+    candidates.push({
+      score: 80,
+      label: 'formGroupName (ancestor)',
+      code: `page.locator('[formGroupName="${fgn}"]')`,
+      note: `Good anchor for scoping a getByRole()/getByLabel() call inside this group.`
+    });
+  }
+
+  // 4. aria-label direct
+  const aria = attr(el,'aria-label');
+  if(aria && !(role && name === aria)){
+    candidates.push({
+      score: 82,
+      label: 'aria-label',
+      code: `page.locator('[aria-label="${aria.replace(/"/g,'\\"')}"]')`,
+      note: `Direct attribute match. Stable if the label copy doesn't change often.`
+    });
+  }
+
+  // 5. name / placeholder
+  const nameAttr = attr(el,'name');
+  if(nameAttr){
+    candidates.push({
+      score: 70,
+      label: 'name attribute',
+      code: `page.locator('[name="${nameAttr}"]')`,
+      note: `Common on native form controls.`
+    });
+  }
+  const ph = attr(el,'placeholder');
+  if(ph){
+    candidates.push({
+      score: 65,
+      label: 'Placeholder',
+      code: `page.getByPlaceholder('${ph.replace(/'/g,"\\'")}')`,
+      note: `Fine for inputs, but breaks if placeholder copy changes.`
+    });
+  }
+
+  // 6. text content (for buttons/links/labels without other anchors)
+  const txt = textOf(el);
+  if(txt && ['button','a','span','label','td','th','li'].includes(tag)){
+    candidates.push({
+      score: 60,
+      label: 'Text content',
+      code: `page.getByText('${txt.replace(/'/g,"\\'")}', { exact: true })`,
+      note: `Fragile if copy changes or text repeats elsewhere on the page.`
+    });
+  }
+
+  // 7. stable class-based CSS
+  const sClasses = stableClasses(el);
+  const unstable = [...el.classList].filter(isUnstableClass);
+  if(sClasses.length){
+    candidates.push({
+      score: 45,
+      label: 'Stable class',
+      code: `page.locator('${tag}.${sClasses.join('.')}')`,
+      note: unstable.length
+        ? `Filtered out ${unstable.length} Angular-generated class(es) (${unstable.slice(0,2).join(', ')}${unstable.length>2?'…':''}) — do not use those, they change on rebuild.`
+        : `No generated classes detected on this element.`
+    });
+  } else if(unstable.length){
+    candidates.push({
+      score: 15,
+      label: 'Class-based (unstable)',
+      code: `page.locator('${tag}.${unstable[0]}') /* ⚠ avoid */`,
+      note: `Every class on this element looks Angular/Material-generated (${unstable.join(', ')}). Do not rely on this — it will change between builds.`
+    });
+  }
+
+  // 8. nth-child structural fallback
+  if(el.parentElement){
+    const idx = [...el.parentElement.children].indexOf(el) + 1;
+    candidates.push({
+      score: 10,
+      label: 'Structural (nth-child)',
+      code: `page.locator('${pathOf(el.parentElement).split(' > ').pop()} > ${tag}:nth-child(${idx})')`,
+      note: `Last resort — breaks the moment sibling order or count changes. Only use combined with a stable ancestor.`
+    });
+  }
+
+  candidates.sort((a,b)=>b.score-a.score);
+  return candidates;
 }
 
-// Pull role + accessible-name option out of a getByRole(...) call's raw args, e.g. "'radio', { name: 'Confirm' }"
-function parseRoleArgs(argsRaw){
-  const roleMatch = argsRaw.match(/^['"`]([\s\S]*?)['"`]/);
-  const nameMatch = argsRaw.match(/name\s*:\s*['"`]([\s\S]*?)['"`]/);
-  return { role: roleMatch ? roleMatch[1] : null, name: nameMatch ? nameMatch[1] : '' };
+function scoreClass(score){
+  if(score >= 75) return 's-high';
+  if(score >= 40) return 's-mid';
+  return 's-low';
 }
 
-// ---------- Rendering ----------
-let lastCards = [];
-
-function colorFor(category){
-  return { excellent:'var(--accent)', good:'var(--blue)', fair:'var(--amber)', risky:'var(--amber)', bad:'var(--red)' }[category];
-}
-
-function renderResults(cards){
-  const wrap = $('#results');
-  if (cards.length === 0){
-    wrap.innerHTML = '<div class="empty">Paste some locators above and hit Analyze.</div>';
+function renderCandidates(el){
+  const list = buildCandidates(el);
+  const wrap = document.getElementById('candidates');
+  wrap.innerHTML = '';
+  if(!list.length){
+    wrap.innerHTML = '<div class="empty-hint">No usable attributes found on this element. Try selecting a parent, or check the traversal panel to anchor from an ancestor.</div>';
     return;
   }
-  const counts = cards.reduce((acc,c)=>{acc[c.category]=(acc[c.category]||0)+1; return acc;}, {});
-  const chipDefs = ['all','excellent','good','fair','risky','bad'];
-
-  wrap.innerHTML = `
-    <div class="results-head">
-      <div class="results-title">${cards.length} locator${cards.length!==1?'s':''} analyzed</div>
-      <div class="chips">${chipDefs.map(c=>`<div class="chip ${c==='all'?'active':''}" data-filter="${c}">${c}${c!=='all'?` (${counts[c]||0})`:''}</div>`).join('')}</div>
-      <button class="primary" id="copyAllBtn">Copy all suggested code</button>
-    </div>
-    <div id="cardList"></div>
-  `;
-
-  const list = $('#cardList');
-  list.innerHTML = cards.map((c, idx) => `
-    <div class="card" data-category="${c.category}">
-      <div class="card-top">
-        <div class="var-name">${c.varName ? c.varName : '(unnamed)'}</div>
-        <div class="badge ${c.category}">${c.category}</div>
-        <div class="meter"><i style="width:${c.score}%; background:${colorFor(c.category)}"></i></div>
-        <div class="score">${c.score}/100</div>
+  list.forEach(c=>{
+    const div = document.createElement('div');
+    div.className = 'cand';
+    div.innerHTML = `
+      <div class="top">
+        <span class="label">${c.label}</span>
+        <span class="score ${scoreClass(c.score)}">${c.score}</span>
       </div>
-      <div class="card-body">
-        <div class="row"><div class="k">Current</div><div class="code">${escapeHtml(c.originalCode)}</div></div>
-        ${c.suggestion && c.suggestion.code ? `
-        <div class="row"><div class="k">Suggest</div><div class="code suggest">${escapeHtml(buildAssignment(c.varName, c.suggestion.code))}</div></div>
-        ` : ''}
-        ${c.suggestion && c.suggestion.why ? `<div class="row"><div class="k">Because</div><div style="font-size:12px;color:var(--muted);padding-top:4px;">${escapeHtml(c.suggestion.why)}</div></div>` : ''}
-        ${c.issues.length ? `<ul class="issues">${c.issues.map(i=>`<li>${escapeHtml(i)}</li>`).join('')}</ul>` : `<ul class="issues none">No structural red flags detected.</ul>`}
-
-        <div class="row"><div class="k">Test now</div><div class="code" style="color:#a9b3c9;">${escapeHtml(c.devtoolsCurrent)}</div></div>
-        ${c.devtoolsSuggested ? `<div class="row"><div class="k">Test fix</div><div class="code suggest">${escapeHtml(c.devtoolsSuggested)}</div></div>` : ''}
-        <div style="font-size:11px;color:var(--muted); margin:2px 0 0;">Paste into Chrome DevTools → Console on the live page. Logs a match count and outlines whatever it finds.</div>
-
-        <div class="row-actions">
-          <button class="copy-btn" data-kind="pw" data-idx="${idx}">Copy Playwright line</button>
-          <button class="copy-btn" data-kind="dt-current" data-idx="${idx}">Copy DevTools (current)</button>
-          ${c.devtoolsSuggested ? `<button class="copy-btn" data-kind="dt-suggest" data-idx="${idx}">Copy DevTools (fix)</button>` : ''}
-        </div>
-      </div>
-    </div>
-  `).join('');
-
-  $$('.copy-btn', list).forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const c = cards[btn.dataset.idx];
-      const kind = btn.dataset.kind;
-      let text, label;
-      if (kind === 'pw'){
-        text = buildAssignment(c.varName, (c.suggestion && c.suggestion.code) ? c.suggestion.code : c.originalCode.replace(/^[^=]*=\s*/,''));
-        label = 'Playwright line copied';
-      } else if (kind === 'dt-current'){
-        text = c.devtoolsCurrent;
-        label = 'DevTools snippet copied';
-      } else {
-        text = c.devtoolsSuggested;
-        label = 'DevTools snippet copied';
-      }
-      navigator.clipboard.writeText(text).then(()=>showToast(label));
+      <div class="code">${escText(c.code)}<button class="copybtn secondary" data-code="${escAttr(c.code)}">Copy</button></div>
+      <div class="note">${c.note}</div>
+    `;
+    wrap.appendChild(div);
+  });
+  wrap.querySelectorAll('.copybtn').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      navigator.clipboard.writeText(btn.dataset.code);
+      btn.textContent = 'Copied!';
+      setTimeout(()=>btn.textContent='Copy', 1000);
     });
   });
+}
 
-  $$('.chip', wrap).forEach(chip=>{
-    chip.addEventListener('click', ()=>{
-      $$('.chip', wrap).forEach(c=>c.classList.remove('active'));
-      chip.classList.add('active');
-      const f = chip.dataset.filter;
-      $$('.card', list).forEach(card=>{
-        card.style.display = (f==='all' || card.dataset.category===f) ? '' : 'none';
+// ---------- TRAVERSAL PANEL ----------
+function findStableAncestor(el){
+  let cur = el.parentElement;
+  while(cur && cur.id !== '__root__'){
+    if(attr(cur,'data-testid') || attr(cur,'formgroupname') || attr(cur,'formGroupName') || (attr(cur,'aria-label')) || stableClasses(cur).length){
+      return cur;
+    }
+    cur = cur.parentElement;
+  }
+  return null;
+}
+
+function shortDesc(el){
+  if(!el) return null;
+  const tag = el.tagName.toLowerCase();
+  const id = attr(el,'data-testid') ? `[testid=${attr(el,'data-testid')}]`
+    : attr(el,'formcontrolname') ? `[fcn=${attr(el,'formcontrolname')}]`
+    : attr(el,'formgroupname') ? `[fgn=${attr(el,'formgroupname')}]`
+    : attr(el,'aria-label') ? `[aria=${attr(el,'aria-label')}]`
+    : stableClasses(el).length ? `.${stableClasses(el)[0]}`
+    : null;
+  return `<${tag}${id?' '+id:''}>`;
+}
+
+function renderTraversal(el){
+  const wrap = document.getElementById('traversal');
+  wrap.innerHTML = '';
+
+  const parent = el.parentElement && el.parentElement.id !== '__root__' ? el.parentElement : null;
+  const children = [...el.children];
+  const siblings = parent ? [...parent.children].filter(c=>c!==el) : [];
+  const anchor = findStableAncestor(el);
+
+  const section = (title, items, onClick, emptyText) => {
+    const h = document.createElement('h2');
+    h.textContent = title;
+    wrap.appendChild(h);
+    if(!items.length){
+      const p = document.createElement('div');
+      p.className = 'empty-hint';
+      p.textContent = emptyText;
+      wrap.appendChild(p);
+      return;
+    }
+    items.forEach(item=>{
+      const b = document.createElement('button');
+      b.className = 'secondary';
+      b.style.display = 'block';
+      b.style.width = '100%';
+      b.style.textAlign = 'left';
+      b.style.marginBottom = '6px';
+      b.innerHTML = shortDesc(item);
+      b.addEventListener('click', ()=>{
+        selectElement(item);
+        highlightInTree(item);
       });
+      wrap.appendChild(b);
     });
-  });
+  };
 
-  $('#copyAllBtn').addEventListener('click', ()=>{
-    const text = cards.map(c=>{
-      const code = (c.suggestion && c.suggestion.code) ? c.suggestion.code : c.originalCode.replace(/^[^=]*=\s*/,'');
-      const line = buildAssignment(c.varName, code);
-      const flag = c.category === 'excellent' || c.category === 'good' ? '' : `  // ${c.category} — ${c.issues[0] || 'review'}`;
-      return line + (flag ? ';' + flag : ';');
-    }).join('\n');
-    navigator.clipboard.writeText(text).then(()=>showToast('All lines copied'));
-  });
+  section('↑ Parent', parent ? [parent] : [], null, 'No parent (this is the root element).');
+  section('↓ Children', children, null, 'This element has no children.');
+  section('↔ Siblings', siblings, null, 'No sibling elements.');
+
+  // Anchor + relative locator suggestion
+  const h = document.createElement('h2');
+  h.textContent = 'Suggested anchor';
+  wrap.appendChild(h);
+  if(anchor){
+    const box = document.createElement('div');
+    box.className = 'cand';
+    const role = roleGuess(el);
+    const name = accessibleName(el);
+    const anchorSel = attr(anchor,'data-testid') ? `page.getByTestId('${attr(anchor,'data-testid')}')`
+      : attr(anchor,'formgroupname') ? `page.locator('[formGroupName="${attr(anchor,'formgroupname')}"]')`
+      : attr(anchor,'aria-label') ? `page.locator('[aria-label="${attr(anchor,'aria-label')}"]')`
+      : `page.locator('${anchor.tagName.toLowerCase()}.${stableClasses(anchor)[0]}')`;
+    const rel = role && name ? `.getByRole('${role}', { name: '${name.replace(/'/g,"\\'")}' })`
+      : `.locator('${el.tagName.toLowerCase()}')`;
+    box.innerHTML = `
+      <div class="top"><span class="label">Relative locator</span></div>
+      <div class="code">${escText(anchorSel + rel)}<button class="copybtn secondary" data-code="${escAttr(anchorSel+rel)}">Copy</button></div>
+      <div class="note">Anchored at nearest stable ancestor ${shortDesc(anchor)}, then scoped down. This is usually the most refactor-resistant option in an Angular app with sparse test ids.</div>
+    `;
+    wrap.appendChild(box);
+    box.querySelector('.copybtn').addEventListener('click', (e)=>{
+      navigator.clipboard.writeText(e.target.dataset.code);
+      e.target.textContent='Copied!';
+      setTimeout(()=>e.target.textContent='Copy',1000);
+    });
+  } else {
+    const p = document.createElement('div');
+    p.className = 'empty-hint';
+    p.textContent = 'No stable ancestor found above this element — every attribute up the chain looks Angular-generated. Consider asking the dev team to add a data-testid here.';
+    wrap.appendChild(p);
+  }
 }
 
-function buildAssignment(varName, code){
-  return varName ? `${varName} = this.${code};` : `this.${code};`;
+function highlightInTree(el){
+  // best-effort: re-render tree isn't tracked by ref easily since we rebuilt DOM;
+  // selection sync across panels is handled by object identity already (el is live in `doc`)
 }
-
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
-
-function reconstructOriginal(call){
-  const prefix = call.varName ? `${call.varName} = this.page.` : `this.page.`;
-  return `${prefix}${call.method}(${call.argsRaw})${call.chain}`;
-}
-
-// ---------- Wire up ----------
-$('#analyzeBtn').addEventListener('click', ()=>{
-  const code = $('#inputCode').value;
-  const domText = $('#inputDom').value;
-  const doc = buildDoc(domText);
-
-  const calls = extractCalls(code);
-  const cards = calls.map(call=>{
-    const { score, category, issues, selectorStr } = analyze(call);
-    let suggestion = null;
-    if (call.method === 'locator'){
-      const ds = doc ? domSuggestion(doc, selectorStr) : null;
-      if (ds && ds.code) suggestion = { code: ds.code, why: ds.why, method: ds.method, arg: ds.arg, role: ds.role };
-      else if (ds && ds.notFound && doc) issues.push(ds.error ? "Selector couldn't be evaluated as plain CSS (uses a Playwright-only pseudo-class) — copy the exact suggestion manually." : 'No element in the pasted DOM matched this selector — verify it still applies to the current page.');
-    }
-
-    // DevTools snippet for the locator as it exists today
-    let devtoolsCurrent;
-    if (call.method === 'getByRole'){
-      const { role, name } = parseRoleArgs(call.argsRaw);
-      devtoolsCurrent = devtoolsSnippet('getByRole', name, { role });
-    } else {
-      devtoolsCurrent = devtoolsSnippet(call.method, selectorStr);
-    }
-
-    // DevTools snippet for the suggested replacement, if one exists
-    let devtoolsSuggested = null;
-    if (suggestion && suggestion.method){
-      devtoolsSuggested = devtoolsSnippet(suggestion.method, suggestion.arg, { role: suggestion.role });
-    }
-
-    return {
-      varName: call.varName,
-      originalCode: reconstructOriginal(call),
-      score, category, issues, suggestion,
-      devtoolsCurrent, devtoolsSuggested
-    };
-  });
-
-  cards.sort((a,b)=> a.score - b.score);
-  lastCards = cards;
-  renderResults(cards);
-  document.getElementById('results').scrollIntoView({behavior:'smooth', block:'start'});
-});
-
-$('#clearBtn').addEventListener('click', ()=>{
-  $('#inputCode').value = '';
-  $('#inputDom').value = '';
-  lastCards = [];
-  renderResults([]);
-});
-
-$('#loadSample').addEventListener('click', ()=>{
-  $('#inputCode').value = `applicableRulesDropdown = this.page.locator("#applicableRulesOptions");
-radioButtonConfirm = this.page.locator("#confirmationOptions_01 > label > span.mat-radio-label-content");
-radioButtonMayAdd = this.page.locator("#confirmationOptions_02 > label > span.mat-radio-label-content");
-radioButtonWithout = this.page.locator("#confirmationOptions_03 > label > span.mat-radio-label-content");
-previewCustomerReference = this.page.locator(".beneficiaryReference").first();
-previewDraweeReference = this.page.locator(".customerReference").first();
-generalDetailsTab = this.page.locator("#generalDetails-0");
-applicantAndBeneficiaryTab = this.page.locator("#applicantBeneficiaryDetails-1");
-modeOfTransmissionSwift = this.page.locator("#transmissionModeSWIFT-button");
-nextBtn = this.page.locator("#next");
-expiryDate = this.page.locator("#expiryDate");
-placeOfExpiryAtAdvising = this.page.locator("#placeOfExpiry-panel > mat-option:nth-child(1)");
-irrevocableCheckbox = this.page.locator("#irv_flag-input");`;
-
-  $('#inputDom').value = `<div id="confirmationOptions_01" class="mat-radio-button">
-  <label for="mat-radio-3-input">
-    <span class="mat-radio-label-content">Confirm</span>
-  </label>
-  <input type="radio" id="mat-radio-3-input" name="confirmationOptions" data-testid="confirmation-confirm">
-</div>
-<button id="next" data-testid="wizard-next-button">Next</button>
-<input id="irv_flag-input" type="checkbox" aria-label="Irrevocable" data-testid="irrevocable-checkbox">`;
-  showToast('Sample loaded');
-});
-
-renderResults([]);
 </script>
 </body>
 </html>
