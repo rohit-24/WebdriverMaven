@@ -30,11 +30,21 @@
   button:hover{filter:brightness(1.1);}
   button:disabled{opacity:.4; cursor:not-allowed;}
   .row{display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;}
-  #tree{ font-family:var(--mono); font-size:12.5px; line-height:1.6; margin-top:10px;}
-  .node{ white-space:nowrap; cursor:pointer; padding:1px 4px; border-radius:4px; display:flex; align-items:center; gap:4px;}
+  #tree{ font-family:var(--mono); font-size:12.5px; line-height:1.7; margin-top:10px; overflow-x:auto; padding-bottom:8px;}
+  .node{ white-space:nowrap; cursor:pointer; padding:2px 4px; border-radius:4px; display:flex; align-items:center; gap:5px; width:max-content; min-width:100%;}
   .node:hover{ background:var(--panel2); }
   .node.selected{ background:rgba(94,177,255,0.18); outline:1px solid var(--accent); }
-  .node .tagline{overflow:hidden; text-overflow:ellipsis;}
+  .node .tagline{white-space:nowrap;}
+  .toggle{ width:12px; flex-shrink:0; color:var(--dim); text-align:center; user-select:none; }
+  .toggle.leaf{ visibility:hidden; }
+  .chip{ font-size:10.5px; padding:0 5px; border-radius:4px; background:var(--panel2); border:1px solid var(--border); flex-shrink:0; }
+  .chip.id{color:var(--good);}
+  .chip.testid{color:var(--good); font-weight:700;}
+  .chip.role{color:var(--purple);}
+  .chip.fcn{color:#7fc7ff;}
+  .expand-attrs{ color:var(--dim); flex-shrink:0; font-size:11px; }
+  .expand-attrs:hover{ color:var(--accent); }
+  .full-attrs{ padding-left:26px; color:var(--dim); white-space:nowrap; }
   .badge{ font-size:9px; padding:0 4px; border-radius:4px; font-weight:700; flex-shrink:0;}
   .badge.anchor{ background:var(--purple); color:#1a0f2e; }
   .badge.target{ background:var(--good); color:#06251a; }
@@ -174,36 +184,90 @@ function roleGuess(el){
 function accessibleName(el){ return attr(el,'aria-label') || textOf(el) || attr(el,'placeholder') || attr(el,'title') || null; }
 
 // ---------- TREE ----------
+// collapsed[uid] = true means children hidden. expandedAttrs[uid] = true means full attr dump shown.
+const collapsedNodes = new Set();
+const expandedAttrs = new Set();
+
+function keyChips(el){
+  let html = '';
+  const testid = attr(el,'data-testid');
+  if(testid) html += `<span class="chip testid">testid=${escAttr(testid)}</span>`;
+  if(el.id && !/^(cdk-|mat-|ng-)/.test(el.id)) html += `<span class="chip id">#${escAttr(el.id)}</span>`;
+  const fcn = attr(el,'formcontrolname'); if(fcn) html += `<span class="chip fcn">fcn=${escAttr(fcn)}</span>`;
+  const fgn = attr(el,'formgroupname'); if(fgn) html += `<span class="chip fcn">fgn=${escAttr(fgn)}</span>`;
+  const role = attr(el,'role'); if(role) html += `<span class="chip role">role=${escAttr(role)}</span>`;
+  const aria = attr(el,'aria-label'); if(aria) html += `<span class="chip role">aria="${escAttr(aria.slice(0,20))}${aria.length>20?'…':''}"</span>`;
+  const best = bestClassSelector(el);
+  if(best) html += `<span class="chip cls-${best.tier}" style="background:transparent;border:none;padding:0;">.${escAttr(best.classes[0])}</span>`;
+  return html;
+}
+
+function fullAttrsHtml(el){
+  let attrHtml = '';
+  for(const a of el.attributes){
+    if(a.name==='style') continue;
+    if(a.name==='class'){
+      const spans = [...el.classList].map(c=>`<span class="cls-${classify(c)}">${c}</span>`).join(' ');
+      attrHtml += ` <span class="attr">class</span>="${spans}"`; continue;
+    }
+    attrHtml += ` <span class="attr">${a.name}</span>="<span class="attrval">${escAttr(a.value)}</span>"`;
+  }
+  return `&lt;<span class="tag">${el.tagName.toLowerCase()}</span>${attrHtml}&gt;`;
+}
+
 function buildTree(root){
   const container = document.createElement('div');
   const skip = new Set(['SCRIPT','STYLE']);
-  function classSpans(el){
-    return [...el.classList].map(c=>`<span class="cls-${classify(c)}">${c}</span>`).join(' ');
-  }
+
   function render(el, depth){
     if(skip.has(el.tagName)) return;
     el.__uid = el.__uid || ('el'+(elCounter++));
+    const hasChildren = el.children.length > 0;
+    const isCollapsed = collapsedNodes.has(el.__uid);
+    const attrsOpen = expandedAttrs.has(el.__uid);
+
     const line = document.createElement('div');
     line.className = 'node';
     line.style.paddingLeft = (depth*14)+'px';
     line.dataset.uid = el.__uid;
-    let attrHtml = '';
-    for(const a of el.attributes){
-      if(a.name==='style') continue;
-      if(a.name==='class'){ attrHtml += ` <span class="attr">class</span>="${classSpans(el)}"`; continue; }
-      attrHtml += ` <span class="attr">${a.name}</span>="<span class="attrval">${escAttr(a.value)}</span>"`;
-    }
-    const badges = `${el===anchorEl?'<span class="badge anchor">A</span>':''}${el===targetEl?'<span class="badge target">T</span>':''}`;
-    line.innerHTML = `${badges}<span class="tagline">&lt;<span class="tag">${el.tagName.toLowerCase()}</span>${attrHtml}&gt;</span>`;
     if(el===selectedEl) line.classList.add('selected');
-    line.addEventListener('click', (e)=>{ e.stopPropagation(); selectElement(el); });
+
+    const badges = `${el===anchorEl?'<span class="badge anchor">A</span>':''}${el===targetEl?'<span class="badge target">T</span>':''}`;
+    const toggle = `<span class="toggle ${hasChildren?'':'leaf'}">${hasChildren ? (isCollapsed?'▸':'▾') : '·'}</span>`;
+    const tagLabel = `&lt;<span class="tag">${el.tagName.toLowerCase()}</span>&gt;`;
+    line.innerHTML = `${toggle}${badges}<span class="tagline">${tagLabel}</span>${keyChips(el)}<span class="expand-attrs" data-uid="${el.__uid}">${attrsOpen?'[hide attrs]':'[attrs]'}</span>`;
+
+    line.addEventListener('click', (e)=>{
+      if(e.target.classList.contains('toggle') && hasChildren){
+        e.stopPropagation();
+        if(isCollapsed) collapsedNodes.delete(el.__uid); else collapsedNodes.add(el.__uid);
+        refreshTree(); return;
+      }
+      if(e.target.classList.contains('expand-attrs')){
+        e.stopPropagation();
+        if(attrsOpen) expandedAttrs.delete(el.__uid); else expandedAttrs.add(el.__uid);
+        refreshTree(); return;
+      }
+      selectElement(el);
+    });
     container.appendChild(line);
-    for(const child of el.children) render(child, depth+1);
+
+    if(attrsOpen){
+      const fa = document.createElement('div');
+      fa.className = 'full-attrs';
+      fa.style.paddingLeft = (depth*14+26)+'px';
+      fa.innerHTML = fullAttrsHtml(el);
+      container.appendChild(fa);
+    }
+
+    if(hasChildren && !isCollapsed){
+      for(const child of el.children) render(child, depth+1);
+    }
     const directText = [...el.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent.trim()).join(' ').trim();
-    if(directText && el.children.length===0){
+    if(directText && !hasChildren){
       const t=document.createElement('div'); t.className='txt';
-      t.style.paddingLeft=((depth+1)*14)+'px';
-      t.textContent = '"' + directText.slice(0,60) + (directText.length>60?'…':'') + '"';
+      t.style.paddingLeft=((depth+1)*14+16)+'px';
+      t.textContent = '"' + directText.slice(0,50) + (directText.length>50?'…':'') + '"';
       container.appendChild(t);
     }
   }
@@ -424,56 +488,85 @@ function bestSelectorForHop(el, isFinal){
   return {code:`locator('${el.tagName.toLowerCase()}')`, label:'tag only', tier:'weak'};
 }
 
+function buildDownChain(topEl, bottomEl, pageBottomChain){
+  // pageBottomChain: full ancestorsOf(bottomEl) array (bottom...root), topEl must appear in it.
+  const topIdx = pageBottomChain.indexOf(topEl);
+  const hops = [{el:topEl, sel: bestSelectorForHop(topEl, topIdx===0)}];
+  for(let i=topIdx-1; i>=0; i--){
+    const node = pageBottomChain[i];
+    hops.push({el:node, sel: bestSelectorForHop(node, i===0)});
+  }
+  let code = hops[0].sel.code;
+  for(let i=1;i<hops.length;i++){
+    if(hops[i].sel.tier==='weak' && i!==hops.length-1) continue;
+    code += '.' + hops[i].sel.code;
+  }
+  const genCount = hops.reduce((n,h)=> n + [...h.el.classList].filter(c=>classify(c)==='generated').length, 0);
+  return {hops, code, genCount};
+}
+
 function renderChain(){
   const wrap = document.getElementById('chainResult');
   if(!anchorEl || !targetEl){
     wrap.innerHTML = '<div class="empty-hint">Select an element, click "Set" next to Anchor, select another element, click "Set" next to Target.</div>';
     return;
   }
-  const targetChain = ancestorsOf(targetEl); // target ... root
-  const anchorIdx = targetChain.indexOf(anchorEl);
-
-  if(anchorIdx === -1){
-    wrap.innerHTML = `<div class="empty-hint">Target is not a descendant of the anchor in this snippet. Pick an anchor that is an ancestor of the target (e.g. a wrapping card, form group, or the component root), or swap which one you set as anchor.</div>`;
-    return;
-  }
-  if(anchorIdx === 0){
-    wrap.innerHTML = `<div class="empty-hint">Anchor and target are the same element — pick a different target descendant.</div>`;
+  if(anchorEl === targetEl){
+    wrap.innerHTML = `<div class="empty-hint">Anchor and target are the same element — pick a different one for target.</div>`;
     return;
   }
 
-  // hops between anchor(exclusive) down to target(inclusive), anchor itself is hop 0
-  const anchorHop = bestSelectorForHop(anchorEl, false);
-  const hops = [{el:anchorEl, sel:anchorHop}];
-  for(let i=anchorIdx-1; i>=0; i--){
-    const node = targetChain[i];
-    const isFinal = i===0;
-    hops.push({el:node, sel: bestSelectorForHop(node, isFinal)});
+  const targetChain = ancestorsOf(targetEl);   // target ... root
+  const anchorChain = ancestorsOf(anchorEl);   // anchor ... root
+  const anchorIsAncestorOfTarget = targetChain.includes(anchorEl);
+  const targetIsAncestorOfAnchor = anchorChain.includes(targetEl);
+
+  // ---- CASE 1: anchor is an ancestor of target (scope down) ----
+  if(anchorIsAncestorOfTarget){
+    const {hops, code, genCount} = buildDownChain(anchorEl, targetEl, targetChain);
+    const fullCode = 'page.' + code;
+    wrap.innerHTML = `
+      <div class="cand">
+        <div class="top"><span class="label">Descendant chain (anchor scopes down)</span><span class="score s-high">${hops.length} hop${hops.length>1?'s':''}</span></div>
+        <div class="code">${escText(fullCode)}<button class="copybtn secondary" data-code="${escAttr(fullCode)}">Copy</button></div>
+        <div class="note">Path: ${hops.map(h=>shortDesc(h.el)+` <span style="color:var(--dim)">(${h.sel.label})</span>`).join(' → ')}</div>
+        ${genCount ? `<div class="note" style="color:var(--bad)">Ignored ${genCount} framework-generated class(es) along this path.</div>` : ''}
+      </div>
+      <div class="empty-hint">Click × next to Anchor or Target above to redo the pick.</div>
+    `;
+    wireCopyButtons(wrap);
+    return;
   }
 
-  // Build chain code: page.<anchorSel>.<hop1Sel>.<hop2Sel>...
-  // Skip intermediate hops that only offer a weak "tag only" selector — chain straight through with a combinator instead.
-  let code = 'page.' + hops[0].sel.code;
-  let usedHops = 1;
-  for(let i=1;i<hops.length;i++){
-    if(hops[i].sel.tier==='weak' && i!==hops.length-1) continue; // skip uninformative middle hop
-    code += '.' + hops[i].sel.code;
-    usedHops++;
+  // ---- CASE 2: target is an ancestor of anchor (e.g. "find the row containing this cell") ----
+  if(targetIsAncestorOfAnchor){
+    // Inner locator: path from target's immediate child down to anchor, used inside filter({has:...})
+    const childOfTarget = anchorChain[anchorChain.indexOf(targetEl) - 1]; // node just below target on the way to anchor
+    const {hops: innerHops, code: innerCode, genCount: innerGen} = buildDownChain(childOfTarget, anchorEl, anchorChain);
+    // outer container selector for target itself (likely a repeated element, e.g. <tr>, <li>, card row)
+    const outerSel = bestSelectorForHop(targetEl, false);
+    const outerCode = `page.${outerSel.code}`;
+    const hasCode = `page.${innerCode}`;
+    const finalCode = `${outerCode}.filter({ has: ${hasCode} })`;
+    const outerGen = [...targetEl.classList].filter(c=>classify(c)==='generated').length;
+
+    wrap.innerHTML = `
+      <div class="cand">
+        <div class="top"><span class="label">Ancestor chain (filter by descendant)</span><span class="score s-high">has-filter</span></div>
+        <div class="code">${escText(finalCode)}<button class="copybtn secondary" data-code="${escAttr(finalCode)}">Copy</button></div>
+        <div class="note">Target ${shortDesc(targetEl)} is an ancestor of the anchor, so it's located as: "the ${targetEl.tagName.toLowerCase()} that contains this specific descendant" — Playwright's <code>.filter({ has })</code> is the idiom for this (e.g. "the row containing this button/text").</div>
+        <div class="note">Descendant path used inside filter: ${innerHops.map(h=>shortDesc(h.el)+` <span style="color:var(--dim)">(${h.sel.label})</span>`).join(' → ')}</div>
+        ${(innerGen+outerGen) ? `<div class="note" style="color:var(--bad)">Ignored ${innerGen+outerGen} framework-generated class(es) along this path.</div>` : ''}
+        <div class="note">If the outer selector (<code>${escText(outerSel.code)}</code>) matches many elements even before filtering, that's fine — <code>.filter({ has })</code> narrows it down to the one containing the descendant.</div>
+      </div>
+      <div class="empty-hint">Click × next to Anchor or Target above to redo the pick.</div>
+    `;
+    wireCopyButtons(wrap);
+    return;
   }
 
-  const weakCount = hops.filter(h=>h.sel.tier==='weak').length;
-  const genCount = hops.reduce((n,h)=> n + [...h.el.classList].filter(c=>classify(c)==='generated').length, 0);
-
-  wrap.innerHTML = `
-    <div class="cand">
-      <div class="top"><span class="label">Chained locator</span><span class="score ${scoreClass(100-weakCount*20)}">${hops.length} hop${hops.length>1?'s':''}</span></div>
-      <div class="code">${escText(code)}<button class="copybtn secondary" data-code="${escAttr(code)}">Copy</button></div>
-      <div class="note">Path: ${hops.map(h=>shortDesc(h.el)+` <span style="color:var(--dim)">(${h.sel.label})</span>`).join(' → ')}</div>
-      ${genCount ? `<div class="note" style="color:var(--bad)">Ignored ${genCount} framework-generated class(es) along this path — they were not used in the locator.</div>` : ''}
-    </div>
-    <div class="empty-hint">Click × next to Anchor or Target above to redo the pick.</div>
-  `;
-  wireCopyButtons(wrap);
+  // ---- CASE 3: unrelated — no direct ancestor/descendant relationship ----
+  wrap.innerHTML = `<div class="empty-hint">Anchor and target aren't in the same ancestor/descendant line in this snippet (they're cousins under some common parent). Try setting the anchor to their nearest common ancestor instead, or use two separate locators scoped from a shared parent.</div>`;
 }
 </script>
 </body>
