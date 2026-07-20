@@ -1,573 +1,385 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Playwright Locator Finder</title>
-<style>
-  :root{
-    --bg:#0f1115; --panel:#161922; --panel2:#1c202b; --border:#2a2f3d;
-    --text:#dfe3ee; --dim:#8890a4; --accent:#5eb1ff; --good:#4fd68a;
-    --warn:#e8b34a; --bad:#f16565; --purple:#b389f0;
-    --mono: ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-  }
-  *{box-sizing:border-box;}
-  body{ margin:0; background:var(--bg); color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; font-size:14px; }
-  header{ padding:14px 20px; border-bottom:1px solid var(--border); display:flex; align-items:baseline; gap:10px; }
-  header h1{font-size:16px; margin:0; font-weight:600;}
-  header span{color:var(--dim); font-size:12px;}
-  .layout{ display:grid; grid-template-columns: 360px 1fr 380px; height: calc(100vh - 49px); }
-  .col{ border-right:1px solid var(--border); overflow:auto; padding:14px; }
-  .col:last-child{border-right:none;}
-  h2{ font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); margin:14px 0 8px 0; font-weight:600; }
-  h2:first-child{margin-top:0;}
-  textarea{ width:100%; height:150px; background:var(--panel2); color:var(--text);
-    border:1px solid var(--border); border-radius:6px; padding:10px; font-family:var(--mono); font-size:12px; resize:vertical; }
-  button{ background:var(--accent); color:#08111c; border:none; border-radius:6px;
-    padding:7px 11px; font-size:12.5px; font-weight:600; cursor:pointer; }
-  button.secondary{ background:var(--panel2); color:var(--text); border:1px solid var(--border); font-weight:500; }
-  button.tiny{ padding:3px 8px; font-size:11px; }
-  button:hover{filter:brightness(1.1);}
-  button:disabled{opacity:.4; cursor:not-allowed;}
-  .row{display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;}
-  #tree{ font-family:var(--mono); font-size:12.5px; line-height:1.7; margin-top:10px; overflow-x:auto; padding-bottom:8px;}
-  .node{ white-space:nowrap; cursor:pointer; padding:2px 4px; border-radius:4px; display:flex; align-items:center; gap:5px; width:max-content; min-width:100%;}
-  .node:hover{ background:var(--panel2); }
-  .node.selected{ background:rgba(94,177,255,0.18); outline:1px solid var(--accent); }
-  .node .tagline{white-space:nowrap;}
-  .toggle{ width:12px; flex-shrink:0; color:var(--dim); text-align:center; user-select:none; }
-  .toggle.leaf{ visibility:hidden; }
-  .chip{ font-size:10.5px; padding:0 5px; border-radius:4px; background:var(--panel2); border:1px solid var(--border); flex-shrink:0; }
-  .chip.id{color:var(--good);}
-  .chip.testid{color:var(--good); font-weight:700;}
-  .chip.role{color:var(--purple);}
-  .chip.fcn{color:#7fc7ff;}
-  .expand-attrs{ color:var(--dim); flex-shrink:0; font-size:11px; }
-  .expand-attrs:hover{ color:var(--accent); }
-  .full-attrs{ padding-left:26px; color:var(--dim); white-space:nowrap; }
-  .badge{ font-size:9px; padding:0 4px; border-radius:4px; font-weight:700; flex-shrink:0;}
-  .badge.anchor{ background:var(--purple); color:#1a0f2e; }
-  .badge.target{ background:var(--good); color:#06251a; }
-  .tag{color:var(--accent);} .attr{color:var(--warn);} .attrval{color:#9fe0a0;}
-  .cls-generated{color:var(--bad); text-decoration:line-through;}
-  .cls-state{color:var(--warn);}
-  .cls-framework{color:#7fc7ff;}
-  .cls-custom{color:var(--good);}
-  .txt{color:var(--dim); font-style:italic;}
-  .empty-hint{ color:var(--dim); font-size:12.5px; margin-top:8px; line-height:1.5;}
-  .selected-path{ font-family:var(--mono); font-size:11.5px; color:var(--dim); margin-bottom:10px; word-break:break-all;}
-  .cand{ background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:10px;}
-  .cand .top{ display:flex; justify-content:space-between; align-items:center; gap:8px;}
-  .cand .label{ font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--dim); font-weight:600;}
-  .score{ font-size:11px; font-weight:700; padding:2px 7px; border-radius:20px; font-family:var(--mono); }
-  .score.s-high{ background:rgba(79,214,138,0.15); color:var(--good); }
-  .score.s-mid{ background:rgba(232,179,74,0.15); color:var(--warn); }
-  .score.s-low{ background:rgba(241,101,101,0.15); color:var(--bad); }
-  .code{ font-family:var(--mono); font-size:12px; background:var(--panel2); border:1px solid var(--border);
-    border-radius:6px; padding:8px 34px 8px 10px; margin-top:6px; word-break:break-all; position:relative;}
-  .copybtn{ position:absolute; top:6px; right:6px; font-size:10.5px; padding:3px 7px; margin:0;}
-  .note{ font-size:11.5px; color:var(--dim); margin-top:4px; line-height:1.4;}
-  .anchor-target-bar{ background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:6px;}
-  .at-row{ display:flex; align-items:center; justify-content:space-between; gap:6px; padding:5px 0; font-size:12.5px;}
-  .at-row .lab{ color:var(--dim); font-size:11px; text-transform:uppercase; letter-spacing:.05em; width:56px; flex-shrink:0;}
-  .at-row .val{ font-family:var(--mono); font-size:11.5px; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .legend{ display:flex; flex-wrap:wrap; gap:10px; font-size:11px; color:var(--dim); margin-top:6px;}
-  .legend span{display:flex; align-items:center; gap:4px;}
-  .dot{width:8px; height:8px; border-radius:50%; display:inline-block;}
-  ::-webkit-scrollbar{width:10px; height:10px;}
-  ::-webkit-scrollbar-thumb{background:#333a4a; border-radius:6px;}
-  ::-webkit-scrollbar-track{background:transparent;}
-</style>
-</head>
-<body>
+You are a Senior Frontend Engineer and UI/UX Designer.
 
-<header>
-  <h1>Playwright Locator Finder</h1>
-  <span>Set an anchor + target while walking the tree → get a chained, stability-ranked locator</span>
-</header>
+Build a lightweight Enterprise Resource Portfolio Dashboard.
 
-<div class="layout">
+====================================================
+Technology
+====================================================
 
-  <div class="col">
-    <h2>1. Paste HTML snippet</h2>
-    <textarea id="htmlInput" placeholder="Paste outer HTML from DevTools (right-click element → Copy → Copy outerHTML)"></textarea>
-    <div class="row">
-      <button id="parseBtn">Parse DOM</button>
-      <button id="sampleBtn" class="secondary">Load sample</button>
-    </div>
-    <div class="legend">
-      <span><i class="dot" style="background:var(--good)"></i>custom (best)</span>
-      <span><i class="dot" style="background:#7fc7ff"></i>framework class</span>
-      <span><i class="dot" style="background:var(--warn)"></i>state (avoid)</span>
-      <span><i class="dot" style="background:var(--bad)"></i>generated (never)</span>
-    </div>
+Use ONLY
 
-    <h2>2. Click elements to inspect</h2>
-    <div id="tree"><div class="empty-hint">Tree appears here after parsing.</div></div>
-  </div>
+- HTML5
+- CSS3
+- Vanilla JavaScript
+- Chart.js
+- SheetJS (xlsx)
 
-  <div class="col">
-    <h2>3. Locators for selected element</h2>
-    <div id="selectedPath" class="selected-path"></div>
-    <div id="candidates"><div class="empty-hint">Select an element on the left.</div></div>
-  </div>
+No React
+No Angular
+No Backend
+No Database
+No AI
+No Authentication
+No Notifications
+No Email
 
-  <div class="col">
-    <h2>4. Anchor → Target chain</h2>
-    <div class="anchor-target-bar">
-      <div class="at-row">
-        <span class="lab">Anchor</span>
-        <span class="val" id="anchorVal">none set</span>
-        <button class="tiny secondary" id="setAnchorBtn" disabled>Set</button>
-        <button class="tiny secondary" id="clearAnchorBtn" disabled>×</button>
-      </div>
-      <div class="at-row">
-        <span class="lab">Target</span>
-        <span class="val" id="targetVal">none set</span>
-        <button class="tiny secondary" id="setTargetBtn" disabled>Set</button>
-        <button class="tiny secondary" id="clearTargetBtn" disabled>×</button>
-      </div>
-    </div>
-    <div id="chainResult"><div class="empty-hint">Select an element, click "Set" next to Anchor, select another element, click "Set" next to Target. The tool walks the path between them and builds the chained locator.</div></div>
+Everything should run locally by opening index.html.
 
-    <h2>Quick traversal from selection</h2>
-    <div id="traversal"><div class="empty-hint">Select an element to see its parent / children / siblings here.</div></div>
-  </div>
+====================================================
+Goal
+====================================================
 
-</div>
+Managers currently maintain project and resource allocation in Excel.
 
-<script>
-// ---------- CLASS STABILITY CLASSIFICATION ----------
-const GENERATED_PATTERNS = [/^ng-tns-/, /^_ngcontent/, /^_nghost/, /^css-[a-z0-9]{5,}$/i, /^[a-z]{1,2}\d{4,}$/i, /^jss\d+$/];
-const STATE_PATTERNS = [/^ng-(valid|invalid|pristine|dirty|touched|untouched|star-inserted)$/, /^(active|disabled|selected|open|expanded|collapsed|hover|focused?)$/i, /-focus(ed)?$/i, /^cdk-(focused|program-focused|keyboard-focused|high-contrast)/, /^mat-focus-indicator$/];
-const FRAMEWORK_PREFIXES = [/^mat-mdc-/, /^mat-/, /^cdk-/, /^ui-/, /^p-/, /^mdc-/, /^ant-/, /^el-/, /^v-/];
+The dashboard should convert Excel into a clean, professional management dashboard.
 
-function classify(cls){
-  if(GENERATED_PATTERNS.some(re=>re.test(cls))) return 'generated';
-  if(STATE_PATTERNS.some(re=>re.test(cls))) return 'state';
-  if(FRAMEWORK_PREFIXES.some(re=>re.test(cls))) return 'framework';
-  return 'custom';
-}
-function classesByTier(el){
-  const out = {generated:[], state:[], framework:[], custom:[]};
-  [...el.classList].forEach(c => out[classify(c)].push(c));
-  return out;
-}
-function bestClassSelector(el){
-  const t = classesByTier(el);
-  if(t.custom.length) return {classes:t.custom, tier:'custom'};
-  if(t.framework.length) return {classes:t.framework, tier:'framework'};
-  return null;
-}
+The dashboard should NOT try to replace Excel.
 
-let selectedEl = null, anchorEl = null, targetEl = null, elCounter = 0;
+It should simply help managers quickly understand the current project portfolio.
 
-function escAttr(s){ return (s||'').replace(/"/g,'&quot;'); }
-function escText(s){ return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function attr(el,n){ return el.getAttribute(n); }
-function textOf(el){ const t=el.textContent.trim().replace(/\s+/g,' '); return t.length && t.length<60 ? t : null; }
+Keep the UI minimal, clean and uncluttered.
 
-function roleGuess(el){
-  const tag = el.tagName.toLowerCase();
-  const explicit = attr(el,'role');
-  if(explicit) return explicit;
-  const map = {button:'button',a:'link',select:'combobox',textarea:'textbox',h1:'heading',h2:'heading',h3:'heading',table:'table',ul:'list',li:'listitem',img:'img'};
-  if(tag==='input'){
-    const type=(attr(el,'type')||'text').toLowerCase();
-    if(type==='checkbox') return 'checkbox';
-    if(type==='radio') return 'radio';
-    if(type==='button'||type==='submit') return 'button';
-    return 'textbox';
-  }
-  return map[tag] || null;
-}
-function accessibleName(el){ return attr(el,'aria-label') || textOf(el) || attr(el,'placeholder') || attr(el,'title') || null; }
+====================================================
+Excel Data
+====================================================
 
-// ---------- TREE ----------
-// collapsed[uid] = true means children hidden. expandedAttrs[uid] = true means full attr dump shown.
-const collapsedNodes = new Set();
-const expandedAttrs = new Set();
+Read one Excel sheet.
 
-function keyChips(el){
-  let html = '';
-  const testid = attr(el,'data-testid');
-  if(testid) html += `<span class="chip testid">testid=${escAttr(testid)}</span>`;
-  if(el.id && !/^(cdk-|mat-|ng-)/.test(el.id)) html += `<span class="chip id">#${escAttr(el.id)}</span>`;
-  const fcn = attr(el,'formcontrolname'); if(fcn) html += `<span class="chip fcn">fcn=${escAttr(fcn)}</span>`;
-  const fgn = attr(el,'formgroupname'); if(fgn) html += `<span class="chip fcn">fgn=${escAttr(fgn)}</span>`;
-  const role = attr(el,'role'); if(role) html += `<span class="chip role">role=${escAttr(role)}</span>`;
-  const aria = attr(el,'aria-label'); if(aria) html += `<span class="chip role">aria="${escAttr(aria.slice(0,20))}${aria.length>20?'…':''}"</span>`;
-  const best = bestClassSelector(el);
-  if(best) html += `<span class="chip cls-${best.tier}" style="background:transparent;border:none;padding:0;">.${escAttr(best.classes[0])}</span>`;
-  return html;
-}
+Columns include
 
-function fullAttrsHtml(el){
-  let attrHtml = '';
-  for(const a of el.attributes){
-    if(a.name==='style') continue;
-    if(a.name==='class'){
-      const spans = [...el.classList].map(c=>`<span class="cls-${classify(c)}">${c}</span>`).join(' ');
-      attrHtml += ` <span class="attr">class</span>="${spans}"`; continue;
-    }
-    attrHtml += ` <span class="attr">${a.name}</span>="<span class="attrval">${escAttr(a.value)}</span>"`;
-  }
-  return `&lt;<span class="tag">${el.tagName.toLowerCase()}</span>${attrHtml}&gt;`;
-}
+Project
+Environment
+Functional Resources
+Technical Resources
+Testing Resources
+Tentative Go Live
+Project Status
+RAG Status
+CR Created
+Remarks
 
-function buildTree(root){
-  const container = document.createElement('div');
-  const skip = new Set(['SCRIPT','STYLE']);
+====================================================
+Normalization
+====================================================
 
-  function render(el, depth){
-    if(skip.has(el.tagName)) return;
-    el.__uid = el.__uid || ('el'+(elCounter++));
-    const hasChildren = el.children.length > 0;
-    const isCollapsed = collapsedNodes.has(el.__uid);
-    const attrsOpen = expandedAttrs.has(el.__uid);
+Do NOT work directly with Excel rows.
 
-    const line = document.createElement('div');
-    line.className = 'node';
-    line.style.paddingLeft = (depth*14)+'px';
-    line.dataset.uid = el.__uid;
-    if(el===selectedEl) line.classList.add('selected');
+Normalize the data into
 
-    const badges = `${el===anchorEl?'<span class="badge anchor">A</span>':''}${el===targetEl?'<span class="badge target">T</span>':''}`;
-    const toggle = `<span class="toggle ${hasChildren?'':'leaf'}">${hasChildren ? (isCollapsed?'▸':'▾') : '·'}</span>`;
-    const tagLabel = `&lt;<span class="tag">${el.tagName.toLowerCase()}</span>&gt;`;
-    line.innerHTML = `${toggle}${badges}<span class="tagline">${tagLabel}</span>${keyChips(el)}<span class="expand-attrs" data-uid="${el.__uid}">${attrsOpen?'[hide attrs]':'[attrs]'}</span>`;
+Projects
+Resources
+Assignments
+Environments
 
-    line.addEventListener('click', (e)=>{
-      if(e.target.classList.contains('toggle') && hasChildren){
-        e.stopPropagation();
-        if(isCollapsed) collapsedNodes.delete(el.__uid); else collapsedNodes.add(el.__uid);
-        refreshTree(); return;
-      }
-      if(e.target.classList.contains('expand-attrs')){
-        e.stopPropagation();
-        if(attrsOpen) expandedAttrs.delete(el.__uid); else expandedAttrs.add(el.__uid);
-        refreshTree(); return;
-      }
-      selectElement(el);
-    });
-    container.appendChild(line);
+Split comma-separated resource names into individual assignments.
 
-    if(attrsOpen){
-      const fa = document.createElement('div');
-      fa.className = 'full-attrs';
-      fa.style.paddingLeft = (depth*14+26)+'px';
-      fa.innerHTML = fullAttrsHtml(el);
-      container.appendChild(fa);
-    }
+Example
 
-    if(hasChildren && !isCollapsed){
-      for(const child of el.children) render(child, depth+1);
-    }
-    const directText = [...el.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent.trim()).join(' ').trim();
-    if(directText && !hasChildren){
-      const t=document.createElement('div'); t.className='txt';
-      t.style.paddingLeft=((depth+1)*14+16)+'px';
-      t.textContent = '"' + directText.slice(0,50) + (directText.length>50?'…':'') + '"';
-      container.appendChild(t);
-    }
-  }
-  render(root,0);
-  return container;
-}
+Testing Resources
 
-function refreshTree(){
-  const treeEl = document.getElementById('tree');
-  const root = window.__rootEl;
-  if(!root) return;
-  treeEl.innerHTML = '';
-  treeEl.appendChild(buildTree(root));
-}
+Rohit, Ram, Jacob
 
-document.getElementById('parseBtn').addEventListener('click', ()=>{
-  const html = document.getElementById('htmlInput').value;
-  if(!html.trim()) return;
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(`<div id="__root__">${html}</div>`,'text/html');
-  window.__rootEl = doc.getElementById('__root__');
-  selectedEl = anchorEl = targetEl = null;
-  elCounter = 0;
-  refreshTree();
-  updateAnchorTargetUI();
-  document.getElementById('candidates').innerHTML = '<div class="empty-hint">Select an element to see locator suggestions.</div>';
-  document.getElementById('traversal').innerHTML = '<div class="empty-hint">Select an element first.</div>';
-  document.getElementById('chainResult').innerHTML = '<div class="empty-hint">Select an element, click "Set" next to Anchor, select another element, click "Set" next to Target.</div>';
-});
+becomes
 
-document.getElementById('sampleBtn').addEventListener('click', ()=>{
-  document.getElementById('htmlInput').value =
-`<p-dropdown _ngcontent-wlp-c838 id="currency" class="ng-tns-c122-261 ng-invalid ng-untouched ng-pristine ui-dropdown ui-widget ui-state-default ui-corner-all">
-  <div class="ui-helper-hidden-accessible ng-tns-c122-261"></div>
-  <div class="ui-dropdown-label-container ng-tns-c122-261">
-    <span class="ui-dropdown-label ng-tns-c122-261">Select Currency</span>
-  </div>
-  <div role="button" aria-haspopup="listbox" class="ui-dropdown-trigger ui-state-default ui-corner-right ng-tns-c122-261">
-    <span class="ui-dropdown-trigger-icon ui-clickable ng-tns-c122-261 pi pi-caret-down"></span>
-  </div>
-</p-dropdown>`;
-  document.getElementById('parseBtn').click();
-});
+Trade Hub -> Rohit
+Trade Hub -> Ram
+Trade Hub -> Jacob
 
-// ---------- SELECTION ----------
-function pathOf(el){
-  const parts=[]; let cur=el;
-  while(cur && cur.id!=='__root__' && cur.tagName){
-    let seg=cur.tagName.toLowerCase();
-    if(cur.id) seg+=`#${cur.id}`;
-    parts.unshift(seg); cur=cur.parentElement;
-  }
-  return parts.join(' > ');
-}
+This normalized model will be used for all calculations.
 
-function selectElement(el){
-  selectedEl = el;
-  document.getElementById('selectedPath').textContent = 'Selected: ' + pathOf(el);
-  renderCandidates(el);
-  renderTraversal(el);
-  refreshTree();
-  updateAnchorTargetUI();
-}
+====================================================
+Dashboard Layout
+====================================================
 
-function updateAnchorTargetUI(){
-  document.getElementById('anchorVal').textContent = anchorEl ? shortDesc(anchorEl) : 'none set';
-  document.getElementById('targetVal').textContent = targetEl ? shortDesc(targetEl) : 'none set';
-  document.getElementById('setAnchorBtn').disabled = !selectedEl;
-  document.getElementById('setTargetBtn').disabled = !selectedEl;
-  document.getElementById('clearAnchorBtn').disabled = !anchorEl;
-  document.getElementById('clearTargetBtn').disabled = !targetEl;
-  renderChain();
-}
+Left Sidebar
 
-document.getElementById('setAnchorBtn').addEventListener('click', ()=>{ if(selectedEl){ anchorEl = selectedEl; refreshTree(); updateAnchorTargetUI(); }});
-document.getElementById('setTargetBtn').addEventListener('click', ()=>{ if(selectedEl){ targetEl = selectedEl; refreshTree(); updateAnchorTargetUI(); }});
-document.getElementById('clearAnchorBtn').addEventListener('click', ()=>{ anchorEl=null; refreshTree(); updateAnchorTargetUI(); });
-document.getElementById('clearTargetBtn').addEventListener('click', ()=>{ targetEl=null; refreshTree(); updateAnchorTargetUI(); });
+- Executive Dashboard
+- Resources
+- Projects
+- Environment
+- Analytics
 
-// ---------- SINGLE-ELEMENT CANDIDATE LOCATORS ----------
-function buildCandidates(el){
-  const candidates = [];
-  const tag = el.tagName.toLowerCase();
+====================================================
+Executive Dashboard
+====================================================
 
-  for(const name of ['data-testid','data-test-id','data-test','data-cy','data-qa']){
-    const v = attr(el,name);
-    if(v) candidates.push({score:100, label:'Test ID', code:`page.getByTestId('${v}')`, note:`Uses ${name}. Most stable — prefer whenever present.`});
-  }
-  if(el.id && !/^(cdk-|mat-|ng-)/.test(el.id)){
-    candidates.push({score:95, label:'Hand-set id', code:`page.locator('#${el.id}')`, note:`Looks like a real, developer-assigned id (not framework-generated) — very stable.`});
-  }
-  const role = roleGuess(el), name = accessibleName(el);
-  if(role && name) candidates.push({score:90, label:'Role + Name', code:`page.getByRole('${role}', { name: '${name.replace(/'/g,"\\'")}' })`, note:`Survives class churn entirely. Recommended default without a test id.`});
-  else if(role) candidates.push({score:55, label:'Role only', code:`page.getByRole('${role}')`, note:`No accessible name found — may match multiple elements; narrow with an ancestor or .filter().`});
+Only include the following.
 
-  const fcn = attr(el,'formcontrolname');
-  if(fcn) candidates.push({score:85, label:'formControlName', code:`page.locator('[formControlName="${fcn}"]')`, note:`Angular reactive-forms attribute, tied to the form model not styling.`});
-  const fgn = attr(el,'formgroupname');
-  if(fgn) candidates.push({score:80, label:'formGroupName (ancestor)', code:`page.locator('[formGroupName="${fgn}"]')`, note:`Good anchor for scoping further locators inside this group.`});
+1. KPI Cards
 
-  const aria = attr(el,'aria-label');
-  if(aria && !(role && name===aria)) candidates.push({score:82, label:'aria-label', code:`page.locator('[aria-label="${aria.replace(/"/g,'\\"')}"]')`, note:`Direct attribute match.`});
+- Total Projects
+- Completed
+- In Progress
+- Blocked
+- Total Resources
+- Overallocated Resources
+- Available Resources
+- Upcoming Releases
 
-  const ph = attr(el,'placeholder');
-  if(ph) candidates.push({score:65, label:'Placeholder', code:`page.getByPlaceholder('${ph.replace(/'/g,"\\'")}')`, note:`Breaks if placeholder copy changes.`});
+----------------------------------------------------
 
-  const txt = textOf(el);
-  if(txt && ['button','a','span','label','td','th','li'].includes(tag)) candidates.push({score:60, label:'Text content', code:`page.getByText('${txt.replace(/'/g,"\\'")}', { exact: true })`, note:`Fragile if copy changes or repeats elsewhere.`});
+2. Project Status
 
-  const best = bestClassSelector(el);
-  if(best){
-    const score = best.tier==='custom' ? 70 : 50;
-    candidates.push({score, label: best.tier==='custom' ? 'Custom class' : 'Framework class', code:`page.locator('${tag}.${best.classes.join('.')}')`, note: best.tier==='custom' ? `App-authored class — reasonably stable.` : `Belongs to the UI library itself (e.g. PrimeNG "p-*"/"ui-*", Material "mat-*"). Stable within a library version, but re-check after upgrades.`});
-  }
-  const t = classesByTier(el);
-  if(!best && t.generated.length){
-    candidates.push({score:10, label:'Generated class (avoid)', code:`page.locator('${tag}.${t.generated[0]}') /* ⚠ do not use */`, note:`All classes here look framework-generated (${t.generated.slice(0,3).join(', ')}) — they change on every rebuild.`});
-  }
-  if(t.state.length && !t.generated.length && !t.custom.length && !t.framework.length){
-    candidates.push({score:20, label:'State class (avoid)', code:`page.locator('${tag}.${t.state[0]}') /* ⚠ toggles at runtime */`, note:`These classes (${t.state.join(', ')}) reflect interaction/validation state — they appear and disappear as the user interacts.`});
-  }
+Chart.js Doughnut
 
-  if(el.parentElement){
-    const idx = [...el.parentElement.children].indexOf(el)+1;
-    candidates.push({score:10, label:'Structural (nth-child)', code:`page.locator('${tag}:nth-child(${idx})')`, note:`Last resort — pair with a stable ancestor, never use alone.`});
-  }
-  candidates.sort((a,b)=>b.score-a.score);
-  return candidates;
-}
+Completed
 
-function scoreClass(score){ if(score>=75) return 's-high'; if(score>=40) return 's-mid'; return 's-low'; }
+In Progress
 
-function candHtml(c){
-  return `<div class="cand">
-    <div class="top"><span class="label">${c.label}</span><span class="score ${scoreClass(c.score)}">${c.score}</span></div>
-    <div class="code">${escText(c.code)}<button class="copybtn secondary" data-code="${escAttr(c.code)}">Copy</button></div>
-    <div class="note">${c.note}</div>
-  </div>`;
-}
-function wireCopyButtons(container){
-  container.querySelectorAll('.copybtn').forEach(btn=>{
-    btn.addEventListener('click',(e)=>{
-      e.stopPropagation();
-      navigator.clipboard.writeText(btn.dataset.code);
-      btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy',1000);
-    });
-  });
-}
+Blocked
 
-function renderCandidates(el){
-  const list = buildCandidates(el);
-  const wrap = document.getElementById('candidates');
-  wrap.innerHTML = list.length ? list.map(candHtml).join('') : '<div class="empty-hint">No usable attributes on this element — try a parent, or use the Anchor→Target chain builder.</div>';
-  wireCopyButtons(wrap);
-}
+----------------------------------------------------
 
-// ---------- QUICK TRAVERSAL PANEL ----------
-function shortDesc(el){
-  if(!el) return null;
-  const tag = el.tagName.toLowerCase();
-  const best = bestClassSelector(el);
-  const id = attr(el,'data-testid') ? `[testid=${attr(el,'data-testid')}]`
-    : (el.id && !/^(cdk-|mat-|ng-)/.test(el.id)) ? `#${el.id}`
-    : attr(el,'formcontrolname') ? `[fcn=${attr(el,'formcontrolname')}]`
-    : attr(el,'formgroupname') ? `[fgn=${attr(el,'formgroupname')}]`
-    : attr(el,'aria-label') ? `[aria=${attr(el,'aria-label')}]`
-    : best ? `.${best.classes[0]}`
-    : null;
-  return `<${tag}${id?' '+id:''}>`;
-}
+3. Upcoming Go Lives
 
-function renderTraversal(el){
-  const wrap = document.getElementById('traversal');
-  wrap.innerHTML = '';
-  const parent = el.parentElement && el.parentElement.id!=='__root__' ? el.parentElement : null;
-  const children = [...el.children];
-  const siblings = parent ? [...parent.children].filter(c=>c!==el) : [];
+Show next 5 releases.
 
-  const section = (title, items, emptyText) => {
-    const h=document.createElement('h2'); h.textContent=title; wrap.appendChild(h);
-    if(!items.length){ const p=document.createElement('div'); p.className='empty-hint'; p.textContent=emptyText; wrap.appendChild(p); return; }
-    items.forEach(item=>{
-      const b=document.createElement('button'); b.className='secondary';
-      b.style.cssText='display:block;width:100%;text-align:left;margin-bottom:6px;font-family:var(--mono);font-size:11.5px;';
-      b.innerHTML = shortDesc(item);
-      b.addEventListener('click', ()=>selectElement(item));
-      wrap.appendChild(b);
-    });
-  };
-  section('↑ Parent', parent?[parent]:[], 'No parent (root element).');
-  section('↓ Children', children, 'No children.');
-  section('↔ Siblings', siblings, 'No siblings.');
-}
+Columns
 
-// ---------- ANCHOR → TARGET CHAIN ----------
-function ancestorsOf(el){
-  const chain=[]; let cur=el;
-  while(cur && cur.id!=='__root__'){ chain.push(cur); cur=cur.parentElement; }
-  return chain; // [el, parent, grandparent, ...]
-}
+Project
 
-function bestSelectorForHop(el, isFinal){
-  // Returns {code, tier, label} for a single element, used as one hop in a chain.
-  const testid = attr(el,'data-testid');
-  if(testid) return {code:`getByTestId('${testid}')`, label:'testid', tier:'custom'};
-  if(el.id && !/^(cdk-|mat-|ng-)/.test(el.id)) return {code:`locator('#${el.id}')`, label:'id', tier:'custom'};
-  const fcn = attr(el,'formcontrolname');
-  if(fcn) return {code:`locator('[formControlName="${fcn}"]')`, label:'formControlName', tier:'custom'};
-  const fgn = attr(el,'formgroupname');
-  if(fgn) return {code:`locator('[formGroupName="${fgn}"]')`, label:'formGroupName', tier:'custom'};
-  const role = roleGuess(el), name = accessibleName(el);
-  if(isFinal && role && name) return {code:`getByRole('${role}', { name: '${name.replace(/'/g,"\\'")}' })`, label:'role+name', tier:'custom'};
-  const aria = attr(el,'aria-label');
-  if(aria) return {code:`locator('[aria-label="${aria.replace(/"/g,'\\"')}"]')`, label:'aria-label', tier:'custom'};
-  if(isFinal && role) return {code:`getByRole('${role}')`, label:'role', tier:'framework'};
-  const best = bestClassSelector(el);
-  if(best) return {code:`locator('${el.tagName.toLowerCase()}.${best.classes.join('.')}')`, label: best.tier+' class', tier: best.tier};
-  return {code:`locator('${el.tagName.toLowerCase()}')`, label:'tag only', tier:'weak'};
-}
+Go Live
 
-function buildDownChain(topEl, bottomEl, pageBottomChain){
-  // pageBottomChain: full ancestorsOf(bottomEl) array (bottom...root), topEl must appear in it.
-  const topIdx = pageBottomChain.indexOf(topEl);
-  const hops = [{el:topEl, sel: bestSelectorForHop(topEl, topIdx===0)}];
-  for(let i=topIdx-1; i>=0; i--){
-    const node = pageBottomChain[i];
-    hops.push({el:node, sel: bestSelectorForHop(node, i===0)});
-  }
-  let code = hops[0].sel.code;
-  for(let i=1;i<hops.length;i++){
-    if(hops[i].sel.tier==='weak' && i!==hops.length-1) continue;
-    code += '.' + hops[i].sel.code;
-  }
-  const genCount = hops.reduce((n,h)=> n + [...h.el.classList].filter(c=>classify(c)==='generated').length, 0);
-  return {hops, code, genCount};
-}
+Environment
 
-function renderChain(){
-  const wrap = document.getElementById('chainResult');
-  if(!anchorEl || !targetEl){
-    wrap.innerHTML = '<div class="empty-hint">Select an element, click "Set" next to Anchor, select another element, click "Set" next to Target.</div>';
-    return;
-  }
-  if(anchorEl === targetEl){
-    wrap.innerHTML = `<div class="empty-hint">Anchor and target are the same element — pick a different one for target.</div>`;
-    return;
-  }
+RAG
 
-  const targetChain = ancestorsOf(targetEl);   // target ... root
-  const anchorChain = ancestorsOf(anchorEl);   // anchor ... root
-  const anchorIsAncestorOfTarget = targetChain.includes(anchorEl);
-  const targetIsAncestorOfAnchor = anchorChain.includes(targetEl);
+Sorted by nearest date.
 
-  // ---- CASE 1: anchor is an ancestor of target (scope down) ----
-  if(anchorIsAncestorOfTarget){
-    const {hops, code, genCount} = buildDownChain(anchorEl, targetEl, targetChain);
-    const fullCode = 'page.' + code;
-    wrap.innerHTML = `
-      <div class="cand">
-        <div class="top"><span class="label">Descendant chain (anchor scopes down)</span><span class="score s-high">${hops.length} hop${hops.length>1?'s':''}</span></div>
-        <div class="code">${escText(fullCode)}<button class="copybtn secondary" data-code="${escAttr(fullCode)}">Copy</button></div>
-        <div class="note">Path: ${hops.map(h=>shortDesc(h.el)+` <span style="color:var(--dim)">(${h.sel.label})</span>`).join(' → ')}</div>
-        ${genCount ? `<div class="note" style="color:var(--bad)">Ignored ${genCount} framework-generated class(es) along this path.</div>` : ''}
-      </div>
-      <div class="empty-hint">Click × next to Anchor or Target above to redo the pick.</div>
-    `;
-    wireCopyButtons(wrap);
-    return;
-  }
+----------------------------------------------------
 
-  // ---- CASE 2: target is an ancestor of anchor (e.g. "find the row containing this cell") ----
-  if(targetIsAncestorOfAnchor){
-    // Inner locator: path from target's immediate child down to anchor, used inside filter({has:...})
-    const childOfTarget = anchorChain[anchorChain.indexOf(targetEl) - 1]; // node just below target on the way to anchor
-    const {hops: innerHops, code: innerCode, genCount: innerGen} = buildDownChain(childOfTarget, anchorEl, anchorChain);
-    // outer container selector for target itself (likely a repeated element, e.g. <tr>, <li>, card row)
-    const outerSel = bestSelectorForHop(targetEl, false);
-    const outerCode = `page.${outerSel.code}`;
-    const hasCode = `page.${innerCode}`;
-    const finalCode = `${outerCode}.filter({ has: ${hasCode} })`;
-    const outerGen = [...targetEl.classList].filter(c=>classify(c)==='generated').length;
+4. Projects Needing Attention
 
-    wrap.innerHTML = `
-      <div class="cand">
-        <div class="top"><span class="label">Ancestor chain (filter by descendant)</span><span class="score s-high">has-filter</span></div>
-        <div class="code">${escText(finalCode)}<button class="copybtn secondary" data-code="${escAttr(finalCode)}">Copy</button></div>
-        <div class="note">Target ${shortDesc(targetEl)} is an ancestor of the anchor, so it's located as: "the ${targetEl.tagName.toLowerCase()} that contains this specific descendant" — Playwright's <code>.filter({ has })</code> is the idiom for this (e.g. "the row containing this button/text").</div>
-        <div class="note">Descendant path used inside filter: ${innerHops.map(h=>shortDesc(h.el)+` <span style="color:var(--dim)">(${h.sel.label})</span>`).join(' → ')}</div>
-        ${(innerGen+outerGen) ? `<div class="note" style="color:var(--bad)">Ignored ${innerGen+outerGen} framework-generated class(es) along this path.</div>` : ''}
-        <div class="note">If the outer selector (<code>${escText(outerSel.code)}</code>) matches many elements even before filtering, that's fine — <code>.filter({ has })</code> narrows it down to the one containing the descendant.</div>
-      </div>
-      <div class="empty-hint">Click × next to Anchor or Target above to redo the pick.</div>
-    `;
-    wireCopyButtons(wrap);
-    return;
-  }
+Automatically show
 
-  // ---- CASE 3: unrelated — no direct ancestor/descendant relationship ----
-  wrap.innerHTML = `<div class="empty-hint">Anchor and target aren't in the same ancestor/descendant line in this snippet (they're cousins under some common parent). Try setting the anchor to their nearest common ancestor instead, or use two separate locators scoped from a shared parent.</div>`;
-}
-</script>
-</body>
-</html>
+Go Live within next 7 days
+
+OR
+
+RAG = Red
+
+OR
+
+Status = Blocked
+
+Display only top 5.
+
+----------------------------------------------------
+
+5. Overallocated Resources
+
+Display top 5.
+
+Columns
+
+Resource
+
+Projects
+
+Allocation %
+
+Progress Bar
+
+Red if allocation >100%
+
+----------------------------------------------------
+
+6. Available Resources
+
+Display top 5.
+
+Columns
+
+Resource
+
+Availability %
+
+Allocation %
+
+Green progress bar.
+
+====================================================
+Resources Page
+====================================================
+
+Simple searchable table.
+
+Columns
+
+Resource
+
+Projects
+
+Role
+
+Environment
+
+Allocation %
+
+Status
+
+Search
+
+Filter
+
+Sort
+
+Highlight
+
+Green
+
+0-70%
+
+Amber
+
+71-100%
+
+Red
+
+Above 100%
+
+====================================================
+Projects Page
+====================================================
+
+Project cards.
+
+Each card shows
+
+Project Name
+
+Environment
+
+Go Live
+
+Project Status
+
+RAG
+
+Total Resources
+
+Clicking expands
+
+Functional Resources
+
+Technical Resources
+
+Testing Resources
+
+Remarks
+
+====================================================
+Environment Page
+====================================================
+
+Simple cards.
+
+For each environment show
+
+Projects
+
+Resources
+
+Project Health
+
+Upcoming Releases
+
+====================================================
+Analytics Page
+====================================================
+
+Only four charts.
+
+Project Status
+
+Projects by Environment
+
+Projects by Manager
+
+Top 10 Busy Resources
+
+No additional charts.
+
+====================================================
+Global Search
+====================================================
+
+Search
+
+Project
+
+Resource
+
+Environment
+
+====================================================
+Filters
+====================================================
+
+Month
+
+Environment
+
+Project Status
+
+RAG
+
+====================================================
+Excel Upload
+====================================================
+
+Allow uploading ResourceAllocation.xlsx.
+
+Replace the existing data.
+
+Refresh dashboard automatically.
+
+====================================================
+Dummy Data
+====================================================
+
+Generate realistic dummy data.
+
+30 Projects
+
+45 Resources
+
+6 Managers
+
+7 Environments
+
+====================================================
+Design
+====================================================
+
+Dark theme.
+
+Microsoft Fluent inspired.
+
+Rounded cards.
+
+Minimal icons.
+
+Professional spacing.
+
+Responsive layout.
+
+Sticky sidebar.
+
+Avoid excessive animations.
+
+====================================================
+Code Quality
+====================================================
+
+Modular JavaScript.
+
+Reusable functions.
+
+Separate UI from business logic.
+
+Comment important functions.
+
+Keep code simple and maintainable.
+
+The dashboard should feel like a clean internal management tool, not a business intelligence platform.
