@@ -1,1 +1,114 @@
-https://github.com/alaintruong77/playwright-dashboard/blob/main/README.md
+
+When you’re taking over LoadRunner performance testing from another team, the goal is to understand the application, the test framework, the environment, and the execution process. Here’s a practical handover checklist.
+
+1. Project overview
+
+* What application is being tested?
+* What are the critical business transactions?
+* What are the performance goals (response time, throughput, concurrency)?
+* Which environments are used (QA, UAT, Performance, Production-like)?
+
+2. LoadRunner setup
+
+* Which version of LoadRunner is being used?
+* Is it Controller, VuGen, Analysis, or LoadRunner Enterprise?
+* Where is it installed?
+* Who manages the licenses?
+
+3. Scripts
+
+* How many scripts are available?
+* Which business process does each script represent?
+* Where are the scripts stored (Git, ALM, shared drive)?
+* Have the scripts been parameterized?
+* What correlations are implemented?
+* Are there any scripts that frequently break?
+
+4. Test scenarios
+
+* What scenarios already exist?
+* How many virtual users are used in each test?
+* What is the workload distribution?
+* What are the ramp-up, steady-state, and ramp-down settings?
+* Are there different scenarios for smoke, load, stress, endurance, or spike testing?
+
+5. Test data
+
+* Where does the test data come from?
+* How are user credentials managed?
+* How is unique test data maintained?
+* How is data reset after execution?
+
+6. Environment
+
+* Which servers are involved?
+* What monitoring tools are used (AppDynamics, Dynatrace, Grafana, SiteScope, etc.)?
+* Who provides server monitoring?
+* Are there any environment limitations?
+
+7. Execution process
+
+* How is a test executed?
+* Who approves test execution?
+* What pre-checks are required?
+* What post-test activities are performed?
+* How are logs collected?
+
+8. Results and analysis
+
+* Which KPIs are reported?
+    * Response time
+    * Throughput
+    * Hits/sec
+    * Transactions/sec
+    * Error rate
+    * CPU
+    * Memory
+    * Database metrics
+* What constitutes a pass or fail?
+* How are bottlenecks identified?
+
+9. Reporting
+
+* Is there a standard report template?
+* Who receives the reports?
+* What metrics must be included?
+* Are there SLA/SLO targets?
+
+10. Integrations
+
+* Is LoadRunner integrated with Jenkins, Azure DevOps, Git, or ALM?
+* Is test execution automated?
+* How are builds triggered?
+
+11. Access required
+
+Make sure you receive access to:
+
+* LoadRunner/VuGen
+* LoadRunner Controller
+* LoadRunner Analysis
+* License server (if applicable)
+* Script repository
+* Performance environment
+* Monitoring dashboards
+* Application credentials
+* Database (if needed)
+* ALM/Jira/Azure DevOps
+* Shared documentation
+
+12. Known issues
+
+Ask specifically:
+
+* What are the current known issues?
+* Which scripts require frequent maintenance?
+* What are the common execution failures?
+* Any environment-specific problems?
+* Any workarounds that the team routinely uses?
+
+Key question to ask at the end
+
+“Can you walk me through one complete performance test—from script selection, scenario creation, execution, monitoring, analysis, and final report generation?”
+
+This end-to-end walkthrough often reveals practical details that aren’t documented and helps you become productive much faster.
