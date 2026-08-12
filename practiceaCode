@@ -1,114 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Screenshot Diff — Compare UI Screenshots</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
+<style>
+  :root{
+    --ink:#151a23;
+    --paper:#f6f5f1;
+    --panel:#ffffff;
+    --line:#e2ded3;
+    --accent:#2f6f5e;
+    --accent-soft:#e7f1ed;
+    --added:#1f8a4c;
+    --added-bg:#e5f6ec;
+    --removed:#c23b3b;
+    --removed-bg:#fbeaea;
+    --muted:#6b7280;
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px;}
+  header{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:16px;margin-bottom:28px;flex-wrap:wrap;gap:12px;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px;}
+  .brand .mark{
+    width:14px;height:14px;background:var(--accent);
+    display:inline-block;border-radius:3px;transform:translateY(1px);
+  }
+  h1{font-size:22px;margin:0;letter-spacing:-0.02em;font-weight:700;}
+  .tagline{color:var(--muted);font-size:13px;margin-top:2px;}
+  .badge{
+    font-family:var(--mono);font-size:11px;color:var(--muted);
+    border:1px solid var(--line);border-radius:20px;padding:5px 12px;
+    background:var(--panel);
+  }
 
-When you’re taking over LoadRunner performance testing from another team, the goal is to understand the application, the test framework, the environment, and the execution process. Here’s a practical handover checklist.
+  .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  @media(max-width:720px){.upload-grid{grid-template-columns:1fr;}}
+  .dropzone{
+    background:var(--panel);border:1.5px dashed var(--line);border-radius:14px;
+    padding:22px;text-align:center;cursor:pointer;transition:.15s ease;position:relative;
+    min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .dropzone:hover{border-color:var(--accent);background:var(--accent-soft);}
+  .dropzone.filled{padding:10px;cursor:default;}
+  .dropzone.filled:hover{border-color:var(--line);background:var(--panel);}
+  .dropzone .label{
+    font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--accent);font-weight:600;margin-bottom:8px;
+  }
+  .dropzone .hint{color:var(--muted);font-size:13px;}
+  .dropzone img{max-width:100%;max-height:260px;border-radius:8px;display:block;box-shadow:0 1px 4px rgba(0,0,0,.12);}
+  .dropzone .filename{font-size:12px;color:var(--muted);margin-top:8px;font-family:var(--mono);word-break:break-all;padding:0 8px;}
+  .dropzone input{display:none;}
+  .swap-note{grid-column:1/-1;text-align:center;font-size:12px;color:var(--muted);margin-top:-8px;}
 
-1. Project overview
+  .controls{
+    display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:20px;
+  }
+  button{
+    font-family:var(--sans);font-size:13.5px;font-weight:600;
+    border:1.5px solid var(--ink);background:var(--ink);color:#fff;
+    padding:10px 18px;border-radius:9px;cursor:pointer;transition:.12s ease;
+  }
+  button:hover{transform:translateY(-1px);}
+  button:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+  button.secondary{background:transparent;color:var(--ink);}
+  .tabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px;}
+  .tab{
+    padding:8px 14px;border-radius:7px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;
+    user-select:none;
+  }
+  .tab.active{background:var(--ink);color:#fff;}
 
-* What application is being tested?
-* What are the critical business transactions?
-* What are the performance goals (response time, throughput, concurrency)?
-* Which environments are used (QA, UAT, Performance, Production-like)?
+  .panel{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:none;
+  }
+  .panel.active{display:block;}
 
-2. LoadRunner setup
+  .stats-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
+  .stat{
+    border:1px solid var(--line);border-radius:10px;padding:12px 16px;min-width:120px;
+  }
+  .stat .num{font-size:22px;font-weight:700;font-family:var(--mono);}
+  .stat .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;}
 
-* Which version of LoadRunner is being used?
-* Is it Controller, VuGen, Analysis, or LoadRunner Enterprise?
-* Where is it installed?
-* Who manages the licenses?
+  #visualCanvasWrap{position:relative;overflow:auto;border:1px solid var(--line);border-radius:10px;background:repeating-conic-gradient(#f0efe9 0% 25%, #fff 0% 50%) 50% / 20px 20px;}
+  #visualCanvas{display:block;max-width:100%;}
 
-3. Scripts
+  .slider-wrap{position:relative;overflow:hidden;border-radius:10px;border:1px solid var(--line);user-select:none;}
+  .slider-wrap img{display:block;width:100%;pointer-events:none;}
+  .slider-wrap .after-layer{position:absolute;top:0;left:0;height:100%;overflow:hidden;width:50%;border-right:2px solid var(--accent);}
+  .slider-wrap .after-layer img{width:var(--fullwidth);max-width:none;}
+  .slider-handle{
+    position:absolute;top:50%;left:50%;width:34px;height:34px;background:var(--accent);
+    border-radius:50%;transform:translate(-50%,-50%);cursor:ew-resize;
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;
+    box-shadow:0 2px 8px rgba(0,0,0,.3);
+  }
+  .slider-range{width:100%;margin-top:14px;accent-color:var(--accent);}
 
-* How many scripts are available?
-* Which business process does each script represent?
-* Where are the scripts stored (Git, ALM, shared drive)?
-* Have the scripts been parameterized?
-* What correlations are implemented?
-* Are there any scripts that frequently break?
+  .legend{display:flex;gap:18px;margin-bottom:14px;font-size:12.5px;color:var(--muted);flex-wrap:wrap;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .swatch{width:12px;height:12px;border-radius:3px;display:inline-block;}
 
-4. Test scenarios
+  .diff-lines{font-family:var(--mono);font-size:13px;line-height:1.75;white-space:pre-wrap;word-break:break-word;}
+  .diff-line{padding:2px 8px;border-radius:5px;}
+  .diff-line.added{background:var(--added-bg);color:#0d5c31;}
+  .diff-line.removed{background:var(--removed-bg);color:#8a2222;text-decoration:line-through;text-decoration-color:#c2807f;}
+  .diff-line.added::before{content:"+ ";font-weight:700;}
+  .diff-line.removed::before{content:"− ";font-weight:700;}
+  .diff-line.same{color:#8a8f98;}
+  .diff-line.same::before{content:"  ";}
 
-* What scenarios already exist?
-* How many virtual users are used in each test?
-* What is the workload distribution?
-* What are the ramp-up, steady-state, and ramp-down settings?
-* Are there different scenarios for smoke, load, stress, endurance, or spike testing?
+  .empty{color:var(--muted);font-size:14px;text-align:center;padding:40px 10px;}
+  .progress{font-family:var(--mono);font-size:12px;color:var(--accent);margin-top:8px;min-height:16px;}
+  .footer-note{margin-top:26px;font-size:12px;color:var(--muted);line-height:1.6;}
+  .footer-note code{background:var(--panel);border:1px solid var(--line);padding:1px 6px;border-radius:5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <span class="mark"></span>
+      <div>
+        <h1>Screenshot Diff</h1>
+        <div class="tagline">Compare two screenshots — spot added, removed, or shifted content</div>
+      </div>
+    </div>
+    <div class="badge">runs entirely in this browser tab</div>
+  </header>
 
-5. Test data
+  <div class="upload-grid">
+    <div class="dropzone" id="dropA">
+      <div class="label">Before</div>
+      <div class="hint">Click or drop the earlier screenshot</div>
+      <input type="file" id="fileA" accept="image/*">
+    </div>
+    <div class="dropzone" id="dropB">
+      <div class="label">After</div>
+      <div class="hint">Click or drop the newer screenshot</div>
+      <input type="file" id="fileB" accept="image/*">
+    </div>
+  </div>
 
-* Where does the test data come from?
-* How are user credentials managed?
-* How is unique test data maintained?
-* How is data reset after execution?
+  <div class="controls">
+    <button id="runVisual" disabled>Compare visually</button>
+    <button id="runText" class="secondary" disabled>Extract & diff text (OCR)</button>
+    <button id="reset" class="secondary">Reset</button>
+    <div class="progress" id="progress"></div>
+  </div>
 
-6. Environment
+  <div class="tabs">
+    <div class="tab active" data-tab="visual">Visual diff</div>
+    <div class="tab" data-tab="slider">Slider overlay</div>
+    <div class="tab" data-tab="text">Text diff</div>
+  </div>
 
-* Which servers are involved?
-* What monitoring tools are used (AppDynamics, Dynatrace, Grafana, SiteScope, etc.)?
-* Who provides server monitoring?
-* Are there any environment limitations?
+  <div style="height:16px"></div>
 
-7. Execution process
+  <div class="panel active" id="panel-visual">
+    <div class="stats-row" id="visualStats"></div>
+    <div class="legend">
+      <span><span class="swatch" style="background:#c23b3b"></span> changed region</span>
+    </div>
+    <div id="visualCanvasWrap"><canvas id="visualCanvas"></canvas></div>
+    <div class="empty" id="visualEmpty">Upload both screenshots, then click "Compare visually."</div>
+  </div>
 
-* How is a test executed?
-* Who approves test execution?
-* What pre-checks are required?
-* What post-test activities are performed?
-* How are logs collected?
+  <div class="panel" id="panel-slider">
+    <div id="sliderContainer" class="empty">Upload both screenshots to preview the overlay slider.</div>
+  </div>
 
-8. Results and analysis
+  <div class="panel" id="panel-text">
+    <div class="stats-row" id="textStats"></div>
+    <div id="textContent" class="empty">Click "Extract & diff text (OCR)" to compare the actual field labels, values, and copy on each screenshot. This can take 10–30 seconds per image.</div>
+  </div>
 
-* Which KPIs are reported?
-    * Response time
-    * Throughput
-    * Hits/sec
-    * Transactions/sec
-    * Error rate
-    * CPU
-    * Memory
-    * Database metrics
-* What constitutes a pass or fail?
-* How are bottlenecks identified?
+  <div class="footer-note">
+    Visual diff finds pixel regions that changed (moved elements, new sections, resized components). Text diff runs on-device OCR (Tesseract.js) to catch renamed or added/removed fields and labels that a pixel diff alone might mis-flag as "changed" due to font rendering. Nothing is uploaded anywhere — save this <code>.html</code> file and open it offline any time (OCR requires an internet connection the first time, to load the recognition engine).
+  </div>
+</div>
 
-9. Reporting
+<script>
+const state = { imgA:null, imgB:null, fileNameA:'', fileNameB:'' };
 
-* Is there a standard report template?
-* Who receives the reports?
-* What metrics must be included?
-* Are there SLA/SLO targets?
+function setupDrop(dropId, fileId, which){
+  const drop = document.getElementById(dropId);
+  const input = document.getElementById(fileId);
+  drop.addEventListener('click', ()=> input.click());
+  drop.addEventListener('dragover', e=>{e.preventDefault(); drop.style.borderColor='var(--accent)';});
+  drop.addEventListener('dragleave', ()=> drop.style.borderColor='');
+  drop.addEventListener('drop', e=>{
+    e.preventDefault();
+    if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0], which, drop);
+  });
+  input.addEventListener('change', e=>{
+    if(e.target.files[0]) handleFile(e.target.files[0], which, drop);
+  });
+}
 
-10. Integrations
+function handleFile(file, which, drop){
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    const img = new Image();
+    img.onload = ()=>{
+      if(which==='A'){ state.imgA = img; state.fileNameA = file.name; }
+      else { state.imgB = img; state.fileNameB = file.name; }
+      drop.classList.add('filled');
+      drop.innerHTML = `<img src="${ev.target.result}"><div class="filename">${file.name} — ${img.width}×${img.height}</div>`;
+      checkReady();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
 
-* Is LoadRunner integrated with Jenkins, Azure DevOps, Git, or ALM?
-* Is test execution automated?
-* How are builds triggered?
+function checkReady(){
+  const ready = state.imgA && state.imgB;
+  document.getElementById('runVisual').disabled = !ready;
+  document.getElementById('runText').disabled = !ready;
+}
 
-11. Access required
+setupDrop('dropA','fileA','A');
+setupDrop('dropB','fileB','B');
 
-Make sure you receive access to:
+document.getElementById('reset').addEventListener('click', ()=> location.reload());
 
-* LoadRunner/VuGen
-* LoadRunner Controller
-* LoadRunner Analysis
-* License server (if applicable)
-* Script repository
-* Performance environment
-* Monitoring dashboards
-* Application credentials
-* Database (if needed)
-* ALM/Jira/Azure DevOps
-* Shared documentation
+// Tabs
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
+    if(tab.dataset.tab==='slider') buildSlider();
+  });
+});
 
-12. Known issues
+function setProgress(msg){ document.getElementById('progress').textContent = msg || ''; }
 
-Ask specifically:
+// ---------- VISUAL DIFF ----------
+document.getElementById('runVisual').addEventListener('click', runVisualDiff);
 
-* What are the current known issues?
-* Which scripts require frequent maintenance?
-* What are the common execution failures?
-* Any environment-specific problems?
-* Any workarounds that the team routinely uses?
+function runVisualDiff(){
+  setProgress('Analyzing pixels…');
+  const w = Math.max(state.imgA.width, state.imgB.width);
+  const h = Math.max(state.imgA.height, state.imgB.height);
 
-Key question to ask at the end
+  const cA = document.createElement('canvas'); cA.width=w; cA.height=h;
+  const cB = document.createElement('canvas'); cB.width=w; cB.height=h;
+  cA.getContext('2d').drawImage(state.imgA,0,0,w,h);
+  cB.getContext('2d').drawImage(state.imgB,0,0,w,h);
+  const dataA = cA.getContext('2d').getImageData(0,0,w,h).data;
+  const dataB = cB.getContext('2d').getImageData(0,0,w,h).data;
 
-“Can you walk me through one complete performance test—from script selection, scenario creation, execution, monitoring, analysis, and final report generation?”
+  // downsample factor for clustering performance
+  const cell = Math.max(4, Math.round(Math.max(w,h)/300));
+  const gw = Math.ceil(w/cell), gh = Math.ceil(h/cell);
+  const grid = new Uint8Array(gw*gh);
+  const THRESH = 40;
 
-This end-to-end walkthrough often reveals practical details that aren’t documented and helps you become productive much faster.
+  for(let gy=0; gy<gh; gy++){
+    for(let gx=0; gx<gw; gx++){
+      let diffCount=0, total=0;
+      const x0=gx*cell, y0=gy*cell;
+      const x1=Math.min(w,x0+cell), y1=Math.min(h,y0+cell);
+      for(let y=y0;y<y1;y+=2){
+        for(let x=x0;x<x1;x+=2){
+          const idx=(y*w+x)*4;
+          const dr=Math.abs(dataA[idx]-dataB[idx]);
+          const dg=Math.abs(dataA[idx+1]-dataB[idx+1]);
+          const db=Math.abs(dataA[idx+2]-dataB[idx+2]);
+          total++;
+          if(dr+dg+db > THRESH*3) diffCount++;
+        }
+      }
+      grid[gy*gw+gx] = (diffCount/total > 0.15) ? 1 : 0;
+    }
+  }
+
+  // connected components (4-dir) over grid
+  const visited = new Uint8Array(gw*gh);
+  const boxes = [];
+  for(let gy=0; gy<gh; gy++){
+    for(let gx=0; gx<gw; gx++){
+      const i = gy*gw+gx;
+      if(grid[i] && !visited[i]){
+        // BFS
+        let minX=gx,maxX=gx,minY=gy,maxY=gy,count=0;
+        const stack=[[gx,gy]];
+        visited[i]=1;
+        while(stack.length){
+          const [cx,cy]=stack.pop();
+          count++;
+          minX=Math.min(minX,cx); maxX=Math.max(maxX,cx);
+          minY=Math.min(minY,cy); maxY=Math.max(maxY,cy);
+          const neighbors=[[cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]];
+          for(const [nx,ny] of neighbors){
+            if(nx>=0&&nx<gw&&ny>=0&&ny<gh){
+              const ni=ny*gw+nx;
+              if(grid[ni] && !visited[ni]){ visited[ni]=1; stack.push([nx,ny]); }
+            }
+          }
+        }
+        if(count>=3){ // filter noise
+          boxes.push({
+            x:minX*cell, y:minY*cell,
+            w:(maxX-minX+1)*cell, h:(maxY-minY+1)*cell,
+            cells:count
+          });
+        }
+      }
+    }
+  }
+  // merge nearby boxes (simple pass)
+  boxes.sort((a,b)=>b.cells-a.cells);
+
+  // draw
+  const outCanvas = document.getElementById('visualCanvas');
+  outCanvas.width = w; outCanvas.height = h;
+  const octx = outCanvas.getContext('2d');
+  octx.drawImage(cB,0,0);
+  octx.globalAlpha = 1;
+  octx.strokeStyle = '#c23b3b';
+  octx.lineWidth = Math.max(2, Math.round(w/500));
+  octx.font = `bold ${Math.max(12,Math.round(w/120))}px monospace`;
+  boxes.forEach((b,i)=>{
+    octx.strokeRect(b.x, b.y, b.w, b.h);
+    octx.fillStyle = '#c23b3b';
+    octx.fillRect(b.x, b.y-Math.round(w/55), Math.round(w/45)+16, Math.round(w/55));
+    octx.fillStyle = '#fff';
+    octx.fillText((i+1).toString(), b.x+4, b.y-6);
+  });
+
+  document.getElementById('visualEmpty').style.display='none';
+  const changedPct = (boxes.reduce((s,b)=>s+b.w*b.h,0) / (w*h) * 100).toFixed(1);
+  document.getElementById('visualStats').innerHTML = `
+    <div class="stat"><div class="num">${boxes.length}</div><div class="lbl">Changed regions</div></div>
+    <div class="stat"><div class="num">${changedPct}%</div><div class="lbl">Area changed</div></div>
+    <div class="stat"><div class="num">${w}×${h}</div><div class="lbl">Compared at</div></div>
+  `;
+  setProgress('Done.');
+  setTimeout(()=>setProgress(''), 1500);
+}
+
+// ---------- SLIDER OVERLAY ----------
+let sliderBuilt = false;
+function buildSlider(){
+  if(!state.imgA || !state.imgB) return;
+  const container = document.getElementById('sliderContainer');
+  container.className='';
+  container.innerHTML = `
+    <div class="slider-wrap" id="sliderWrap">
+      <img src="${state.imgA.src}" id="beforeImg">
+      <div class="after-layer" id="afterLayer" style="--fullwidth:100%">
+        <img src="${state.imgB.src}" id="afterImg">
+      </div>
+      <div class="slider-handle" id="sliderHandle">↔</div>
+    </div>
+    <input type="range" min="0" max="100" value="50" class="slider-range" id="sliderRange">
+    <div class="legend" style="margin-top:10px"><span>Before (left)</span><span>After (right) — drag the handle or slider</span></div>
+  `;
+  const wrap = document.getElementById('sliderWrap');
+  const afterLayer = document.getElementById('afterLayer');
+  const afterImg = document.getElementById('afterImg');
+  const handle = document.getElementById('sliderHandle');
+  const range = document.getElementById('sliderRange');
+
+  function sync(){
+    const wrapW = wrap.offsetWidth;
+    afterImg.style.width = wrapW + 'px';
+  }
+  window.addEventListener('resize', sync);
+  setTimeout(sync, 50);
+
+  function setPos(pct){
+    pct = Math.max(0, Math.min(100, pct));
+    afterLayer.style.width = pct+'%';
+    handle.style.left = pct+'%';
+    range.value = pct;
+  }
+  range.addEventListener('input', e=> setPos(+e.target.value));
+
+  let dragging=false;
+  handle.addEventListener('mousedown', ()=> dragging=true);
+  window.addEventListener('mouseup', ()=> dragging=false);
+  window.addEventListener('mousemove', e=>{
+    if(!dragging) return;
+    const rect = wrap.getBoundingClientRect();
+    const pct = (e.clientX-rect.left)/rect.width*100;
+    setPos(pct);
+  });
+  handle.addEventListener('touchstart', ()=> dragging=true);
+  window.addEventListener('touchend', ()=> dragging=false);
+  window.addEventListener('touchmove', e=>{
+    if(!dragging) return;
+    const rect = wrap.getBoundingClientRect();
+    const pct = (e.touches[0].clientX-rect.left)/rect.width*100;
+    setPos(pct);
+  });
+  setPos(50);
+}
+
+// ---------- TEXT DIFF (OCR) ----------
+document.getElementById('runText').addEventListener('click', runTextDiff);
+
+async function ocrImage(img, label){
+  setProgress(`Reading text from "${label}"…`);
+  const canvas = document.createElement('canvas');
+  canvas.width = img.width; canvas.height = img.height;
+  canvas.getContext('2d').drawImage(img,0,0);
+  const { data } = await Tesseract.recognize(canvas, 'eng', {
+    logger: m=>{
+      if(m.status==='recognizing text'){
+        setProgress(`Reading text from "${label}"… ${Math.round(m.progress*100)}%`);
+      }
+    }
+  });
+  return data.text
+    .split('\n')
+    .map(l=>l.trim())
+    .filter(l=>l.length>0);
+}
+
+// classic LCS-based line diff
+function diffLines(a, b){
+  const n=a.length, m=b.length;
+  const dp = Array.from({length:n+1},()=>new Uint16Array(m+1));
+  for(let i=n-1;i>=0;i--){
+    for(let j=m-1;j>=0;j--){
+      dp[i][j] = a[i]===b[j] ? dp[i+1][j+1]+1 : Math.max(dp[i+1][j], dp[i][j+1]);
+    }
+  }
+  const result=[];
+  let i=0,j=0;
+  while(i<n && j<m){
+    if(a[i]===b[j]){ result.push({type:'same', text:a[i]}); i++; j++; }
+    else if(dp[i+1][j] >= dp[i][j+1]){ result.push({type:'removed', text:a[i]}); i++; }
+    else { result.push({type:'added', text:b[j]}); j++; }
+  }
+  while(i<n){ result.push({type:'removed', text:a[i]}); i++; }
+  while(j<m){ result.push({type:'added', text:b[j]}); j++; }
+  return result;
+}
+
+async function runTextDiff(){
+  document.getElementById('runText').disabled = true;
+  document.getElementById('runVisual').disabled = true;
+  try{
+    const linesA = await ocrImage(state.imgA, 'Before');
+    const linesB = await ocrImage(state.imgB, 'After');
+    const diff = diffLines(linesA, linesB);
+    const added = diff.filter(d=>d.type==='added').length;
+    const removed = diff.filter(d=>d.type==='removed').length;
+    const retained = diff.filter(d=>d.type==='same').length;
+
+    document.getElementById('textStats').innerHTML = `
+      <div class="stat"><div class="num" style="color:var(--added)">${added}</div><div class="lbl">Lines added</div></div>
+      <div class="stat"><div class="num" style="color:var(--removed)">${removed}</div><div class="lbl">Lines removed</div></div>
+      <div class="stat"><div class="num">${retained}</div><div class="lbl">Lines retained</div></div>
+    `;
+    const html = diff.map(d=>`<div class="diff-line ${d.type}">${escapeHtml(d.text)}</div>`).join('');
+    document.getElementById('textContent').className='diff-lines';
+    document.getElementById('textContent').innerHTML = html || '<div class="empty">No text detected.</div>';
+    setProgress('Done.');
+  }catch(err){
+    setProgress('');
+    document.getElementById('textContent').className='empty';
+    document.getElementById('textContent').textContent = 'OCR failed to load — check your internet connection (needed once, to fetch the recognition engine), then try again. Error: '+err.message;
+  }
+  document.getElementById('runText').disabled = false;
+  document.getElementById('runVisual').disabled = false;
+  setTimeout(()=>setProgress(''), 1500);
+}
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
