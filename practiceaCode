@@ -167,7 +167,29 @@
   }
   .html-input-box .filestat{font-size:11.5px;color:var(--muted);margin-top:6px;font-family:var(--mono);}
 
-  .field-diff-list{display:flex;flex-direction:column;gap:8px;}
+  .field-diff-list{display:flex;flex-direction:column;gap:14px;}
+  .section-block{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel);}
+  .section-block.has-changes{border-color:#d8c9a3;}
+  .section-header{
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+    padding:13px 16px;background:#f3f1e9;cursor:pointer;user-select:none;
+    font-weight:700;font-size:14.5px;list-style:none;
+  }
+  .section-header::-webkit-details-marker{display:none;}
+  .section-header .stag{
+    font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
+    padding:3px 8px;border-radius:5px;font-weight:700;margin-right:8px;
+  }
+  .stag.new{background:var(--added-bg);color:#0d5c31;}
+  .stag.removed-sec{background:var(--removed-bg);color:#8a2222;}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{font-family:var(--mono);font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;}
+  .chip.moved{background:#fdf3e0;color:#7a5210;}
+  .chip.changed{background:var(--removed-bg);color:#8a2222;}
+  .chip.added{background:var(--added-bg);color:#0d5c31;}
+  .chip.removed{background:var(--removed-bg);color:#8a2222;}
+  .chip.clean{background:#eef3ef;color:#4a7a63;}
+  .section-body{padding:12px 16px 16px;display:flex;flex-direction:column;gap:8px;}
   .field-row{border:1px solid var(--line);border-radius:10px;padding:11px 14px;font-size:13.5px;}
   .field-row .flabel{font-weight:700;margin-bottom:4px;}
   .field-row .fmeta{font-family:var(--mono);font-size:12px;color:var(--muted);}
@@ -910,18 +932,22 @@ function renderFieldRow(r){
   const showCls = r.status==='retained' ? (document.getElementById('showRetained').checked ? ' show':'') : '';
   let body;
   if(r.status==='moved'){
-    body = `<div class="fmeta">moved: ${escapeHtml(r.fromSection)} <span class="arrow">→</span> ${escapeHtml(r.toSection)} · value retained: <span class="fval">${escapeHtml(r.toValue||'(empty)')}</span></div>`;
+    body = `<div class="fmeta">moved from "${escapeHtml(r.fromSection)}" · value retained</div><div class="fval">${escapeHtml(r.toValue||'(empty)')}</div>`;
   } else if(r.status==='changed'){
-    body = `<div class="fmeta">${escapeHtml(r.fromSection===r.toSection ? r.fromSection : r.fromSection+' → '+r.toSection)}</div>
-            <div class="fval"><span class="old">${escapeHtml(r.fromValue||'(empty)')}</span><span class="arrow">→</span><b>${escapeHtml(r.toValue||'(empty)')}</b></div>`;
+    const sectionNote = (r.fromSection!==r.toSection) ? `<div class="fmeta">also moved: ${escapeHtml(r.fromSection)} → ${escapeHtml(r.toSection)}</div>` : '';
+    body = `${sectionNote}<div class="fval"><span class="old">${escapeHtml(r.fromValue||'(empty)')}</span><span class="arrow">→</span><b>${escapeHtml(r.toValue||'(empty)')}</b></div>`;
   } else if(r.status==='added'){
-    body = `<div class="fmeta">new in ${escapeHtml(r.toSection)}</div><div class="fval">${escapeHtml(r.toValue||'(empty)')}</div>`;
+    body = `<div class="fval">${escapeHtml(r.toValue||'(empty)')}</div>`;
   } else if(r.status==='removed'){
-    body = `<div class="fmeta">no longer present — was in ${escapeHtml(r.fromSection)}</div><div class="fval">${escapeHtml(r.fromValue||'(empty)')}</div>`;
+    body = `<div class="fval">${escapeHtml(r.fromValue||'(empty)')}</div>`;
   } else {
-    body = `<div class="fmeta">${escapeHtml(r.toSection||r.fromSection)}</div><div class="fval">${escapeHtml(r.toValue ?? r.fromValue ?? '')}</div>`;
+    body = `<div class="fval">${escapeHtml(r.toValue ?? r.fromValue ?? '')}</div>`;
   }
-  return `<div class="field-row status-${r.status}${showCls}"><div class="flabel">${escapeHtml(r.label)}</div>${body}</div>`;
+  const STATUS_LABEL = {moved:'MOVED', changed:'CHANGED', added:'ADDED', removed:'REMOVED', retained:'unchanged'};
+  return `<div class="field-row status-${r.status}${showCls}">
+    <div class="flabel">${escapeHtml(r.label)} <span class="fmeta" style="margin-left:6px">${STATUS_LABEL[r.status]}</span></div>
+    ${body}
+  </div>`;
 }
 
 function buildHtmlSummary(counts){
@@ -941,6 +967,63 @@ function buildHtmlSummary(counts){
   let sentence = parts.join(', ').replace(/,([^,]*)$/, ' and$1') + '.';
   banner.className='summary-banner';
   banner.innerHTML = `<span class="icon">${removed>0||changed>0?'⚠️':'↕️'}</span><span>${sentence}</span>`;
+}
+
+function buildSectionReport(diff, fieldsA, fieldsB){
+  // primary section per row: destination if it has one, else origin
+  diff.forEach(r=>{ r.section = r.toSection || r.fromSection; });
+
+  const sectionsA = new Set(fieldsA.map(f=>f.section));
+  const sectionsB = new Set(fieldsB.map(f=>f.section));
+
+  // section order: order of first appearance in B, then leftover A-only sections
+  const order = [];
+  fieldsB.forEach(f=>{ if(!order.includes(f.section)) order.push(f.section); });
+  fieldsA.forEach(f=>{ if(!order.includes(f.section)) order.push(f.section); });
+
+  const groups = new Map();
+  order.forEach(s=> groups.set(s, []));
+  diff.forEach(r=>{
+    if(!groups.has(r.section)) groups.set(r.section, []);
+    groups.get(r.section).push(r);
+  });
+
+  const statusPriority = {moved:0, changed:1, added:2, removed:3, retained:4};
+
+  let html = '';
+  groups.forEach((rows, section)=>{
+    if(rows.length===0) return;
+    rows.sort((a,b)=> statusPriority[a.status]-statusPriority[b.status]);
+
+    const counts = {moved:0, changed:0, added:0, removed:0, retained:0};
+    rows.forEach(r=> counts[r.status]++);
+    const hasChanges = counts.moved+counts.changed+counts.added+counts.removed > 0;
+
+    const isNewSection = sectionsB.has(section) && !sectionsA.has(section);
+    const isRemovedSection = sectionsA.has(section) && !sectionsB.has(section);
+
+    const chips = [];
+    if(counts.moved) chips.push(`<span class="chip moved">${counts.moved} moved</span>`);
+    if(counts.changed) chips.push(`<span class="chip changed">${counts.changed} changed</span>`);
+    if(counts.added) chips.push(`<span class="chip added">${counts.added} added</span>`);
+    if(counts.removed) chips.push(`<span class="chip removed">${counts.removed} removed</span>`);
+    if(!hasChanges) chips.push(`<span class="chip clean">no changes</span>`);
+
+    const tag = isNewSection ? `<span class="stag new">new section</span>`
+      : isRemovedSection ? `<span class="stag removed-sec">removed section</span>` : '';
+
+    const rowsHtml = rows.map(renderFieldRow).join('');
+
+    html += `<details class="section-block${hasChanges?' has-changes':''}" ${hasChanges?'open':''}>
+      <summary class="section-header">
+        <span>${tag}${escapeHtml(section)}</span>
+        <span class="chips">${chips.join('')}</span>
+      </summary>
+      <div class="section-body">${rowsHtml}</div>
+    </details>`;
+  });
+
+  return html;
 }
 
 document.getElementById('runHtmlDiff').addEventListener('click', ()=>{
@@ -974,12 +1057,8 @@ document.getElementById('runHtmlDiff').addEventListener('click', ()=>{
     `;
     buildHtmlSummary(counts);
 
-    // order: moved, changed, added, removed, retained
-    const order = {moved:0, changed:1, added:2, removed:3, retained:4};
-    diff.sort((a,b)=> order[a.status]-order[b.status]);
-
     document.getElementById('fieldDiffContainer').className='field-diff-list';
-    document.getElementById('fieldDiffContainer').innerHTML = diff.map(renderFieldRow).join('');
+    document.getElementById('fieldDiffContainer').innerHTML = buildSectionReport(diff, fieldsA, fieldsB);
     document.getElementById('htmlProgress').textContent='Done.';
     setTimeout(()=> document.getElementById('htmlProgress').textContent='', 1500);
   }catch(err){
