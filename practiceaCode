@@ -117,17 +117,69 @@
   .legend span{display:inline-flex;align-items:center;gap:6px;}
   .swatch{width:12px;height:12px;border-radius:3px;display:inline-block;}
 
-  .diff-lines{font-family:var(--mono);font-size:13px;line-height:1.75;white-space:pre-wrap;word-break:break-word;}
-  .diff-line{padding:2px 8px;border-radius:5px;}
+  .diff-lines{font-family:var(--mono);font-size:13px;line-height:1.9;word-break:break-word;}
+  .diff-line{padding:5px 10px;border-radius:6px;margin-bottom:3px;}
   .diff-line.added{background:var(--added-bg);color:#0d5c31;}
-  .diff-line.removed{background:var(--removed-bg);color:#8a2222;text-decoration:line-through;text-decoration-color:#c2807f;}
-  .diff-line.added::before{content:"+ ";font-weight:700;}
-  .diff-line.removed::before{content:"− ";font-weight:700;}
-  .diff-line.same{color:#8a8f98;}
-  .diff-line.same::before{content:"  ";}
+  .diff-line.removed{background:var(--removed-bg);color:#8a2222;}
+  .diff-line.changed{background:#fdf3e0;color:#7a5210;}
+  .diff-line.added::before{content:"+  ";font-weight:700;}
+  .diff-line.removed::before{content:"−  ";font-weight:700;}
+  .diff-line.changed .old{text-decoration:line-through;text-decoration-color:#c9a96b;color:#9a6a1f;}
+  .diff-line.changed .arrow{margin:0 8px;color:#b8863b;}
+  .diff-line.changed .new{font-weight:700;}
+  .diff-line.same{color:#9aa0aa;display:none;}
+  .diff-line.same.show{display:block;}
+  .diff-toggle{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-bottom:14px;user-select:none;cursor:pointer;}
+  .diff-toggle input{accent-color:var(--accent);}
+  .summary-banner{
+    display:flex;align-items:center;gap:12px;
+    background:var(--accent-soft);border:1px solid #bcd9cd;border-radius:12px;
+    padding:14px 18px;margin-bottom:18px;font-size:14.5px;font-weight:600;color:#1d4a3d;
+    line-height:1.5;
+  }
+  .summary-banner .icon{font-size:20px;flex-shrink:0;}
+  .summary-banner.neutral{background:#f0efe9;border-color:var(--line);color:#4a4f58;}
+  .quality-note{
+    background:#fdf3e0;border:1px solid #e9cd93;border-radius:10px;padding:12px 14px;
+    font-size:12.5px;color:#7a5210;margin-bottom:16px;line-height:1.6;display:none;
+  }
+  .quality-note.show{display:block;}
 
   .empty{color:var(--muted);font-size:14px;text-align:center;padding:40px 10px;}
   .progress{font-family:var(--mono);font-size:12px;color:var(--accent);margin-top:8px;min-height:16px;}
+  .mode-switch{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:5px;margin-bottom:22px;width:fit-content;}
+  .mode-btn{
+    padding:9px 18px;border-radius:8px;font-size:13.5px;font-weight:600;color:var(--muted);
+    cursor:pointer;user-select:none;border:none;background:transparent;font-family:var(--sans);
+  }
+  .mode-btn.active{background:var(--ink);color:#fff;}
+  .mode-panel{display:none;}
+  .mode-panel.active{display:block;}
+
+  .html-input-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  @media(max-width:720px){.html-input-grid{grid-template-columns:1fr;}}
+  .html-input-box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;}
+  .html-input-box .label{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+  .html-input-box .label button{padding:5px 10px;font-size:11px;border-radius:6px;}
+  .html-input-box textarea{
+    width:100%;height:160px;resize:vertical;border:1px solid var(--line);border-radius:8px;
+    padding:10px;font-family:var(--mono);font-size:11.5px;color:var(--ink);background:#fbfaf7;
+  }
+  .html-input-box .filestat{font-size:11.5px;color:var(--muted);margin-top:6px;font-family:var(--mono);}
+
+  .field-diff-list{display:flex;flex-direction:column;gap:8px;}
+  .field-row{border:1px solid var(--line);border-radius:10px;padding:11px 14px;font-size:13.5px;}
+  .field-row .flabel{font-weight:700;margin-bottom:4px;}
+  .field-row .fmeta{font-family:var(--mono);font-size:12px;color:var(--muted);}
+  .field-row.status-moved{background:#fdf3e0;border-color:#e9cd93;}
+  .field-row.status-changed{background:var(--removed-bg);border-color:#ecb9b9;}
+  .field-row.status-added{background:var(--added-bg);border-color:#a9dcbb;}
+  .field-row.status-removed{background:var(--removed-bg);border-color:#ecb9b9;}
+  .field-row.status-retained{background:#fbfaf7;display:none;}
+  .field-row.status-retained.show{display:block;}
+  .fval{font-family:var(--mono);}
+  .fval .old{text-decoration:line-through;color:#9a6a1f;}
+  .fval .arrow{margin:0 6px;color:#b8863b;}
   .footer-note{margin-top:26px;font-size:12px;color:var(--muted);line-height:1.6;}
   .footer-note code{background:var(--panel);border:1px solid var(--line);padding:1px 6px;border-radius:5px;}
 </style>
@@ -144,6 +196,13 @@
     </div>
     <div class="badge">runs entirely in this browser tab</div>
   </header>
+
+  <div class="mode-switch">
+    <button class="mode-btn active" data-mode="image">Screenshots (image)</button>
+    <button class="mode-btn" data-mode="html">Page source (HTML) — exact diff</button>
+  </div>
+
+  <div class="mode-panel active" id="mode-image">
 
   <div class="upload-grid">
     <div class="dropzone" id="dropA">
@@ -187,17 +246,72 @@
   </div>
 
   <div class="panel" id="panel-text">
+    <div class="summary-banner" id="summaryBanner" style="display:none"></div>
     <div class="stats-row" id="textStats"></div>
+    <div class="quality-note" id="qualityNote">⚠ Low OCR confidence detected — this usually means the image is a photo of a screen (moiré pattern) rather than an actual screenshot file. For a reliable field-level diff, export or save the real screenshot (PNG/JPG) instead of photographing the monitor. The visual diff and slider tabs still work fine with photos.</div>
+    <label class="diff-toggle"><input type="checkbox" id="showSame"> Show unchanged lines too</label>
     <div id="textContent" class="empty">Click "Extract & diff text (OCR)" to compare the actual field labels, values, and copy on each screenshot. This can take 10–30 seconds per image.</div>
   </div>
 
   <div class="footer-note">
     Visual diff finds pixel regions that changed (moved elements, new sections, resized components). Text diff runs on-device OCR (Tesseract.js) to catch renamed or added/removed fields and labels that a pixel diff alone might mis-flag as "changed" due to font rendering. Nothing is uploaded anywhere — save this <code>.html</code> file and open it offline any time (OCR requires an internet connection the first time, to load the recognition engine).
   </div>
+
+  </div><!-- /mode-image -->
+
+  <div class="mode-panel" id="mode-html">
+    <div class="html-input-grid">
+      <div class="html-input-box">
+        <div class="label">Before — page source
+          <button class="secondary" id="loadFileA">Load .html file</button>
+        </div>
+        <input type="file" id="htmlFileA" accept=".html,.htm,text/html" style="display:none">
+        <textarea id="htmlTextA" placeholder="Paste the page's HTML source here (right-click the page → View Page Source → copy all, or File → Save Page As → HTML), or click 'Load .html file' above."></textarea>
+        <div class="filestat" id="htmlStatA">No source loaded yet</div>
+      </div>
+      <div class="html-input-box">
+        <div class="label">After — page source
+          <button class="secondary" id="loadFileB">Load .html file</button>
+        </div>
+        <input type="file" id="htmlFileB" accept=".html,.htm,text/html" style="display:none">
+        <textarea id="htmlTextB" placeholder="Paste the newer version's HTML source here, or click 'Load .html file' above."></textarea>
+        <div class="filestat" id="htmlStatB">No source loaded yet</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="runHtmlDiff" disabled>Compare fields (exact)</button>
+      <button id="resetHtml" class="secondary">Reset</button>
+      <div class="progress" id="htmlProgress"></div>
+    </div>
+
+    <div style="height:16px"></div>
+
+    <div class="summary-banner" id="htmlSummaryBanner" style="display:none"></div>
+    <div class="stats-row" id="htmlStats"></div>
+    <label class="diff-toggle"><input type="checkbox" id="showRetained"> Show unchanged fields too</label>
+    <div id="fieldDiffContainer" class="empty">Paste or load both HTML sources, then click "Compare fields (exact)."</div>
+
+    <div class="footer-note">
+      This mode reads real DOM elements (inputs, selects, textareas, label/value pairs) and diffs their exact text — no image recognition involved, so results are deterministic. It works best when the page uses standard form controls with labels; heavily scripted single-page apps that render everything as unlabeled <code>&lt;div&gt;</code>s may need the label association checked manually. To grab page source: open the page, right-click → "View Page Source" (or Ctrl+U), select all, copy, and paste into the box above — or use your browser's "Save As → Webpage, HTML only."
+    </div>
+  </div><!-- /mode-html -->
+
 </div>
 
 <script>
 const state = { imgA:null, imgB:null, fileNameA:'', fileNameB:'' };
+const htmlState = { textA:'', textB:'' };
+
+// ---- Mode switching ----
+document.querySelectorAll('.mode-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.mode-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('mode-'+btn.dataset.mode).classList.add('active');
+  });
+});
 
 function setupDrop(dropId, fileId, which){
   const drop = document.getElementById(dropId);
@@ -419,12 +533,35 @@ function buildSlider(){
 
 // ---------- TEXT DIFF (OCR) ----------
 document.getElementById('runText').addEventListener('click', runTextDiff);
+document.getElementById('showSame').addEventListener('change', e=>{
+  document.querySelectorAll('.diff-line.same').forEach(el=> el.classList.toggle('show', e.target.checked));
+});
+
+function preprocessCanvas(img){
+  // upscale small images for better OCR, and boost contrast / grayscale
+  const targetW = Math.min(2400, Math.max(img.width, 1400));
+  const scale = targetW / img.width;
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(img.width*scale);
+  canvas.height = Math.round(img.height*scale);
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img,0,0,canvas.width,canvas.height);
+  const id = ctx.getImageData(0,0,canvas.width,canvas.height);
+  const d = id.data;
+  for(let i=0;i<d.length;i+=4){
+    const gray = 0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+    const boosted = Math.min(255, Math.max(0, (gray-128)*1.35+128));
+    d[i]=d[i+1]=d[i+2]=boosted;
+  }
+  ctx.putImageData(id,0,0);
+  return canvas;
+}
 
 async function ocrImage(img, label){
   setProgress(`Reading text from "${label}"…`);
-  const canvas = document.createElement('canvas');
-  canvas.width = img.width; canvas.height = img.height;
-  canvas.getContext('2d').drawImage(img,0,0);
+  const canvas = preprocessCanvas(img);
   const { data } = await Tesseract.recognize(canvas, 'eng', {
     logger: m=>{
       if(m.status==='recognizing text'){
@@ -432,25 +569,66 @@ async function ocrImage(img, label){
       }
     }
   });
-  return data.text
-    .split('\n')
-    .map(l=>l.trim())
-    .filter(l=>l.length>0);
+
+  const rawLines = (data.lines && data.lines.length) ? data.lines : null;
+  let lines = [];
+  let confSum=0, confCount=0;
+
+  if(rawLines){
+    rawLines.forEach(l=>{
+      const text = (l.text||'').trim().replace(/\s+/g,' ');
+      if(!text) return;
+      const conf = l.confidence ?? 0;
+      confSum += conf; confCount++;
+      const alnum = (text.match(/[a-zA-Z0-9]/g)||[]).length;
+      const alnumRatio = alnum / text.length;
+      // filter obvious OCR junk: low confidence or mostly symbols or too short
+      if(conf >= 40 && alnumRatio >= 0.35 && text.replace(/[^a-zA-Z0-9]/g,'').length >= 2){
+        lines.push(text);
+      }
+    });
+  } else {
+    lines = data.text.split('\n').map(l=>l.trim().replace(/\s+/g,' ')).filter(l=>l.length>=2);
+    confSum = data.confidence||0; confCount=1;
+  }
+
+  const avgConfidence = confCount ? confSum/confCount : 0;
+  return { lines, avgConfidence };
 }
 
-// classic LCS-based line diff
+// Levenshtein distance -> similarity ratio 0..1
+function similarity(a,b){
+  a=a.toLowerCase(); b=b.toLowerCase();
+  if(a===b) return 1;
+  const n=a.length,m=b.length;
+  if(!n||!m) return 0;
+  const dp=Array.from({length:n+1},()=> new Uint16Array(m+1));
+  for(let i=0;i<=n;i++) dp[i][0]=i;
+  for(let j=0;j<=m;j++) dp[0][j]=j;
+  for(let i=1;i<=n;i++){
+    for(let j=1;j<=m;j++){
+      dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+    }
+  }
+  const dist = dp[n][m];
+  return 1 - dist/Math.max(n,m);
+}
+
+// classic LCS-based line diff (case-insensitive match)
 function diffLines(a, b){
+  const an = a.map(l=>l.toLowerCase());
+  const bn = b.map(l=>l.toLowerCase());
   const n=a.length, m=b.length;
   const dp = Array.from({length:n+1},()=>new Uint16Array(m+1));
   for(let i=n-1;i>=0;i--){
     for(let j=m-1;j>=0;j--){
-      dp[i][j] = a[i]===b[j] ? dp[i+1][j+1]+1 : Math.max(dp[i+1][j], dp[i][j+1]);
+      dp[i][j] = an[i]===bn[j] ? dp[i+1][j+1]+1 : Math.max(dp[i+1][j], dp[i][j+1]);
     }
   }
   const result=[];
   let i=0,j=0;
   while(i<n && j<m){
-    if(a[i]===b[j]){ result.push({type:'same', text:a[i]}); i++; j++; }
+    if(an[i]===bn[j]){ result.push({type:'same', text:a[i]}); i++; j++; }
     else if(dp[i+1][j] >= dp[i][j+1]){ result.push({type:'removed', text:a[i]}); i++; }
     else { result.push({type:'added', text:b[j]}); j++; }
   }
@@ -459,28 +637,90 @@ function diffLines(a, b){
   return result;
 }
 
+// merge adjacent removed+added pairs that are similar enough into a single "changed" entry
+function mergeChanges(diff){
+  const out = [];
+  for(let k=0;k<diff.length;k++){
+    const cur = diff[k], next = diff[k+1];
+    if(cur.type==='removed' && next && next.type==='added'){
+      const sim = similarity(cur.text, next.text);
+      if(sim >= 0.45){
+        out.push({type:'changed', from:cur.text, to:next.text});
+        k++; // consume both
+        continue;
+      }
+    }
+    out.push(cur);
+  }
+  return out;
+}
+
+function renderDiffLine(d){
+  if(d.type==='changed'){
+    return `<div class="diff-line changed"><span class="old">${escapeHtml(d.from)}</span><span class="arrow">→</span><span class="new">${escapeHtml(d.to)}</span></div>`;
+  }
+  const showCls = d.type==='same' ? (document.getElementById('showSame').checked ? ' show':'') : '';
+  return `<div class="diff-line ${d.type}${showCls}">${escapeHtml(d.text)}</div>`;
+}
+
+function buildSummary(added, removed, changed, retained){
+  const banner = document.getElementById('summaryBanner');
+  banner.style.display = 'flex';
+
+  if(added===0 && removed===0 && changed===0){
+    banner.className = 'summary-banner neutral';
+    banner.innerHTML = `<span class="icon">✅</span><span>No differences found — all ${retained} detected line${retained===1?'':'s'} match between the two screenshots.</span>`;
+    return;
+  }
+
+  const parts = [];
+  if(changed>0) parts.push(`<b>${changed}</b> field${changed===1?'':'s'} moved or updated (value carried over)`);
+  if(added>0) parts.push(`<b>${added}</b> new line${added===1?'':'s'} added`);
+  if(removed>0) parts.push(`<b>${removed}</b> line${removed===1?'':'s'} removed`);
+
+  let sentence = parts.join(', ').replace(/,([^,]*)$/, ' and$1') + '.';
+  if(removed===0 && added===0){
+    sentence += ' Nothing appears to have been lost or newly introduced.';
+  }
+
+  banner.className = 'summary-banner';
+  banner.innerHTML = `<span class="icon">${removed>0 ? '⚠️' : '↕️'}</span><span>${sentence}</span>`;
+}
+
 async function runTextDiff(){
   document.getElementById('runText').disabled = true;
   document.getElementById('runVisual').disabled = true;
+  document.getElementById('qualityNote').classList.remove('show');
   try{
-    const linesA = await ocrImage(state.imgA, 'Before');
-    const linesB = await ocrImage(state.imgB, 'After');
-    const diff = diffLines(linesA, linesB);
+    const resA = await ocrImage(state.imgA, 'Before');
+    const resB = await ocrImage(state.imgB, 'After');
+
+    if(resA.avgConfidence < 55 || resB.avgConfidence < 55){
+      document.getElementById('qualityNote').classList.add('show');
+    }
+
+    const rawDiff = diffLines(resA.lines, resB.lines);
+    const diff = mergeChanges(rawDiff);
+
     const added = diff.filter(d=>d.type==='added').length;
     const removed = diff.filter(d=>d.type==='removed').length;
+    const changed = diff.filter(d=>d.type==='changed').length;
     const retained = diff.filter(d=>d.type==='same').length;
 
     document.getElementById('textStats').innerHTML = `
-      <div class="stat"><div class="num" style="color:var(--added)">${added}</div><div class="lbl">Lines added</div></div>
-      <div class="stat"><div class="num" style="color:var(--removed)">${removed}</div><div class="lbl">Lines removed</div></div>
-      <div class="stat"><div class="num">${retained}</div><div class="lbl">Lines retained</div></div>
+      <div class="stat"><div class="num" style="color:var(--added)">${added}</div><div class="lbl">Added</div></div>
+      <div class="stat"><div class="num" style="color:var(--removed)">${removed}</div><div class="lbl">Removed</div></div>
+      <div class="stat"><div class="num" style="color:#b8863b">${changed}</div><div class="lbl">Changed</div></div>
+      <div class="stat"><div class="num">${retained}</div><div class="lbl">Retained</div></div>
     `;
-    const html = diff.map(d=>`<div class="diff-line ${d.type}">${escapeHtml(d.text)}</div>`).join('');
+    buildSummary(added, removed, changed, retained);
+    const html = diff.map(renderDiffLine).join('');
     document.getElementById('textContent').className='diff-lines';
-    document.getElementById('textContent').innerHTML = html || '<div class="empty">No text detected.</div>';
+    document.getElementById('textContent').innerHTML = html || '<div class="empty">No reliable text detected in either screenshot.</div>';
     setProgress('Done.');
   }catch(err){
     setProgress('');
+    document.getElementById('summaryBanner').style.display='none';
     document.getElementById('textContent').className='empty';
     document.getElementById('textContent').textContent = 'OCR failed to load — check your internet connection (needed once, to fetch the recognition engine), then try again. Error: '+err.message;
   }
@@ -492,6 +732,262 @@ async function runTextDiff(){
 function escapeHtml(s){
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+
+// ============ HTML PAGE-SOURCE DIFF (exact, no OCR) ============
+
+document.getElementById('loadFileA').addEventListener('click', ()=> document.getElementById('htmlFileA').click());
+document.getElementById('loadFileB').addEventListener('click', ()=> document.getElementById('htmlFileB').click());
+
+function wireHtmlFileInput(fileInputId, textareaId, statId, which){
+  document.getElementById(fileInputId).addEventListener('change', e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      document.getElementById(textareaId).value = ev.target.result;
+      htmlState[which] = ev.target.result;
+      document.getElementById(statId).textContent = `Loaded ${file.name} — ${ev.target.result.length.toLocaleString()} characters`;
+      checkHtmlReady();
+    };
+    reader.readAsText(file);
+  });
+}
+wireHtmlFileInput('htmlFileA','htmlTextA','htmlStatA','textA');
+wireHtmlFileInput('htmlFileB','htmlTextB','htmlStatB','textB');
+
+['A','B'].forEach(letter=>{
+  document.getElementById('htmlText'+letter).addEventListener('input', e=>{
+    htmlState['text'+letter] = e.target.value;
+    document.getElementById('htmlStat'+letter).textContent = e.target.value
+      ? `${e.target.value.length.toLocaleString()} characters pasted`
+      : 'No source loaded yet';
+    checkHtmlReady();
+  });
+});
+
+function checkHtmlReady(){
+  document.getElementById('runHtmlDiff').disabled = !(htmlState.textA.trim() && htmlState.textB.trim());
+}
+
+document.getElementById('resetHtml').addEventListener('click', ()=>{
+  htmlState.textA=''; htmlState.textB='';
+  document.getElementById('htmlTextA').value='';
+  document.getElementById('htmlTextB').value='';
+  document.getElementById('htmlStatA').textContent='No source loaded yet';
+  document.getElementById('htmlStatB').textContent='No source loaded yet';
+  document.getElementById('htmlSummaryBanner').style.display='none';
+  document.getElementById('htmlStats').innerHTML='';
+  document.getElementById('fieldDiffContainer').className='empty';
+  document.getElementById('fieldDiffContainer').textContent='Paste or load both HTML sources, then click "Compare fields (exact)."';
+  checkHtmlReady();
+});
+
+document.getElementById('showRetained').addEventListener('change', e=>{
+  document.querySelectorAll('.field-row.status-retained').forEach(el=> el.classList.toggle('show', e.target.checked));
+});
+
+const HEADING_SELECTOR = 'h1,h2,h3,h4,h5,h6,legend,[role="heading"]';
+
+function getLabelFor(el, doc){
+  if(el.id){
+    try{
+      const lab = doc.querySelector(`label[for="${CSS.escape(el.id)}"]`);
+      if(lab && lab.textContent.trim()) return lab.textContent.trim();
+    }catch(e){}
+  }
+  const parentLabel = el.closest('label');
+  if(parentLabel){
+    const t = parentLabel.textContent.trim();
+    if(t) return t;
+  }
+  if(el.getAttribute('aria-label')) return el.getAttribute('aria-label').trim();
+  if(el.getAttribute('placeholder')) return el.getAttribute('placeholder').trim();
+  let prev = el.previousElementSibling;
+  let hops=0;
+  while(prev && hops<3){
+    const t = prev.textContent.trim();
+    if(t && t.length<100 && !['input','select','textarea'].includes(prev.tagName.toLowerCase())) return t;
+    prev = prev.previousElementSibling; hops++;
+  }
+  return el.name || el.id || '';
+}
+
+function extractFields(htmlText){
+  const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+  const results = [];
+  let currentSection = 'General';
+  if(!doc.body) return results;
+
+  const walker = doc.body.querySelectorAll('*');
+  walker.forEach(el=>{
+    const tag = el.tagName.toLowerCase();
+    if(el.matches(HEADING_SELECTOR)){
+      const t = el.textContent.trim();
+      if(t) currentSection = t;
+      return;
+    }
+    if(tag==='input' || tag==='select' || tag==='textarea'){
+      if(tag==='input' && ['hidden','submit','button','image','file'].includes((el.type||'').toLowerCase())) return;
+      const label = getLabelFor(el, doc);
+      let value;
+      if(tag==='select'){
+        const opt = el.options[el.selectedIndex];
+        value = opt ? opt.text.trim() : '';
+      } else if(el.type==='checkbox' || el.type==='radio'){
+        value = el.checked ? 'checked' : 'unchecked';
+      } else {
+        value = (el.value ?? el.getAttribute('value') ?? '').trim();
+      }
+      if(label) results.push({section: currentSection, label, value, tag});
+    }
+  });
+
+  // fallback: definition list pairs
+  doc.querySelectorAll('dt').forEach(dt=>{
+    const dd = dt.nextElementSibling;
+    if(dd && dd.tagName.toLowerCase()==='dd'){
+      const label = dt.textContent.trim();
+      if(label) results.push({section: currentSection, label, value: dd.textContent.trim(), tag:'dt/dd'});
+    }
+  });
+
+  // fallback: two-cell table rows (label/value style)
+  doc.querySelectorAll('tr').forEach(tr=>{
+    const cells = tr.querySelectorAll('td,th');
+    if(cells.length===2){
+      const label = cells[0].textContent.trim();
+      const value = cells[1].textContent.trim();
+      if(label && !results.some(r=>r.label===label && r.value===value)){
+        results.push({section: currentSection, label, value, tag:'tr'});
+      }
+    }
+  });
+
+  return results;
+}
+
+function normLabel(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }
+
+function matchFields(fieldsA, fieldsB){
+  const usedB = new Array(fieldsB.length).fill(false);
+  const results = [];
+
+  fieldsA.forEach(fa=>{
+    const key = normLabel(fa.label);
+    let matchIdx = fieldsB.findIndex((fb,idx)=> !usedB[idx] && normLabel(fb.label)===key);
+    if(matchIdx===-1){
+      let best=-1, bestScore=0;
+      fieldsB.forEach((fb,idx)=>{
+        if(usedB[idx]) return;
+        const score = similarity(key, normLabel(fb.label));
+        if(score>bestScore){ bestScore=score; best=idx; }
+      });
+      if(bestScore>=0.75) matchIdx = best;
+    }
+    if(matchIdx!==-1){
+      usedB[matchIdx]=true;
+      const fb = fieldsB[matchIdx];
+      const sameSection = fa.section===fb.section;
+      const sameValue = fa.value===fb.value;
+      let status;
+      if(sameValue && sameSection) status='retained';
+      else if(sameValue && !sameSection) status='moved';
+      else status='changed';
+      results.push({label:fa.label, fromSection:fa.section, toSection:fb.section, fromValue:fa.value, toValue:fb.value, status});
+    } else {
+      results.push({label:fa.label, fromSection:fa.section, fromValue:fa.value, status:'removed'});
+    }
+  });
+
+  fieldsB.forEach((fb,idx)=>{
+    if(!usedB[idx]) results.push({label:fb.label, toSection:fb.section, toValue:fb.value, status:'added'});
+  });
+
+  return results;
+}
+
+function renderFieldRow(r){
+  const showCls = r.status==='retained' ? (document.getElementById('showRetained').checked ? ' show':'') : '';
+  let body;
+  if(r.status==='moved'){
+    body = `<div class="fmeta">moved: ${escapeHtml(r.fromSection)} <span class="arrow">→</span> ${escapeHtml(r.toSection)} · value retained: <span class="fval">${escapeHtml(r.toValue||'(empty)')}</span></div>`;
+  } else if(r.status==='changed'){
+    body = `<div class="fmeta">${escapeHtml(r.fromSection===r.toSection ? r.fromSection : r.fromSection+' → '+r.toSection)}</div>
+            <div class="fval"><span class="old">${escapeHtml(r.fromValue||'(empty)')}</span><span class="arrow">→</span><b>${escapeHtml(r.toValue||'(empty)')}</b></div>`;
+  } else if(r.status==='added'){
+    body = `<div class="fmeta">new in ${escapeHtml(r.toSection)}</div><div class="fval">${escapeHtml(r.toValue||'(empty)')}</div>`;
+  } else if(r.status==='removed'){
+    body = `<div class="fmeta">no longer present — was in ${escapeHtml(r.fromSection)}</div><div class="fval">${escapeHtml(r.fromValue||'(empty)')}</div>`;
+  } else {
+    body = `<div class="fmeta">${escapeHtml(r.toSection||r.fromSection)}</div><div class="fval">${escapeHtml(r.toValue ?? r.fromValue ?? '')}</div>`;
+  }
+  return `<div class="field-row status-${r.status}${showCls}"><div class="flabel">${escapeHtml(r.label)}</div>${body}</div>`;
+}
+
+function buildHtmlSummary(counts){
+  const banner = document.getElementById('htmlSummaryBanner');
+  banner.style.display='flex';
+  const {added,removed,changed,moved,retained} = counts;
+  if(added===0 && removed===0 && changed===0 && moved===0){
+    banner.className='summary-banner neutral';
+    banner.innerHTML = `<span class="icon">✅</span><span>No differences found — all ${retained} detected fields match exactly.</span>`;
+    return;
+  }
+  const parts=[];
+  if(moved>0) parts.push(`<b>${moved}</b> field${moved===1?'':'s'} moved to a different section (value retained)`);
+  if(changed>0) parts.push(`<b>${changed}</b> field${changed===1?'':'s'} with a changed value`);
+  if(added>0) parts.push(`<b>${added}</b> new field${added===1?'':'s'} added`);
+  if(removed>0) parts.push(`<b>${removed}</b> field${removed===1?'':'s'} removed`);
+  let sentence = parts.join(', ').replace(/,([^,]*)$/, ' and$1') + '.';
+  banner.className='summary-banner';
+  banner.innerHTML = `<span class="icon">${removed>0||changed>0?'⚠️':'↕️'}</span><span>${sentence}</span>`;
+}
+
+document.getElementById('runHtmlDiff').addEventListener('click', ()=>{
+  document.getElementById('htmlProgress').textContent = 'Parsing DOM…';
+  try{
+    const fieldsA = extractFields(htmlState.textA);
+    const fieldsB = extractFields(htmlState.textB);
+
+    if(fieldsA.length===0 && fieldsB.length===0){
+      document.getElementById('fieldDiffContainer').className='empty';
+      document.getElementById('fieldDiffContainer').textContent = 'No form fields, dt/dd pairs, or two-column table rows were found in either source. This page may render its UI via a heavily scripted framework — try saving the page after it fully loads ("Save As → Complete Webpage") rather than the raw template source.';
+      document.getElementById('htmlProgress').textContent='';
+      return;
+    }
+
+    const diff = matchFields(fieldsA, fieldsB);
+    const counts = {
+      added: diff.filter(d=>d.status==='added').length,
+      removed: diff.filter(d=>d.status==='removed').length,
+      changed: diff.filter(d=>d.status==='changed').length,
+      moved: diff.filter(d=>d.status==='moved').length,
+      retained: diff.filter(d=>d.status==='retained').length,
+    };
+
+    document.getElementById('htmlStats').innerHTML = `
+      <div class="stat"><div class="num" style="color:#b8863b">${counts.moved}</div><div class="lbl">Moved</div></div>
+      <div class="stat"><div class="num" style="color:var(--removed)">${counts.changed}</div><div class="lbl">Changed</div></div>
+      <div class="stat"><div class="num" style="color:var(--added)">${counts.added}</div><div class="lbl">Added</div></div>
+      <div class="stat"><div class="num" style="color:var(--removed)">${counts.removed}</div><div class="lbl">Removed</div></div>
+      <div class="stat"><div class="num">${counts.retained}</div><div class="lbl">Retained</div></div>
+    `;
+    buildHtmlSummary(counts);
+
+    // order: moved, changed, added, removed, retained
+    const order = {moved:0, changed:1, added:2, removed:3, retained:4};
+    diff.sort((a,b)=> order[a.status]-order[b.status]);
+
+    document.getElementById('fieldDiffContainer').className='field-diff-list';
+    document.getElementById('fieldDiffContainer').innerHTML = diff.map(renderFieldRow).join('');
+    document.getElementById('htmlProgress').textContent='Done.';
+    setTimeout(()=> document.getElementById('htmlProgress').textContent='', 1500);
+  }catch(err){
+    document.getElementById('htmlProgress').textContent='';
+    document.getElementById('fieldDiffContainer').className='empty';
+    document.getElementById('fieldDiffContainer').textContent = 'Could not parse the HTML source: '+err.message;
+  }
+});
 </script>
 </body>
 </html>
