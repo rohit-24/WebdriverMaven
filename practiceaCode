@@ -1,68 +1,14 @@
-SR2026 — TEST EXECUTION RAG
 
-Execution                         RAG       Reason
-────────────────────────────────────────────────────
-LOTS Inflight SNA - LBCM          🟢        On Track
-LOTS Inflight SNA - LBUK          🟡        Attention
-LOTS Inflight Test - LBCM         🟡        Attention
-LOTS Inflight Test - LBUK         🔴        High Remaining
-LOTS Regression                   ⚪        Not Started
-TI Regression                     ⚪        Not Started
-TI Inflight - LBCM                🟡        Attention
-TI Inflight - LBUK                🟡        Attention
-
+🔴 Status: Red — TI+ bug load high
+📊 Pass rate: 19% (43 of 221 executed)
+🐞 Open bugs: 22 (11 High priority)
+📅 9 days to release (target 10 Sep 2026)
+─────────────
+Scope: LBUK & LBCM
+Apps: TI+ & LOTS
 Last Reviewed: 31-Aug-2026
 
 
-
-
-Yes 👍 — you can absolutely add emojis/smiley text to the gadget name. I actually recommend it because your dashboard has many similar gadgets, and the emoji makes each section immediately recognizable.
-
-For your current dashboard, I’d use professional emojis, not too many:
-
-Current gadget	Suggested name
-Test Execution Health	🧪 SR2026 – Test Execution Health
-Test Execution Details	📋 SR2026 – Test Execution Details
-Failed Test Runs	🔴 SR2026 – Failed Test Runs
-Remaining Test Runs	🟡 SR2026 – Remaining Test Runs
-Blocked Test Runs	⛔ SR2026 – Blocked Test Runs
-Bug Severity	🐛 SR2026 – Bug Severity
-Aging Bugs 14+ Days	⏳ SR2026 – Aging Bugs (14+ Days)
-Created vs Resolved	📈 SR2026 – Bugs Created vs Resolved
-Release Blockers	🚨 SR2026 – Release Blockers
-
-For the new Rich Text gadget
-
-I’d name it:
-
-🎯 SR2026 – Execution RAG
-
-or, even better:
-
-🚦 SR2026 – Execution RAG Status
-
-I prefer 🚦 SR2026 – Execution RAG Status because someone looking at the dashboard immediately understands what the section is for.
-
-And inside it:
-
-🚦 SR2026 – EXECUTION RAG STATUS
-🟢 LOTS Inflight SNA - LBCM
-   On Track
-🟡 LOTS Inflight SNA - LBUK
-   Attention Required
-🟡 LOTS Inflight Test - LBCM
-   Attention Required
-🔴 LOTS Inflight Test - LBUK
-   Release Risk
-⚪ LOTS Regression
-   Not Started
-⚪ TI Regression
-   Not Started
-🟡 TI Inflight - LBCM
-   Attention Required
-🟡 TI Inflight - LBUK
-   Attention Required
-────────────────────────
-🟢 On Track   🟡 Attention   🔴 Risk   ⚪ N/A
-
-One recommendation: keep the emoji to one per gadget title. That will make the dashboard look polished rather than crowded.
+{panel:bgColor=#FFEBE6|borderColor=#DE350B|titleBGColor=#DE350B|titleColor=#FFFFFF|title=SR2026 STATUS: RED}
+Pass Rate: 19% | Open Bugs: 22 (11 High) | Days to Release: 9
+{panel}
