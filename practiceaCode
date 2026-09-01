@@ -6,9 +6,15 @@
 ─────────────
 Scope: LBUK & LBCM
 Apps: TI+ & LOTS
-Last Reviewed: 31-Aug-2026
+Last Reviewed: 31-Aug-
 
 
-{panel:bgColor=#FFEBE6|borderColor=#DE350B|titleBGColor=#DE350B|titleColor=#FFFFFF|title=SR2026 STATUS: RED}
-Pass Rate: 19% | Open Bugs: 22 (11 High) | Days to Release: 9
-{panel}
+2026
+
+
+SR2026 — RELEASE READINESS
+────────────────────────
+🟡 Pass rate: 19% (43 of 221 executed)
+📅 Days to release: 9 (target 10 Sep 2026)
+🐞 Open bugs: 22 (11 High priority)
+🔴 Status: RED — TI+ bug load high
