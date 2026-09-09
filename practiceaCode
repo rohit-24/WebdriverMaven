@@ -1,29 +1,69 @@
 
-Here's the big picture: this is the system architecture for TI+ (Trade Innovation), Finestra's trade finance platform, showing how a trade request flows from the outside world, through the core processing engine, out to all the systems that need the results.
+1. Scope & priority
 
-1. Upstream Applications (where trades come from)
-Client-facing channels and connectors — ELCY Connector, Komgo Connector, Clear Trade, FileNet (document management), G Forms, Trade Tracker — send trade instructions in. These pass through security layers like Akamai, Azure (DCAPI Hub), and PEGA Cloud (case management/workflow tools like PEGA CBD, PEGA FSU) before reaching the bank's network.
+	•	Do you want health checks on all systems in the diagram, or start with a subset (e.g. just TI+ core + security gateway)?
+	•	Which systems are causing the most pain today — where do devs spend the most manual-check time?
+	•	Is this meant to replace manual checks entirely, or supplement them (early warning only)?
 
-2. Security gateway
-Everything funnels through the LBG COLO Firewall, then API Connect, then the TI+ F5 Core (load balancer/proxy). All these hops use mTLS (TLS 1.2) — mutual encryption, so both sides prove their identity. This is the "front door" layer.
+2. Ownership & access
 
-3. Core TradeLab Applications (the engine room)
+	•	Who owns each system for approvals — can QA get credentials/API access to DBs, JMS queues, SFTP servers, or does that need to go through Infra/DBA/Security?
+	•	For downstream systems we don't own (SWIFT, AML, PRISM, SAP GL) — do we have any access at all, or are we limited to indirect checks (e.g. file/log-based)?
+	•	Who should receive alerts, and who is expected to act on them (QA just detects, or also triages)?
 
-	•	TI+ (AL08419) is the heart of the system — it's where actual trade finance processing happens (both automated and with human users, shown by the little people icons).
-	•	It talks to a TI+ DB Server for storage, Fircosoft for sanctions/compliance screening (files), and Ln(L) and TradeHub via web services and JMS messaging.
-	•	DataStage pulls data into an ODS DB Server (operational data store), which feeds Power BI for reporting.
-	•	LDTS (Bank Side) appears to be a related settlement/ledger system with its own DB.
+3. Tooling & infrastructure
 
-4. Downstream Applications (where results go)
-Once a trade is processed, data fans out to a long list of specialist systems:
+	•	Does the bank already have a monitoring tool (Nagios, Zabbix, Dynatrace, AppDynamics, etc.) we should build into, instead of creating something new?
+	•	Where should scripts run from — a dedicated server/VM, existing CI/CD (Jenkins), or QA's local environment?
+	•	Is there a preferred language/stack (Node.js vs Python vs existing team tooling)?
+	•	What's the alerting channel — email, Slack/Teams, ticketing tool (ServiceNow/Jira)?
 
-	•	SWIFT GTX – sends SWIFT messages to other banks
-	•	AML, Beck/BASEL3, PRISM, WIDR – compliance, risk, and regulatory reporting
-	•	CAPrCBS, BIGS, PSAAS, UICM – various product/banking sub-systems
-	•	MABE4 → SAP GL/Fusion2 – posts accounting entries to the general ledger
-	•	SED → GCTDW → QRM – feeds a data warehouse then a risk management system
-	•	CRW/ICRS, Common – shared reference/reporting data
+4. Environments
 
-In plain terms: a trade request comes in from a client channel → passes through several layers of firewalls and gateways for security → gets processed by the TI+ core engine (with its own databases) → and the results are then distributed to a wide network of compliance, accounting, risk, and reporting systems, plus sent out via SWIFT to other banks.
+	•	Is this for Production only, or also UAT/SIT/DR environments?
+	•	Are there different endpoints/credentials per environment we need to account for?
 
-Want me to turn this into a clean diagram or summary document?
+5. Thresholds & expectations
+
+	•	What response time / downtime is considered acceptable before it's flagged an issue?
+	•	Are there existing SLAs (per system) we should align alert thresholds to, or do we define them ourselves?
+	•	How false-positive-tolerant should this be — is a few false alerts a week OK while we tune it, or does it need to be near-perfect from day one?
+
+6. Security & compliance
+
+	•	Any restrictions on storing credentials for automated scripts (e.g. must use a vault/secrets manager)?
+	•	Any change-management or approval process required before scripts can run against Production systems?
+
+7. Success criteria & timeline
+
+	•	How will success be measured — reduced manual-check time, faster detection, fewer incidents escalated?
+	•	Is there a deadline or is this open-ended / phased?
+	•	Do you want a proof-of-concept on a few systems first before scaling to the full list?
+
+Suggested opening line to lead with: "Before I build out the automation plan, I want to align on scope, access, and tooling so we don't rework it later — can we go through a few quick questions?"
+
+Want me to turn this into a short one-page doc or checklist you can literally walk through in the meeting?
+
+
+
+
+Scope
+
+1. What exactly is the objective of the health check?
+2. What does GREEN/AMBER/RED mean?
+3. Which applications and environments are in scope?
+4. Can I get the current manual health-check checklist/runbook?
+
+Technical
+
+5. For each component, are we checking availability, connectivity, or actual functionality?
+6. Which upstream/downstream integrations are business-critical?
+7. Which checks should be UI/API/DB/JMS/file/infrastructure based?
+8. What test data/transactions should the health check use?
+
+Automation
+
+9. How frequently will it run and who will trigger it?
+10. Where should the results/report be published?
+11. How should failures, retries and non-critical failures be handled?
+12. With the OCP migration, which platform-level checks belong in our framework versus DevOps monitoring?
