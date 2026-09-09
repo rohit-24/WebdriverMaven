@@ -1,20 +1,29 @@
 
-🔴 Status: Red — TI+ bug load high
-📊 Pass rate: 19% (43 of 221 executed)
-🐞 Open bugs: 22 (11 High priority)
-📅 9 days to release (target 10 Sep 2026)
-─────────────
-Scope: LBUK & LBCM
-Apps: TI+ & LOTS
-Last Reviewed: 31-Aug-
+Here's the big picture: this is the system architecture for TI+ (Trade Innovation), Finestra's trade finance platform, showing how a trade request flows from the outside world, through the core processing engine, out to all the systems that need the results.
 
+1. Upstream Applications (where trades come from)
+Client-facing channels and connectors — ELCY Connector, Komgo Connector, Clear Trade, FileNet (document management), G Forms, Trade Tracker — send trade instructions in. These pass through security layers like Akamai, Azure (DCAPI Hub), and PEGA Cloud (case management/workflow tools like PEGA CBD, PEGA FSU) before reaching the bank's network.
 
-2026
+2. Security gateway
+Everything funnels through the LBG COLO Firewall, then API Connect, then the TI+ F5 Core (load balancer/proxy). All these hops use mTLS (TLS 1.2) — mutual encryption, so both sides prove their identity. This is the "front door" layer.
 
+3. Core TradeLab Applications (the engine room)
 
-SR2026 — RELEASE READINESS
-────────────────────────
-🟡 Pass rate: 19% (43 of 221 executed)
-📅 Days to release: 9 (target 10 Sep 2026)
-🐞 Open bugs: 22 (11 High priority)
-🔴 Status: RED — TI+ bug load high
+	•	TI+ (AL08419) is the heart of the system — it's where actual trade finance processing happens (both automated and with human users, shown by the little people icons).
+	•	It talks to a TI+ DB Server for storage, Fircosoft for sanctions/compliance screening (files), and Ln(L) and TradeHub via web services and JMS messaging.
+	•	DataStage pulls data into an ODS DB Server (operational data store), which feeds Power BI for reporting.
+	•	LDTS (Bank Side) appears to be a related settlement/ledger system with its own DB.
+
+4. Downstream Applications (where results go)
+Once a trade is processed, data fans out to a long list of specialist systems:
+
+	•	SWIFT GTX – sends SWIFT messages to other banks
+	•	AML, Beck/BASEL3, PRISM, WIDR – compliance, risk, and regulatory reporting
+	•	CAPrCBS, BIGS, PSAAS, UICM – various product/banking sub-systems
+	•	MABE4 → SAP GL/Fusion2 – posts accounting entries to the general ledger
+	•	SED → GCTDW → QRM – feeds a data warehouse then a risk management system
+	•	CRW/ICRS, Common – shared reference/reporting data
+
+In plain terms: a trade request comes in from a client channel → passes through several layers of firewalls and gateways for security → gets processed by the TI+ core engine (with its own databases) → and the results are then distributed to a wide network of compliance, accounting, risk, and reporting systems, plus sent out via SWIFT to other banks.
+
+Want me to turn this into a clean diagram or summary document?
