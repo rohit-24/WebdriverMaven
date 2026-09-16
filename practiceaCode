@@ -401,3 +401,87 @@ tests/
 ---
 
 That's the complete set: **3 new files**, **applications.json** (per-app edits), **configLoader.js**, **checkRegistry.js**, **secretsProvider.js** (verify only), **README.md**. The two files I had to reconstruct from partial view (`configLoader.js`, `checkRegistry.js`) — paste your actual current versions if you want me to produce an exact diff instead of a best-guess rewrite.
+
+######################################## 2 files changes ##################################
+
+
+
+
+Yes to `configLoader.js` — it's a required change, not optional. `checkRegistry.js` is a maybe, depending on whether you actually want to start using it. Let me be precise about which is which.
+
+## `configLoader.js` — REQUIRED change
+
+Looking at the actual code in your screenshot, `getTargets()` currently does this unconditionally for every target, regardless of `checkType`:
+
+```js
+const loginUrl = envOverride.loginUrl;
+const homeUrl = envOverride.homeUrl;
+const logoutUrl = envOverride.logoutUrl;
+
+targets.push({
+  appId: app.id,
+  appName: app.name,
+  env: envId,
+  tier: envDef.tier,
+  loginUrl,
+  homeUrl,
+  logoutUrl,
+  auth: app.auth,
+  checks: app.checks,
+});
+```
+
+It doesn't branch by `checkType` at all — it just always pulls the same fixed set of fields. So for `checkType: 'middleware'` to work, `wasConsoleUrl` and the app's `middleware` config block simply aren't on the target object today. You'd get `target.wasConsoleUrl === undefined` and your middleware check would fail immediately trying to `page.goto(undefined)`.
+
+The fix is small — follow the exact same flat pattern already used, just add two more lines:
+
+```js
+const loginUrl = envOverride.loginUrl;
+const homeUrl = envOverride.homeUrl;
+const logoutUrl = envOverride.logoutUrl;
+const wasConsoleUrl = envOverride.wasConsoleUrl;   // NEW
+
+targets.push({
+  appId: app.id,
+  appName: app.name,
+  env: envId,
+  tier: envDef.tier,
+  loginUrl,
+  homeUrl,
+  logoutUrl,
+  wasConsoleUrl,          // NEW
+  auth: app.auth,
+  checks: app.checks,
+  middleware: app.middleware,   // NEW - { credentialKey, minExpectedServers } or undefined
+});
+```
+
+That's it — no `if (checkType === 'middleware')` branching needed, since the existing design already just puts every known field on every target flatly and lets specs pick what they need. Apps that don't define `wasConsoleUrl`/`middleware` in their config simply get `undefined` there, which is harmless as long as the middleware spec only runs for apps where `app.checks.middleware === true` — which the existing `checkFilter` logic (line 55: `if (app.checks && app.checks[checkFilter] === false) continue`) already guarantees, since that filtering is generic and already works correctly for any `checkType` string you pass in, including `'middleware'`.
+
+**So: `getTargets({checkType: 'middleware'})` will already correctly filter to only apps with `middleware: true` — you just need those two added lines so the returned targets actually carry the WAS-specific data.**
+
+## `checkRegistry.js` — OPTIONAL, only if you adopt it now
+
+Here's the honest catch: your `applicationUI.spec.js` (from the earlier screenshot) does this:
+
+```js
+const { runUiHealthCheck } = require('../../src/checks/uiHealthCheck');
+```
+
+Direct import — **it doesn't go through `checkRegistry` at all.** So the registry exists as a class but isn't currently wired into how specs actually run checks. Registering `'middleware'` in it right now would have zero effect unless you also change the spec to call `registry.get('middleware')` instead of importing directly.
+
+Two honest paths:
+
+**A. Stay consistent with what you have today (recommended for now):** `applicationMiddleware.spec.js` just does `require('../../src/checks/middlewareHealthCheck')` directly, exactly like the UI spec does. No `checkRegistry.js` change needed at all. Simpler, and matches your existing actual pattern rather than a plan that was never followed through on.
+
+**B. Adopt the registry now, and refactor both specs to use it:**
+```js
+// somewhere at startup / top of checkRegistry.js itself
+registry.register('ui', require('../checks/uiHealthCheck'));
+registry.register('middleware', require('../checks/middlewareHealthCheck'));
+```
+Then both `applicationUI.spec.js` and `applicationMiddleware.spec.js` change to `registry.get(target.checkType).run(...)` — and at that point you could genuinely collapse them into one generic spec file (as I mentioned last message).
+
+I'd lean toward **A for now** — don't half-adopt an abstraction. Either commit to the registry and refactor the UI spec too (getting the real payoff of one generic spec file), or leave it unused until you're ready to do that refactor properly. Wiring registry into *only* the middleware check while UI still bypasses it would leave you with two inconsistent patterns side by side, which is its own maintenance confusion.
+
+**Bottom line: `configLoader.js` needs the two-line addition — do that now, it's required. `checkRegistry.js` needs nothing yet unless you're ready to also refactor `applicationUI.spec.js` to match — otherwise leave it as unused-but-available infrastructure for later.**
