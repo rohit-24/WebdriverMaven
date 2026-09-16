@@ -1,95 +1,403 @@
-Good question to ask now, before you have three divergent codebases. Here's my honest take.
+Here's every file, in full, ready to drop in. For files I could only partially see in your screenshots (`configLoader.js`, `checkRegistry.js`, `secretsProvider.js`), I've reconstructed the pieces consistent with what's visible and marked assumptions clearly — check those against your actual file before pasting over it.
 
-## Short answer
+---
 
-**Don't restructure what you have — it's correctly scoped for what it does.** But **do extract the domain-agnostic core now**, before you build incident automation and cert renewal as separate throwaway efforts. The mistake to avoid isn't "wrong folder structure" — it's building the same secrets/logging/alerting/config-loading logic three more times, each slightly differently, each a separate thing to secure and maintain.
+## NEW — `src/pages/middleware/WasConsolePage.js`
 
-## The real insight: these are different *kinds* of automation, not more of the same
+```js
+const BasePage = require('../BasePage');
 
-This matters more than folder layout. Look at what each domain actually needs:
+const LOCATORS = {
+  usernameInput: '#j_username',
+  passwordInput: '#j_password',
+  loginButton: 'input[type=submit]',
+  // Excludes the hidden #filterControls tbody - only real data rows
+  dataRows: 'tbody:not(#filterControls) tr.table-row',
+  nameLink: 'a[target="statuswindow"]',
+  statusIcon: 'img[name="statusIcon"]'
+};
 
-| Domain | Trigger | Needs browser? | Shape |
-|---|---|---|---|
-| Health check (today) | Scheduled | Yes (Playwright) | Matrix scan, all-green check |
-| Prod incident automation | Event/alert-driven | Sometimes | Diagnose → maybe remediate → notify → ticket |
-| Certificate renewal | Threshold (expiry date) | Rarely | CA/vault API calls, approval workflow |
-| Payment reconciliation | Scheduled/batch | No | Data comparison (DB/file/API), exception report |
+/**
+ * WasConsolePage
+ * ------------------------------------------------------------------
+ * Single shared page object for the IBM WAS Admin Console, reused
+ * across EVERY application - not one class per app, since the console
+ * itself is the same product everywhere. Only wasConsoleUrl and
+ * credentials differ per app/env, both supplied via config.
+ *
+ * Design: no JVM names or counts are hardcoded. The console URL is
+ * already scoped to one app/cell, so every row found on the
+ * "Middleware servers" landing page belongs to this app - just read
+ * every row and confirm the status icon says "Started".
+ * ------------------------------------------------------------------
+ */
+class WasConsolePage extends BasePage {
+  async login({ username, password }) {
+    await this.waitForVisible(LOCATORS.usernameInput);
+    await this.page.locator(LOCATORS.usernameInput).fill(username);
+    await this.page.locator(LOCATORS.passwordInput).fill(password);
+    await this.page.locator(LOCATORS.loginButton).click();
+    // Console redirects straight to "Middleware servers" list post-login.
+    await this.waitForVisible(LOCATORS.dataRows);
+  }
 
-Two of these have nothing to do with a browser. If you keep building everything inside a Playwright project, you'll end up modeling a payment reconciliation job as a "test that passes/fails," which is a semantic mismatch — Playwright's test runner is opinionated toward browser E2E, and forcing unrelated batch jobs through it (`test.step`, `expect()`, HTML reporter) will feel increasingly awkward. **Keep Playwright scoped to things that genuinely need a browser** (health check UI/WAS, maybe some incident diagnostics) — don't make it the platform's skeleton.
+  /**
+   * Reads every server row on the "Middleware servers" page.
+   * Confirmed from DOM inspection:
+   *   running -> <img name="statusIcon" alt="Started" title="Started" src=".../running.gif">
+   *   anything else -> different title text (Stopped, Partial Start, etc.)
+   */
+  async getAllServerStatuses() {
+    const rows = this.page.locator(LOCATORS.dataRows);
+    const count = await rows.count();
+    const results = [];
 
-## What to extract now, while it's cheap
+    for (let i = 0; i < count; i++) {
+      const row = rows.nth(i);
 
-These four pieces are the ones you'll rewrite badly (or duplicate insecurely) if you don't pull them out before starting domain #2:
+      // Some rows (e.g. web servers) may not have the statuswindow link -
+      // fall back to the row's raw text so nothing is silently skipped.
+      const nameLink = row.locator(LOCATORS.nameLink);
+      const name = (await nameLink.count()) > 0
+        ? (await nameLink.first().innerText()).trim()
+        : (await row.innerText()).split('\n')[0].trim();
 
-1. **`secretsProvider.js`** (CyberArk integration) — this is the one you most cannot afford to duplicate. One CyberArk client, reused everywhere, audited once.
-2. **`logger.js`** — structured logging, one format across all automations, so ops can grep logs the same way regardless of which job ran.
-3. **A notifier/reporter** — Slack/Teams/email alerting and a consolidated result format. You already have `consolidatedJsonReporter.js`; generalize it so incident automation and cert renewal report through the *same* channel and shape, not bespoke ones each engineer invents.
-4. **A common "job contract"** — the pattern you already use (`async run(target) -> { status, steps, details }`) is good and domain-agnostic. Formalize it as the thing every automation returns, whether it's a Playwright check, a cert renewal job, or a reconciliation run. This is what lets you eventually build *one* dashboard across all four domains instead of four separate ones.
+      const icon = row.locator(LOCATORS.statusIcon).first();
+      const iconCount = await icon.count();
 
-## Suggested layout
+      if (iconCount === 0) {
+        results.push({ name, status: 'UNKNOWN', reason: 'no status icon found' });
+        continue;
+      }
+
+      const title = ((await icon.getAttribute('title')) || '').trim();
+      results.push({
+        name,
+        status: title === 'Started' ? 'RUNNING' : 'NOT_RUNNING',
+        reason: title || 'no title attribute'
+      });
+    }
+
+    return results;
+  }
+}
+
+module.exports = WasConsolePage;
+```
+
+---
+
+## NEW — `src/checks/middlewareHealthCheck.js`
+
+```js
+const { test, expect } = require('@playwright/test');
+const WasConsolePage = require('../pages/middleware/WasConsolePage');
+const logger = require('../core/logger');
+
+/**
+ * middlewareHealthCheck.js
+ * ------------------------------------------------------------------
+ * Phase 3 - WAS console login + "all servers green" verification.
+ * Signature mirrors uiHealthCheck.js: run(page, target, credentials).
+ * Credentials are resolved by the spec (via secretsProvider), so this
+ * file stays free of any secrets-lookup logic.
+ *
+ * No JVM names/counts are hardcoded per app - see WasConsolePage.js
+ * for the generic row-scan design. Only a minimum-row-count guard
+ * (target.middleware.minExpectedServers) protects against a silently
+ * empty/broken page reporting a false PASS.
+ * ------------------------------------------------------------------
+ */
+async function runMiddlewareHealthCheck(page, target, credentials) {
+  const was = new WasConsolePage(page, target);
+  const scope = `${target.appId}/${target.env}/middleware`;
+
+  await test.step('Navigate to WAS console login page', async () => {
+    await page.goto(target.wasConsoleUrl, { waitUntil: 'domcontentloaded' });
+  });
+
+  await test.step('Login to WAS console', async () => {
+    await was.login(credentials);
+  });
+
+  await test.step('Verify middleware servers are running', async () => {
+    const statuses = await was.getAllServerStatuses();
+    logger.info(scope, `Servers found: ${JSON.stringify(statuses)}`);
+
+    const minExpected = target.middleware.minExpectedServers ?? 1;
+    expect(
+      statuses.length,
+      `Expected at least ${minExpected} server row(s), found ${statuses.length} - page may not have loaded correctly`
+    ).toBeGreaterThanOrEqual(minExpected);
+
+    const down = statuses.filter((s) => s.status !== 'RUNNING');
+    expect(
+      down,
+      `Server(s) not running: ${down.map((s) => `${s.name} (${s.reason})`).join(', ') || 'none'}`
+    ).toHaveLength(0);
+  });
+}
+
+module.exports = { runMiddlewareHealthCheck };
+```
+
+---
+
+## NEW — `tests/healthcheck/applicationMiddleware.spec.js`
+
+```js
+const { test } = require('@playwright/test');
+const { getTargets } = require('../../src/config/configLoader');
+const { getCredentials } = require('../../src/core/secretsProvider');
+const { runMiddlewareHealthCheck } = require('../../src/checks/middlewareHealthCheck');
+
+/**
+ * Phase 3 - Middleware (WAS) Health Check (data-driven)
+ * ------------------------------------------------------------------
+ * ZERO application-specific or environment-specific logic. Asks
+ * configLoader for every enabled (app x environment) combination
+ * that has "middleware" checks enabled, and runs the same WAS
+ * login + all-servers-green check against each. Onboarding a new
+ * app/env is a config-only change - this file never needs editing.
+ * ------------------------------------------------------------------
+ */
+
+const targets = getTargets({ checkType: 'middleware' });
+
+if (targets.length === 0) {
+  test('No middleware health check targets configured', () => {
+    test.skip(true, 'Check config/applications.json and config/environments.json');
+  });
+}
+
+for (const target of targets) {
+  test.describe(`${target.appName} [${target.env}] - Middleware`, () => {
+    test(`WAS health check - ${target.appId} - ${target.env}`, async ({ page }) => {
+      test.info().annotations.push({ type: 'application', description: target.appId });
+      test.info().annotations.push({ type: 'environment', description: target.env });
+      test.info().annotations.push({ type: 'tier', description: target.tier });
+
+      const credentials = await getCredentials(target.middleware.credentialKey, target.env);
+      await runMiddlewareHealthCheck(page, target, credentials);
+    });
+  });
+}
+```
+
+---
+
+## MODIFY — `config/applications.json`
+
+Add a `middleware` block and flip the flag, per app. Shown for TIPLUS — repeat the same two additions for LotsPage/TradeHub/etc.:
+
+```jsonc
+{
+  "id": "TIPLUS",
+  "name": "Trade Innovation Plus",
+  "enabled": true,
+  "checks": {
+    "ui": true,
+    "infra": false,
+    "middleware": true,        // CHANGED: was false
+    "db": false,
+    "config": false
+  },
+  "auth": {
+    "type": "form"
+  },
+  "middleware": {               // NEW block
+    "credentialKey": "TIPLUS_WAS",
+    "minExpectedServers": 3
+  },
+  "environments": {
+    "DEV1": {
+      "loginUrl": "https://wcsduv0a40.onprem.cloud.test.group:10100/tiplus2-global/login",
+      "homeUrl": "https://wcsduv0a40.onprem.cloud.test.group:10100/tiplus2-global/content/index.jsf",
+      "logoutUrl": "https://wcsduv0a40.onprem.cloud.test.group:10100/tiplus2-global/control/Logout.jsf",
+      "wasConsoleUrl": "https://wcsduv0a40.onprem.cloud.test.group:28001/ibm/console/logon.jsp"   // NEW - was missing on DEV1
+    },
+    "DEV2": {
+      "loginUrl": "https://wcsduv0a41.onprem.cloud.test.group:10100/tiplus2-global/login",
+      "homeUrl": "https://wcsduv0a41.onprem.cloud.test.group:10100/tiplus2-global/content/index.jsf",
+      "logoutUrl": "https://wcsduv0a41.onprem.cloud.test.group:10100/tiplus2-global/control/Logout.jsf",
+      "wasConsoleUrl": "https://wcsduv0a41.onprem.cloud.test.group:28001/ibm/console/logon.jsp"   // unchanged, already present
+    },
+    "DEV3": {
+      "loginUrl": "https://wcsduv0a42.onprem.cloud.test.group:10100/tiplus2-global/login",
+      "homeUrl": "https://wcsduv0a42.onprem.cloud.test.group:10100/tiplus2-global/content/index.jsf",
+      "logoutUrl": "https://wcsduv0a42.onprem.cloud.test.group:10100/tiplus2-global/control/Logout.jsf",
+      "wasConsoleUrl": "https://wcsduv0a42.onprem.cloud.test.group:28001/ibm/console/logon.jsp"   // NEW - was missing
+    },
+    "SIT1": {
+      "loginUrl": "https://wcsduv0a51.onprem.cloud.test.group:10100/tiplus28-global/login",
+      "homeUrl": "https://wcsduv0a51.onprem.cloud.test.group:10100/tiplus28-global/content/index.jsf",
+      "logoutUrl": "https://wcsduv0a51.onprem.cloud.test.group:10100/tiplus28-global/control/Logout.jsf",
+      "wasConsoleUrl": "https://wcsduv0a51.onprem.cloud.test.group:28001/ibm/console/logon.jsp"   // NEW - was missing
+    }
+    // Repeat for SIT2-5, PreProd: add "wasConsoleUrl" using each env's own host, port 28001
+  }
+}
+```
+
+> ⚠️ You'll need to fill in the actual `wasConsoleUrl` host for SIT2–SIT5 and PreProd — I only saw DEV2 and SIT1 consoles in your screenshots. Same pattern: `https://<env-host>:28001/ibm/console/logon.jsp`.
+
+---
+
+## MODIFY — `src/config/configLoader.js`
+
+Reconstructed based on the doc comment in your `README.md` (Image 7: *"merges environments.json + applications.json -> flat 'targets' list"*). Add the middleware-specific flattening as one more branch alongside however the `ui` checkType is currently built:
+
+```js
+function getTargets({ checkType }) {
+  const applications = require('../../config/applications.json');
+  const environments = require('../../config/environments.json');
+
+  const targets = [];
+
+  for (const app of applications) {
+    if (!app.enabled) continue;
+    if (!app.checks[checkType]) continue;
+
+    for (const [envId, envConfig] of Object.entries(app.environments)) {
+      const envMeta = environments[envId];
+      if (!envMeta || !envMeta.enabled) continue;
+
+      const baseTarget = {
+        appId: app.id,
+        appName: app.name,
+        env: envId,
+        tier: envMeta.tier,
+        auth: app.auth
+      };
+
+      if (checkType === 'ui') {
+        targets.push({
+          ...baseTarget,
+          loginUrl: envConfig.loginUrl,
+          homeUrl: envConfig.homeUrl,
+          logoutUrl: envConfig.logoutUrl
+        });
+      }
+
+      // NEW: middleware checkType branch
+      if (checkType === 'middleware') {
+        if (!envConfig.wasConsoleUrl) {
+          throw new Error(`Missing wasConsoleUrl for ${app.id}/${envId} - check config/applications.json`);
+        }
+        targets.push({
+          ...baseTarget,
+          wasConsoleUrl: envConfig.wasConsoleUrl,
+          middleware: app.middleware   // { credentialKey, minExpectedServers }
+        });
+      }
+
+      // Phases 2/4/5 (infra/db/config) would add their own branches here later.
+    }
+  }
+
+  return targets;
+}
+
+module.exports = { getTargets };
+```
+
+> ⚠️ This assumes your real `configLoader.js` already loops applications → environments in roughly this shape. If the actual structure differs (e.g. it builds one generic target object and lets each spec pick fields off it), just add the `wasConsoleUrl` / `middleware` fields to whatever the existing generic target-building step is — same idea, adjust to match.
+
+---
+
+## MODIFY — `src/core/checkRegistry.js`
+
+Reconstructed from the README's stated purpose (*"pluggable registry for Phase 2-5 check modules"*). One new registration line:
+
+```js
+const registry = new Map();
+
+function register(checkType, checkModule) {
+  registry.set(checkType, checkModule);
+}
+
+function get(checkType) {
+  return registry.get(checkType);
+}
+
+// Existing registrations
+register('ui', require('../checks/uiHealthCheck'));
+register('infra', require('../checks/infraHealthCheck'));
+register('middleware', require('../checks/middlewareHealthCheck'));  // NEW - was stub, now real
+register('db', require('../checks/dbHealthCheck'));
+register('config', require('../checks/configDriftCheck'));
+
+module.exports = { register, get };
+```
+
+> If your check modules aren't actually routed through this registry by the spec files (i.e. `applicationUI.spec.js` calls `runUiHealthCheck` directly, same as the new middleware spec does), this file may just be a forward-looking placeholder not yet wired to anything — in which case this change is optional bookkeeping, not functionally required for the middleware check to work.
+
+---
+
+## MODIFY — `src/core/secretsProvider.js`
+
+No code change expected — just confirm `getCredentials(credentialKey, env)` already resolves any string key generically (env vars locally, CyberArk in CI per your README comment). If it currently only knows about UI credential keys via a hardcoded map, that map needs one more entry:
+
+```js
+// If secretsProvider.js has a static key map like this, add the new key:
+const CREDENTIAL_KEYS = {
+  TIPLUS_UI: 'TIPLUS_UI_CREDS',
+  TIPLUS_WAS: 'TIPLUS_WAS_CREDS',   // NEW
+  // ...
+};
+```
+
+If instead it just does `process.env[credentialKey + '_' + env + '_USER']`-style dynamic lookup, no change needed — just make sure `TIPLUS_WAS` env vars / CyberArk entries actually exist for each environment.
+
+---
+
+## MODIFY — `README.md`
+
+Update the Phase 3 section (currently the "not implemented yet" stub description) and the folder structure table entries:
+
+```markdown
+## Phase 3 - Middleware (WAS) Health Check
+
+Status: IMPLEMENTED.
+
+Design: one shared `src/pages/middleware/WasConsolePage.js`, reused
+across every application (unlike Phase 1's one-page-class-per-app
+pattern) - the WAS admin console is the same product everywhere,
+only the URL/credentials differ per app/env.
+
+No JVM names or counts are hardcoded in config. The console URL is
+already scoped to one app's cell, so the check reads every row on
+the "Middleware servers" landing page and confirms each status icon's
+title attribute equals "Started". A `minExpectedServers` config value
+guards against a silently empty/broken page reporting a false PASS.
+```
+
+And in the folder structure block:
 
 ```
-trade-support-automation/              # umbrella repo (rename from "Trade Health Check")
-  packages/
-    core/                              # shared, domain-agnostic, used by everything below
-      secretsProvider.js               # CyberArk - ONE implementation, everyone imports it
-      logger.js
-      notifier.js                      # Slack/Teams/email, one format
-      resultTypes.js                   # the {status, steps, details} contract
-      configLoader.js                  # generic JSON-merge utility (env x entity matrix loader)
-
-  domains/
-    health-check/                      # exactly what you have today, basically unchanged
-      config/
-      src/
-        pages/
-        checks/
-      tests/
-      playwright.config.js
-      README.md
-
-    incident-automation/                # future
-      runbooks/                         # one file per incident type, same run() contract
-      src/
-      README.md
-
-    cert-renewal/                       # future - likely no Playwright at all
-      src/
-        renewalJob.js
-      config/
-        certificates.json               # cert id -> issuer, expiry threshold, renewal method
-      README.md
-
-    payment-reconciliation/             # future - data job, no browser
-      src/
-        reconcileJob.js
-      config/
-        sources.json                    # source A, source B, matching rules
-      README.md
-
-  docs/
-    architecture.md                     # explains the core/domains split, so it doesn't erode
-  package.json                          # npm/yarn workspaces root
+checks/
+  uiHealthCheck.js          # Phase 1 orchestration (login/home/status/logout)
+  middlewareHealthCheck.js  # Phase 3 orchestration (login + all-servers-green) - IMPLEMENTED
+  infraHealthCheck.js       # Phase 2 stub/contract
+  dbHealthCheck.js          # Phase 4 stub/contract
+  configDriftCheck.js       # Phase 5 stub/contract
+pages/
+  BasePage.js
+  pageFactory.js
+  apps/
+    _AppPageTemplate.js
+    TiPlusPage.js
+    LotsPage.js
+    LnlPage.js
+    TradeHubPage.js
+  middleware/
+    WasConsolePage.js       # NEW - shared across all apps, not per-app
+tests/
+  healthcheck/
+    applicationUI.spec.js
+    applicationMiddleware.spec.js   # NEW
 ```
 
-## Monorepo vs. separate repos
+---
 
-Given this is a small team automating for one prod support function, **I'd start as a monorepo with npm/yarn workspaces**, not four separate repos with a published shared package. Reasons:
-
-- You're one or two people right now — publishing/versioning an internal npm package for `core/` adds process overhead you don't need yet (private registry, version bumps, changelogs).
-- A monorepo lets `domains/cert-renewal` import `packages/core/secretsProvider` directly via a workspace reference — no publish step, changes to `core` are immediately visible everywhere.
-- If the team grows and domains start being owned by different people/squads with different release cadences, *that's* the signal to split into separate repos with `core` promoted to a real published package. Don't do that migration preemptively — it's mechanical and cheap to do later, expensive to maintain as ceremony now.
-
-## Naming convention for the broader charter
-
-- **Repo/umbrella name**: something like `trade-support-automation` rather than "Trade Health Check" — the current name undersells what it'll become and might confuse a future contributor into thinking it's only health checks.
-- **Per-domain folder = the business capability**, not the tech (`health-check/`, `cert-renewal/`, `payment-reconciliation/`, not `playwright-tests/`, `node-jobs/`).
-- **Job/orchestrator files**: keep the `*HealthCheck.js` pattern within health-check, but use domain-appropriate suffixes elsewhere for clarity at a glance — `certRenewalJob.js`, `paymentReconciliationJob.js`, `incidentRunbook.js`. All still implement the same `run(context) -> result` contract, just named for what they are.
-- **Config files**: keep the `config/<domain-entity>.json` pattern per domain (`certificates.json`, `reconciliationSources.json`) — same philosophy as `applications.json`/`environments.json`: config-only onboarding, wherever possible.
-
-## What NOT to do yet
-
-- Don't reach for microservices, message queues, or Kubernetes just because "prod support automation platform" sounds big — a monorepo of Node scripts triggered by cron/CI, sharing a `core/` package, is entirely sufficient at this scale.
-- Don't build a generic "workflow engine" abstraction speculatively before you've actually built cert renewal or reconciliation once — you don't yet know their real shape. Build the second domain concretely, *then* refactor `core/` based on what genuinely repeated between health-check and that domain. Premature abstraction here would cost you more than the duplication it's trying to prevent.
-
-**Bottom line**: keep today's work exactly as-is, rename/relocate it under `domains/health-check/` when domain #2 starts, and pull out `secretsProvider`, `logger`, `notifier`, and the result contract into `packages/core/` at that same moment — not before, not after.
+That's the complete set: **3 new files**, **applications.json** (per-app edits), **configLoader.js**, **checkRegistry.js**, **secretsProvider.js** (verify only), **README.md**. The two files I had to reconstruct from partial view (`configLoader.js`, `checkRegistry.js`) — paste your actual current versions if you want me to produce an exact diff instead of a best-guess rewrite.
