@@ -1,69 +1,95 @@
+Good question to ask now, before you have three divergent codebases. Here's my honest take.
 
-1. Scope & priority
+## Short answer
 
-	•	Do you want health checks on all systems in the diagram, or start with a subset (e.g. just TI+ core + security gateway)?
-	•	Which systems are causing the most pain today — where do devs spend the most manual-check time?
-	•	Is this meant to replace manual checks entirely, or supplement them (early warning only)?
+**Don't restructure what you have — it's correctly scoped for what it does.** But **do extract the domain-agnostic core now**, before you build incident automation and cert renewal as separate throwaway efforts. The mistake to avoid isn't "wrong folder structure" — it's building the same secrets/logging/alerting/config-loading logic three more times, each slightly differently, each a separate thing to secure and maintain.
 
-2. Ownership & access
+## The real insight: these are different *kinds* of automation, not more of the same
 
-	•	Who owns each system for approvals — can QA get credentials/API access to DBs, JMS queues, SFTP servers, or does that need to go through Infra/DBA/Security?
-	•	For downstream systems we don't own (SWIFT, AML, PRISM, SAP GL) — do we have any access at all, or are we limited to indirect checks (e.g. file/log-based)?
-	•	Who should receive alerts, and who is expected to act on them (QA just detects, or also triages)?
+This matters more than folder layout. Look at what each domain actually needs:
 
-3. Tooling & infrastructure
+| Domain | Trigger | Needs browser? | Shape |
+|---|---|---|---|
+| Health check (today) | Scheduled | Yes (Playwright) | Matrix scan, all-green check |
+| Prod incident automation | Event/alert-driven | Sometimes | Diagnose → maybe remediate → notify → ticket |
+| Certificate renewal | Threshold (expiry date) | Rarely | CA/vault API calls, approval workflow |
+| Payment reconciliation | Scheduled/batch | No | Data comparison (DB/file/API), exception report |
 
-	•	Does the bank already have a monitoring tool (Nagios, Zabbix, Dynatrace, AppDynamics, etc.) we should build into, instead of creating something new?
-	•	Where should scripts run from — a dedicated server/VM, existing CI/CD (Jenkins), or QA's local environment?
-	•	Is there a preferred language/stack (Node.js vs Python vs existing team tooling)?
-	•	What's the alerting channel — email, Slack/Teams, ticketing tool (ServiceNow/Jira)?
+Two of these have nothing to do with a browser. If you keep building everything inside a Playwright project, you'll end up modeling a payment reconciliation job as a "test that passes/fails," which is a semantic mismatch — Playwright's test runner is opinionated toward browser E2E, and forcing unrelated batch jobs through it (`test.step`, `expect()`, HTML reporter) will feel increasingly awkward. **Keep Playwright scoped to things that genuinely need a browser** (health check UI/WAS, maybe some incident diagnostics) — don't make it the platform's skeleton.
 
-4. Environments
+## What to extract now, while it's cheap
 
-	•	Is this for Production only, or also UAT/SIT/DR environments?
-	•	Are there different endpoints/credentials per environment we need to account for?
+These four pieces are the ones you'll rewrite badly (or duplicate insecurely) if you don't pull them out before starting domain #2:
 
-5. Thresholds & expectations
+1. **`secretsProvider.js`** (CyberArk integration) — this is the one you most cannot afford to duplicate. One CyberArk client, reused everywhere, audited once.
+2. **`logger.js`** — structured logging, one format across all automations, so ops can grep logs the same way regardless of which job ran.
+3. **A notifier/reporter** — Slack/Teams/email alerting and a consolidated result format. You already have `consolidatedJsonReporter.js`; generalize it so incident automation and cert renewal report through the *same* channel and shape, not bespoke ones each engineer invents.
+4. **A common "job contract"** — the pattern you already use (`async run(target) -> { status, steps, details }`) is good and domain-agnostic. Formalize it as the thing every automation returns, whether it's a Playwright check, a cert renewal job, or a reconciliation run. This is what lets you eventually build *one* dashboard across all four domains instead of four separate ones.
 
-	•	What response time / downtime is considered acceptable before it's flagged an issue?
-	•	Are there existing SLAs (per system) we should align alert thresholds to, or do we define them ourselves?
-	•	How false-positive-tolerant should this be — is a few false alerts a week OK while we tune it, or does it need to be near-perfect from day one?
+## Suggested layout
 
-6. Security & compliance
+```
+trade-support-automation/              # umbrella repo (rename from "Trade Health Check")
+  packages/
+    core/                              # shared, domain-agnostic, used by everything below
+      secretsProvider.js               # CyberArk - ONE implementation, everyone imports it
+      logger.js
+      notifier.js                      # Slack/Teams/email, one format
+      resultTypes.js                   # the {status, steps, details} contract
+      configLoader.js                  # generic JSON-merge utility (env x entity matrix loader)
 
-	•	Any restrictions on storing credentials for automated scripts (e.g. must use a vault/secrets manager)?
-	•	Any change-management or approval process required before scripts can run against Production systems?
+  domains/
+    health-check/                      # exactly what you have today, basically unchanged
+      config/
+      src/
+        pages/
+        checks/
+      tests/
+      playwright.config.js
+      README.md
 
-7. Success criteria & timeline
+    incident-automation/                # future
+      runbooks/                         # one file per incident type, same run() contract
+      src/
+      README.md
 
-	•	How will success be measured — reduced manual-check time, faster detection, fewer incidents escalated?
-	•	Is there a deadline or is this open-ended / phased?
-	•	Do you want a proof-of-concept on a few systems first before scaling to the full list?
+    cert-renewal/                       # future - likely no Playwright at all
+      src/
+        renewalJob.js
+      config/
+        certificates.json               # cert id -> issuer, expiry threshold, renewal method
+      README.md
 
-Suggested opening line to lead with: "Before I build out the automation plan, I want to align on scope, access, and tooling so we don't rework it later — can we go through a few quick questions?"
+    payment-reconciliation/             # future - data job, no browser
+      src/
+        reconcileJob.js
+      config/
+        sources.json                    # source A, source B, matching rules
+      README.md
 
-Want me to turn this into a short one-page doc or checklist you can literally walk through in the meeting?
+  docs/
+    architecture.md                     # explains the core/domains split, so it doesn't erode
+  package.json                          # npm/yarn workspaces root
+```
 
+## Monorepo vs. separate repos
 
+Given this is a small team automating for one prod support function, **I'd start as a monorepo with npm/yarn workspaces**, not four separate repos with a published shared package. Reasons:
 
+- You're one or two people right now — publishing/versioning an internal npm package for `core/` adds process overhead you don't need yet (private registry, version bumps, changelogs).
+- A monorepo lets `domains/cert-renewal` import `packages/core/secretsProvider` directly via a workspace reference — no publish step, changes to `core` are immediately visible everywhere.
+- If the team grows and domains start being owned by different people/squads with different release cadences, *that's* the signal to split into separate repos with `core` promoted to a real published package. Don't do that migration preemptively — it's mechanical and cheap to do later, expensive to maintain as ceremony now.
 
-Scope
+## Naming convention for the broader charter
 
-1. What exactly is the objective of the health check?
-2. What does GREEN/AMBER/RED mean?
-3. Which applications and environments are in scope?
-4. Can I get the current manual health-check checklist/runbook?
+- **Repo/umbrella name**: something like `trade-support-automation` rather than "Trade Health Check" — the current name undersells what it'll become and might confuse a future contributor into thinking it's only health checks.
+- **Per-domain folder = the business capability**, not the tech (`health-check/`, `cert-renewal/`, `payment-reconciliation/`, not `playwright-tests/`, `node-jobs/`).
+- **Job/orchestrator files**: keep the `*HealthCheck.js` pattern within health-check, but use domain-appropriate suffixes elsewhere for clarity at a glance — `certRenewalJob.js`, `paymentReconciliationJob.js`, `incidentRunbook.js`. All still implement the same `run(context) -> result` contract, just named for what they are.
+- **Config files**: keep the `config/<domain-entity>.json` pattern per domain (`certificates.json`, `reconciliationSources.json`) — same philosophy as `applications.json`/`environments.json`: config-only onboarding, wherever possible.
 
-Technical
+## What NOT to do yet
 
-5. For each component, are we checking availability, connectivity, or actual functionality?
-6. Which upstream/downstream integrations are business-critical?
-7. Which checks should be UI/API/DB/JMS/file/infrastructure based?
-8. What test data/transactions should the health check use?
+- Don't reach for microservices, message queues, or Kubernetes just because "prod support automation platform" sounds big — a monorepo of Node scripts triggered by cron/CI, sharing a `core/` package, is entirely sufficient at this scale.
+- Don't build a generic "workflow engine" abstraction speculatively before you've actually built cert renewal or reconciliation once — you don't yet know their real shape. Build the second domain concretely, *then* refactor `core/` based on what genuinely repeated between health-check and that domain. Premature abstraction here would cost you more than the duplication it's trying to prevent.
 
-Automation
-
-9. How frequently will it run and who will trigger it?
-10. Where should the results/report be published?
-11. How should failures, retries and non-critical failures be handled?
-12. With the OCP migration, which platform-level checks belong in our framework versus DevOps monitoring?
+**Bottom line**: keep today's work exactly as-is, rename/relocate it under `domains/health-check/` when domain #2 starts, and pull out `secretsProvider`, `logger`, `notifier`, and the result contract into `packages/core/` at that same moment — not before, not after.
