@@ -1,25 +1,448 @@
-Here's the curl (Postman-importable) using what you've confirmed so far:
+import pandas as pd
+import time
 
-**REST — check MBeans (needs WC_adminhost_secure port, click that row to get it)**
-```bash
-curl -k -u wasadmin:yourpassword \
-  "https://wcsduv0a40.onprem.cloud.test.group:<WC_adminhost_secure_port>/IBMJMXConnectorREST/mbeans"
-```
 
-**To import into Postman directly:**
-1. Postman → Import → Raw text → paste the curl above
-2. Under **Authorization** tab, set type = Basic Auth, fill username/password (Postman will handle the `-u` conversion automatically)
-3. Under **Settings** (for this request) → turn **SSL certificate verification OFF** (equivalent to `-k`, since your console showed "Not secure"/self-signed cert)
+# ============================================================
+# CONFIGURATION
+# ============================================================
 
-**Check a specific server's state (once you have the port), example MBean query:**
-```bash
-curl -k -u wasadmin:yourpassword \
-  "https://wcsduv0a40.onprem.cloud.test.group:<port>/IBMJMXConnectorREST/mbeans?objectName=WebSphere:type=Server,name=TIPlus28AsyncZone01ServerDevtst01_JVM1,*"
-```
+SOURCE_FILE = "source.xlsx"
+TARGET_FILE = "target.xlsx"
 
-**If REST auth fails / connection refused**, fall back to testing the SOAP port is even listening (won't give app data, just confirms reachability):
-```bash
-curl -k -v "https://wcsduv0a40.onprem.cloud.test.group:10320"
-```
+OUTPUT_FILE = "reconciliation_result.xlsx"
 
-Go grab that `WC_adminhost_secure` port number (click the row like you did for SOAP_CONNECTOR_ADDRESS) and send it over — I'll fill in the exact working curl once we have it.
+# Column used to identify the same record
+UNIQUE_ID_COLUMN = "Trade_ID"
+
+# Columns that should NOT be compared
+# Leave empty if you want to compare every common column.
+IGNORE_COLUMNS = [
+    # "Last_Updated_Time",
+    # "System_Timestamp",
+]
+
+
+# ============================================================
+# START
+# ============================================================
+
+start_time = time.time()
+
+print("==============================================")
+print("        EXCEL RECONCILIATION STARTED")
+print("==============================================")
+
+
+# ============================================================
+# READ EXCEL FILES
+# ============================================================
+
+print("\nReading source file...")
+source = pd.read_excel(SOURCE_FILE)
+
+print("Reading target file...")
+target = pd.read_excel(TARGET_FILE)
+
+print(f"Source rows : {len(source):,}")
+print(f"Target rows : {len(target):,}")
+
+
+# ============================================================
+# CLEAN COLUMN NAMES
+# ============================================================
+
+source.columns = source.columns.astype(str).str.strip()
+target.columns = target.columns.astype(str).str.strip()
+
+
+# ============================================================
+# VALIDATE UNIQUE ID
+# ============================================================
+
+if UNIQUE_ID_COLUMN not in source.columns:
+    raise ValueError(
+        f"Unique ID '{UNIQUE_ID_COLUMN}' not found in source file."
+    )
+
+if UNIQUE_ID_COLUMN not in target.columns:
+    raise ValueError(
+        f"Unique ID '{UNIQUE_ID_COLUMN}' not found in target file."
+    )
+
+
+# ============================================================
+# CHECK DUPLICATE IDS
+# ============================================================
+
+source_duplicates = source[
+    source[UNIQUE_ID_COLUMN].duplicated(keep=False)
+]
+
+target_duplicates = target[
+    target[UNIQUE_ID_COLUMN].duplicated(keep=False)
+]
+
+print("\nDuplicate ID check:")
+
+print(
+    f"Source duplicate rows : "
+    f"{len(source_duplicates):,}"
+)
+
+print(
+    f"Target duplicate rows : "
+    f"{len(target_duplicates):,}"
+)
+
+
+# ============================================================
+# IDENTIFY COMMON COLUMNS
+# ============================================================
+
+source_columns = set(source.columns)
+target_columns = set(target.columns)
+
+common_columns = (
+    source_columns
+    & target_columns
+)
+
+common_columns.discard(UNIQUE_ID_COLUMN)
+
+# Remove ignored columns
+compare_columns = [
+    column
+    for column in common_columns
+    if column not in IGNORE_COLUMNS
+]
+
+source_only_columns = sorted(
+    source_columns - target_columns
+)
+
+target_only_columns = sorted(
+    target_columns - source_columns
+)
+
+
+print("\nColumn analysis:")
+print(f"Common columns       : {len(compare_columns)}")
+print(f"Source-only columns  : {len(source_only_columns)}")
+print(f"Target-only columns  : {len(target_only_columns)}")
+
+
+# ============================================================
+# MERGE SOURCE AND TARGET
+# ============================================================
+
+print("\nMatching records using unique ID...")
+
+merged = pd.merge(
+    source,
+    target,
+    on=UNIQUE_ID_COLUMN,
+    how="outer",
+    suffixes=("_source", "_target"),
+    indicator=True
+)
+
+
+# ============================================================
+# IDENTIFY ID DIFFERENCES
+# ============================================================
+
+missing_in_target = merged[
+    merged["_merge"] == "left_only"
+].copy()
+
+extra_in_target = merged[
+    merged["_merge"] == "right_only"
+].copy()
+
+both = merged[
+    merged["_merge"] == "both"
+].copy()
+
+
+print(f"Records present in both : {len(both):,}")
+print(f"Missing in target       : {len(missing_in_target):,}")
+print(f"Extra in target         : {len(extra_in_target):,}")
+
+
+# ============================================================
+# COLUMN COMPARISON
+# ============================================================
+
+print("\nComparing columns...")
+
+mismatch_records = []
+
+for column in compare_columns:
+
+    source_column = f"{column}_source"
+    target_column = f"{column}_target"
+
+    source_values = both[source_column]
+    target_values = both[target_column]
+
+    # Treat NaN and NaN as equal
+    equal = (
+        source_values.eq(target_values)
+        | (
+            source_values.isna()
+            & target_values.isna()
+        )
+    )
+
+    mismatches = both.loc[
+        ~equal,
+        [
+            UNIQUE_ID_COLUMN,
+            source_column,
+            target_column
+        ]
+    ].copy()
+
+    if not mismatches.empty:
+
+        mismatches["Column"] = column
+
+        mismatches.rename(
+            columns={
+                source_column: "Source_Value",
+                target_column: "Target_Value"
+            },
+            inplace=True
+        )
+
+        mismatch_records.append(
+            mismatches[
+                [
+                    UNIQUE_ID_COLUMN,
+                    "Column",
+                    "Source_Value",
+                    "Target_Value"
+                ]
+            ]
+        )
+
+
+# ============================================================
+# COMBINE ALL MISMATCHES
+# ============================================================
+
+if mismatch_records:
+
+    mismatches = pd.concat(
+        mismatch_records,
+        ignore_index=True
+    )
+
+else:
+
+    mismatches = pd.DataFrame(
+        columns=[
+            UNIQUE_ID_COLUMN,
+            "Column",
+            "Source_Value",
+            "Target_Value"
+        ]
+    )
+
+
+# ============================================================
+# DETERMINE RECORD-LEVEL RESULTS
+# ============================================================
+
+mismatched_ids = set(
+    mismatches[UNIQUE_ID_COLUMN]
+)
+
+both_ids = set(
+    both[UNIQUE_ID_COLUMN]
+)
+
+exact_match_ids = both_ids - mismatched_ids
+
+
+# ============================================================
+# ALL RESULTS
+# ============================================================
+
+all_results = pd.DataFrame({
+    UNIQUE_ID_COLUMN: list(both_ids)
+})
+
+all_results["Result"] = (
+    all_results[UNIQUE_ID_COLUMN]
+    .apply(
+        lambda x:
+        "MISMATCH"
+        if x in mismatched_ids
+        else "MATCH"
+    )
+)
+
+
+# ============================================================
+# MISSING / EXTRA OUTPUT
+# ============================================================
+
+missing_output = missing_in_target[
+    [UNIQUE_ID_COLUMN]
+].copy()
+
+extra_output = extra_in_target[
+    [UNIQUE_ID_COLUMN]
+].copy()
+
+
+# ============================================================
+# SUMMARY
+# ============================================================
+
+summary = pd.DataFrame({
+    "Metric": [
+        "Source Records",
+        "Target Records",
+        "Records Present In Both",
+        "Exact Matches",
+        "Records With Mismatch",
+        "Missing In Target",
+        "Extra In Target",
+        "Columns Compared"
+    ],
+
+    "Count": [
+        len(source),
+        len(target),
+        len(both),
+        len(exact_match_ids),
+        len(mismatched_ids),
+        len(missing_in_target),
+        len(extra_in_target),
+        len(compare_columns)
+    ]
+})
+
+
+# ============================================================
+# COLUMN DIFFERENCES
+# ============================================================
+
+column_difference_summary = pd.DataFrame({
+    "Column": [
+        column
+        for column in compare_columns
+    ],
+
+    "Mismatch_Count": [
+        (
+            mismatches["Column"] == column
+        ).sum()
+        for column in compare_columns
+    ]
+})
+
+column_difference_summary = (
+    column_difference_summary
+    .sort_values(
+        "Mismatch_Count",
+        ascending=False
+    )
+)
+
+
+# ============================================================
+# WRITE EXCEL REPORT
+# ============================================================
+
+print("\nCreating Excel report...")
+
+with pd.ExcelWriter(
+    OUTPUT_FILE,
+    engine="openpyxl"
+) as writer:
+
+    summary.to_excel(
+        writer,
+        sheet_name="Summary",
+        index=False
+    )
+
+    mismatches.to_excel(
+        writer,
+        sheet_name="Mismatches",
+        index=False
+    )
+
+    missing_output.to_excel(
+        writer,
+        sheet_name="Missing_In_Target",
+        index=False
+    )
+
+    extra_output.to_excel(
+        writer,
+        sheet_name="Extra_In_Target",
+        index=False
+    )
+
+    column_difference_summary.to_excel(
+        writer,
+        sheet_name="Column_Summary",
+        index=False
+    )
+
+    all_results.to_excel(
+        writer,
+        sheet_name="All_Results",
+        index=False
+    )
+
+
+# ============================================================
+# FINAL RESULT
+# ============================================================
+
+execution_time = time.time() - start_time
+
+print("\n==============================================")
+print("        RECONCILIATION COMPLETED")
+print("==============================================")
+
+print(
+    f"Source records       : {len(source):,}"
+)
+
+print(
+    f"Target records       : {len(target):,}"
+)
+
+print(
+    f"Exact matches        : {len(exact_match_ids):,}"
+)
+
+print(
+    f"Records with mismatch: {len(mismatched_ids):,}"
+)
+
+print(
+    f"Missing in target    : {len(missing_in_target):,}"
+)
+
+print(
+    f"Extra in target      : {len(extra_in_target):,}"
+)
+
+print(
+    f"Columns compared     : {len(compare_columns)}"
+)
+
+print(
+    f"Execution time       : {execution_time:.2f} seconds"
+)
+
+print(
+    f"\nReport generated: {OUTPUT_FILE}"
+)
