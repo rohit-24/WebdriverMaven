@@ -1,48 +1,55 @@
--- ============================================================
--- SCHEMA-LEVEL HEALTH CHECK
--- Works with standard CONNECT/RESOURCE privileges (no SELECT_CATALOG_ROLE needed)
--- Run as a script (F5) in SQL Developer to see all result sets
--- ============================================================
+Here's a set you can adapt — written in Oracle syntax since that's what your screenshots show (SQL Developer):
 
--- 1. Connectivity & session context
-SELECT SYS_CONTEXT('USERENV','DB_NAME')        AS db_name,
-       SYS_CONTEXT('USERENV','INSTANCE_NAME')  AS instance_name,
-       SYS_CONTEXT('USERENV','SERVER_HOST')    AS host,
-       SYS_CONTEXT('USERENV','SESSION_USER')   AS logged_in_as,
-       SYSDATE                                  AS server_time
-FROM dual;
+**1. Stuck jobs — submitted a while ago, still not complete**
+```sql
+SELECT JOB_ID, NAME, STREAM_ID, STATUS, SUBMITTED, STATUS_CHANGED,
+       ROUND((SYSDATE - SUBMITTED) * 24 * 60, 1) AS MINS_SINCE_SUBMIT
+FROM JOBCONTROL
+WHERE STATUS NOT IN ('C','F')
+  AND SUBMITTED < SYSDATE - INTERVAL '30' MINUTE
+ORDER BY SUBMITTED;
+```
 
--- 2. Invalid objects in your own schema (broken views/procedures/triggers)
-SELECT object_name, object_type, status, last_ddl_time
-FROM user_objects
-WHERE status != 'VALID'
-ORDER BY last_ddl_time DESC;
+**2. Stale jobs — no status movement recently (stronger signal than age alone)**
+```sql
+SELECT JOB_ID, NAME, STREAM_ID, STATUS, STATUS_CHANGED,
+       ROUND((SYSDATE - STATUS_CHANGED) * 24 * 60, 1) AS MINS_SINCE_LAST_CHANGE
+FROM JOBCONTROL
+WHERE STATUS NOT IN ('C','F')
+  AND STATUS_CHANGED < SYSDATE - INTERVAL '30' MINUTE
+ORDER BY STATUS_CHANGED;
+```
 
--- 3. Compile errors on your PL/SQL objects (if any invalid objects found above)
-SELECT name, type, line, position, text
-FROM user_errors
-ORDER BY name, sequence;
+**3. Heartbeat check — is the pipeline even alive? (catches the "no active cases" blind spot)**
+```sql
+SELECT MAX(SUBMITTED) AS LAST_SUBMITTED,
+       ROUND((SYSDATE - MAX(SUBMITTED)) * 24 * 60, 1) AS MINS_SINCE_LAST_JOB
+FROM JOBCONTROL;
+```
+If `MINS_SINCE_LAST_JOB` exceeds whatever's normal for that environment (even during quiet periods), that itself is worth flagging — no jobs at all can mean the trigger/upstream is dead, not that everything's fine.
 
--- 4. Table stats freshness (stale/missing stats can cause bad query plans)
-SELECT table_name, num_rows, last_analyzed, status
-FROM user_tables
-ORDER BY last_analyzed NULLS FIRST;
+**4. Snapshot dashboard — status counts + oldest stuck one per status**
+```sql
+SELECT STATUS,
+       COUNT(*) AS CNT,
+       MIN(SUBMITTED) AS OLDEST_SUBMITTED,
+       ROUND((SYSDATE - MIN(SUBMITTED)) * 24 * 60, 1) AS OLDEST_AGE_MINS
+FROM JOBCONTROL
+WHERE STATUS <> 'C'
+GROUP BY STATUS
+ORDER BY STATUS;
+```
 
--- 5. Schema space usage vs quota
-SELECT tablespace_name,
-       ROUND(bytes/1024/1024, 2)     AS used_mb,
-       ROUND(max_bytes/1024/1024, 2) AS quota_mb
-FROM user_ts_quotas;
+**5. Retry-eligible vs stuck-for-real — split using CAN_RETRY/MUST_COMPLETE**
+```sql
+SELECT JOB_ID, NAME, STATUS, CAN_RETRY, MUST_COMPLETE, PRIORITY,
+       ROUND((SYSDATE - STATUS_CHANGED) * 24 * 60, 1) AS MINS_STALE
+FROM JOBCONTROL
+WHERE STATUS NOT IN ('C','F')
+  AND STATUS_CHANGED < SYSDATE - INTERVAL '30' MINUTE
+  AND MUST_COMPLETE = 'Y'
+ORDER BY PRIORITY, MINS_STALE DESC;
+```
+This last one is probably your highest-value alert — MUST_COMPLETE='Y' jobs stuck past threshold are the ones actually worth paging someone about, versus low-priority retry-eligible ones that can wait for EOD sweep.
 
--- 6. Scheduled jobs owned by this schema (batch loads, file transfers, etc.)
-SELECT job_name, enabled, state, last_start_date, next_run_date
-FROM user_scheduler_jobs;
-
--- 7. DB-wide invalid object count by owner
---    Requires SELECT ANY TABLE (works on TI_DEV1; will return only your own
---    schema's rows, or fail, on accounts without that privilege such as TI_SIT)
-SELECT owner, COUNT(*) AS invalid_count
-FROM all_objects
-WHERE status != 'VALID'
-GROUP BY owner
-ORDER BY invalid_count DESC;
+Swap `INTERVAL '30' MINUTE` for whatever threshold the dev confirms is normal processing time — worth running query 4 over a few days first to see typical age distributions before picking a number.
