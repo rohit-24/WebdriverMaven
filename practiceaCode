@@ -12,161 +12,26 @@ TARGET_FILE = "target.xlsx"
 
 OUTPUT_FILE = "reconciliation_result.xlsx"
 
-# IMPORTANT:
-# Put the column which identifies a record here.
+# Your actual unique ID column
 UNIQUE_ID_COLUMN = "UNIQUE"
 
-# Columns that should NOT be compared.
-# Leave empty if all common columns should be compared.
+# Columns you DON'T want to compare.
+# Normally keep this empty.
 IGNORE_COLUMNS = [
-    # "Last_Updated_Time",
-    # "System_Timestamp",
+    # "LAST_UPDATED_TIMESTAMP",
+    # "SYSTEM_TIMESTAMP",
 ]
 
 # Numeric tolerance.
 #
-# Example:
 # 37.21999999999999 vs 37.22
-#
-# Difference is tiny and will be considered equal.
+# will be considered equal.
 NUMERIC_TOLERANCE = 0.000001
 
-
-# ============================================================
-# HELPER FUNCTIONS
-# ============================================================
-
-def clean_text(value):
-    """
-    Clean text values.
-    """
-
-    if pd.isna(value):
-        return None
-
-    value = str(value).strip()
-
-    if value == "":
-        return None
-
-    return value
-
-
-def is_numeric(value):
-    """
-    Check whether a value can be interpreted as a number.
-    """
-
-    if value is None or pd.isna(value):
-        return False
-
-    try:
-        float(value)
-        return True
-    except (ValueError, TypeError):
-        return False
-
-
-def normalize_identifier(value):
-    """
-    Normalize ID values.
-
-    Examples:
-
-    7112936335
-    7112936335.0
-    7.112936335E9
-
-    will be treated consistently.
-
-    IMPORTANT:
-    We keep identifiers as text rather than converting
-    them to floating-point numbers.
-    """
-
-    if pd.isna(value):
-        return None
-
-    text = str(value).strip()
-
-    if text == "":
-        return None
-
-    # If Excel/Pandas has represented an integer as 123.0
-    # convert it to 123.
-    try:
-
-        number = float(text)
-
-        if number.is_integer():
-
-            return str(int(number))
-
-    except (ValueError, TypeError):
-
-        pass
-
-    return text
-
-
-def values_equal(source_value, target_value):
-    """
-    Compare two values intelligently.
-
-    Handles:
-
-    1. Empty vs empty
-    2. Number vs number
-    3. Numeric text vs number
-    4. Floating-point precision
-    5. Text spaces/case
-    """
-
-    # --------------------------------------------------------
-    # Both empty
-    # --------------------------------------------------------
-
-    if pd.isna(source_value) and pd.isna(target_value):
-        return True
-
-    # One empty, one not empty
-    if pd.isna(source_value) or pd.isna(target_value):
-        return False
-
-    source_text = str(source_value).strip()
-    target_text = str(target_value).strip()
-
-    # Empty strings
-    if source_text == "" and target_text == "":
-        return True
-
-    # --------------------------------------------------------
-    # Numeric comparison
-    # --------------------------------------------------------
-
-    if is_numeric(source_value) and is_numeric(target_value):
-
-        try:
-
-            source_number = float(source_value)
-            target_number = float(target_value)
-
-            return np.isclose(
-                source_number,
-                target_number,
-                atol=NUMERIC_TOLERANCE,
-                rtol=0
-            )
-
-        except (ValueError, TypeError):
-
-            pass
-
-    # --------------------------------------------------------
-    # Text comparison
-    # --------------------------------------------------------
-
-    return source_text.lower() == target_text.lower()
+# Text comparison:
+# True  = "ABC" and "abc" are considered equal
+# False = case matters
+IGNORE_TEXT_CASE = True
 
 
 # ============================================================
@@ -176,17 +41,16 @@ def values_equal(source_value, target_value):
 start_time = time.time()
 
 print()
-print("==============================================")
-print("       EXCEL RECONCILIATION STARTED")
-print("==============================================")
+print("=" * 60)
+print("        EXCEL RECONCILIATION STARTED")
+print("=" * 60)
 
 
 # ============================================================
-# READ EXCEL
+# READ FILES
 # ============================================================
 
-print()
-print("Reading source file...")
+print("\nReading source file...")
 
 source = pd.read_excel(
     SOURCE_FILE,
@@ -200,8 +64,7 @@ target = pd.read_excel(
     dtype=object
 )
 
-print()
-print(f"Source rows : {len(source):,}")
+print(f"\nSource rows : {len(source):,}")
 print(f"Target rows : {len(target):,}")
 
 
@@ -223,90 +86,103 @@ target.columns = (
 
 
 # ============================================================
-# VALIDATE ID COLUMN
+# VALIDATE UNIQUE ID
 # ============================================================
 
 if UNIQUE_ID_COLUMN not in source.columns:
-
     raise ValueError(
-        f"'{UNIQUE_ID_COLUMN}' not found in SOURCE."
+        f"'{UNIQUE_ID_COLUMN}' not found in SOURCE file."
     )
-
 
 if UNIQUE_ID_COLUMN not in target.columns:
-
     raise ValueError(
-        f"'{UNIQUE_ID_COLUMN}' not found in TARGET."
+        f"'{UNIQUE_ID_COLUMN}' not found in TARGET file."
     )
 
 
 # ============================================================
-# NORMALIZE ID
+# NORMALIZE UNIQUE ID
 # ============================================================
+
+def normalize_id(value):
+
+    if pd.isna(value):
+        return None
+
+    value = str(value).strip()
+
+    if value == "":
+        return None
+
+    # Handle values such as:
+    # 12345.0 -> 12345
+    try:
+        number = float(value)
+
+        if number.is_integer():
+            return str(int(number))
+
+    except (ValueError, TypeError):
+        pass
+
+    return value
+
+
+print("\nNormalizing IDs...")
 
 source["_COMPARE_ID"] = (
     source[UNIQUE_ID_COLUMN]
-    .apply(normalize_identifier)
+    .map(normalize_id)
 )
 
 target["_COMPARE_ID"] = (
     target[UNIQUE_ID_COLUMN]
-    .apply(normalize_identifier)
+    .map(normalize_id)
 )
 
 
 # ============================================================
-# CHECK DUPLICATE IDs
+# DUPLICATE CHECK
 # ============================================================
 
-source_duplicate_rows = source[
-    source["_COMPARE_ID"].duplicated(keep=False)
-].copy()
+source_duplicate_count = (
+    source["_COMPARE_ID"]
+    .duplicated()
+    .sum()
+)
 
-target_duplicate_rows = target[
-    target["_COMPARE_ID"].duplicated(keep=False)
-].copy()
+target_duplicate_count = (
+    target["_COMPARE_ID"]
+    .duplicated()
+    .sum()
+)
 
-
-print()
-print("==============================================")
-print("DUPLICATE ID CHECK")
-print("==============================================")
+print("\nDuplicate ID check:")
 
 print(
-    f"Source duplicate rows : "
-    f"{len(source_duplicate_rows):,}"
+    f"Source duplicate IDs : "
+    f"{source_duplicate_count:,}"
 )
 
 print(
-    f"Target duplicate rows : "
-    f"{len(target_duplicate_rows):,}"
+    f"Target duplicate IDs : "
+    f"{target_duplicate_count:,}"
 )
 
 
-# ============================================================
-# STOP IF ID IS NOT UNIQUE
-# ============================================================
+if source_duplicate_count > 0 or target_duplicate_count > 0:
 
-if not source_duplicate_rows.empty:
-
-    print()
+    print("\nERROR:")
     print(
-        "WARNING: Source ID is NOT UNIQUE."
+        "The ID is not unique in one or both files."
     )
 
     print(
-        "A simple ID-based merge could create "
-        "incorrect many-to-many matches."
+        "The program will stop instead of producing "
+        "a potentially incorrect many-to-many comparison."
     )
 
-
-if not target_duplicate_rows.empty:
-
-    print()
-    print(
-        "WARNING: Target ID is NOT UNIQUE."
-    )
+    raise SystemExit
 
 
 # ============================================================
@@ -317,29 +193,37 @@ source_columns = set(source.columns)
 target_columns = set(target.columns)
 
 common_columns = (
-    source_columns & target_columns
+    source_columns
+    & target_columns
 )
 
-# Remove internal column
+# Internal comparison column
 common_columns.discard("_COMPARE_ID")
 
-# Remove unique ID
+# ID itself does not need to be compared
 common_columns.discard(UNIQUE_ID_COLUMN)
 
-# Remove ignored columns
-compare_columns = [
-    column
-    for column in common_columns
-    if column not in IGNORE_COLUMNS
-]
+# Ignore configured columns
+compare_columns = sorted(
+    [
+        column
+        for column in common_columns
+        if column not in IGNORE_COLUMNS
+    ]
+)
 
-compare_columns = sorted(compare_columns)
+source_only_columns = sorted(
+    source_columns - target_columns
+)
+
+target_only_columns = sorted(
+    target_columns - source_columns
+)
 
 
-print()
-print("==============================================")
+print("\n" + "=" * 60)
 print("COLUMN ANALYSIS")
-print("==============================================")
+print("=" * 60)
 
 print(
     f"Columns being compared : "
@@ -351,193 +235,281 @@ print(
     f"{len(IGNORE_COLUMNS)}"
 )
 
-
-# ============================================================
-# IF IDS ARE UNIQUE
-# ============================================================
-
-source_ids_unique = (
-    not source["_COMPARE_ID"].duplicated().any()
+print(
+    f"Source-only columns    : "
+    f"{len(source_only_columns)}"
 )
 
-target_ids_unique = (
-    not target["_COMPARE_ID"].duplicated().any()
+print(
+    f"Target-only columns    : "
+    f"{len(target_only_columns)}"
 )
 
 
 # ============================================================
-# UNIQUE-ID RECONCILIATION
+# SET ID AS INDEX
 # ============================================================
 
-if source_ids_unique and target_ids_unique:
+print("\nAligning records by ID...")
 
-    print()
-    print("IDs are unique in both files.")
-    print("Performing normal reconciliation...")
+source_indexed = (
+    source
+    .set_index("_COMPARE_ID")
+)
 
-    merged = pd.merge(
-        source,
-        target,
-        on="_COMPARE_ID",
-        how="outer",
-        suffixes=("_source", "_target"),
-        indicator=True,
-        validate="one_to_one"
-    )
-
-    # --------------------------------------------------------
-    # Missing
-    # --------------------------------------------------------
-
-    missing_in_target = merged[
-        merged["_merge"] == "left_only"
-    ].copy()
-
-    # --------------------------------------------------------
-    # Extra
-    # --------------------------------------------------------
-
-    extra_in_target = merged[
-        merged["_merge"] == "right_only"
-    ].copy()
-
-    # --------------------------------------------------------
-    # Both
-    # --------------------------------------------------------
-
-    both = merged[
-        merged["_merge"] == "both"
-    ].copy()
+target_indexed = (
+    target
+    .set_index("_COMPARE_ID")
+)
 
 
 # ============================================================
-# DUPLICATE IDS
+# FIND ID DIFFERENCES
 # ============================================================
 
-else:
+source_ids = set(source_indexed.index)
+target_ids = set(target_indexed.index)
 
-    print()
-    print("==============================================")
-    print("DUPLICATE IDS DETECTED")
-    print("==============================================")
+common_ids = source_ids & target_ids
 
-    print()
-    print(
-        "The program will NOT perform a many-to-many merge."
-    )
+missing_ids = source_ids - target_ids
+extra_ids = target_ids - source_ids
 
-    print(
-        "Please identify a true unique key or "
-        "a composite key."
-    )
 
-    # Create duplicate report
+print(
+    f"Records present in both : "
+    f"{len(common_ids):,}"
+)
 
-    duplicate_source = (
-        source_duplicate_rows
-        .drop(columns=["_COMPARE_ID"])
-    )
+print(
+    f"Missing in target       : "
+    f"{len(missing_ids):,}"
+)
 
-    duplicate_target = (
-        target_duplicate_rows
-        .drop(columns=["_COMPARE_ID"])
-    )
-
-    # Create a partial report
-
-    with pd.ExcelWriter(
-        OUTPUT_FILE,
-        engine="openpyxl"
-    ) as writer:
-
-        duplicate_source.to_excel(
-            writer,
-            sheet_name="Duplicate_Source_IDs",
-            index=False
-        )
-
-        duplicate_target.to_excel(
-            writer,
-            sheet_name="Duplicate_Target_IDs",
-            index=False
-        )
-
-        pd.DataFrame({
-            "Message": [
-                "Unique ID is not unique in source or target.",
-                "Reconciliation was NOT performed.",
-                "Please identify a true unique key or composite key."
-            ]
-        }).to_excel(
-            writer,
-            sheet_name="Summary",
-            index=False
-        )
-
-    print()
-    print(
-        f"Duplicate report generated: "
-        f"{OUTPUT_FILE}"
-    )
-
-    print()
-    print(
-        "IMPORTANT: Do not use the previous "
-        "427K mismatch result."
-    )
-
-    raise SystemExit
+print(
+    f"Extra in target         : "
+    f"{len(extra_ids):,}"
+)
 
 
 # ============================================================
-# COMPARE COLUMNS
+# ALIGN ONLY COMMON RECORDS
 # ============================================================
 
-print()
-print("Comparing values...")
+common_id_list = list(common_ids)
 
-mismatch_records = []
+source_common = (
+    source_indexed
+    .loc[common_id_list]
+)
+
+target_common = (
+    target_indexed
+    .loc[common_id_list]
+)
+
+
+# ============================================================
+# NORMALIZATION FUNCTION
+# ============================================================
+
+def normalize_series(series):
+
+    # Convert to object so we can safely manipulate values
+    result = series.copy()
+
+    # Strip whitespace from text
+    result = result.map(
+        lambda x:
+        x.strip()
+        if isinstance(x, str)
+        else x
+    )
+
+    # Convert empty strings to NaN
+    result = result.replace(
+        r"^\s*$",
+        np.nan,
+        regex=True
+    )
+
+    return result
+
+
+# ============================================================
+# COLUMN COMPARISON
+# ============================================================
+
+print("\nComparing values...")
+
+mismatch_frames = []
+
+column_mismatch_counts = []
+
 
 for column in compare_columns:
 
-    source_column = f"{column}_source"
-    target_column = f"{column}_target"
+    source_values = normalize_series(
+        source_common[column]
+    )
 
-    for _, row in both.iterrows():
+    target_values = normalize_series(
+        target_common[column]
+    )
 
-        source_value = row[source_column]
-        target_value = row[target_column]
+    # --------------------------------------------------------
+    # Identify numeric values
+    # --------------------------------------------------------
 
-        if not values_equal(
-            source_value,
-            target_value
-        ):
+    source_numeric = pd.to_numeric(
+        source_values,
+        errors="coerce"
+    )
 
-            mismatch_records.append({
+    target_numeric = pd.to_numeric(
+        target_values,
+        errors="coerce"
+    )
 
-                UNIQUE_ID_COLUMN:
-                    row["_COMPARE_ID"],
+    both_numeric = (
+        source_numeric.notna()
+        & target_numeric.notna()
+    )
 
-                "Column":
-                    column,
+    # --------------------------------------------------------
+    # Start with exact comparison
+    # --------------------------------------------------------
 
-                "Source_Value":
-                    source_value,
+    equal = (
+        source_values.eq(target_values)
+    )
 
-                "Target_Value":
-                    target_value
+    # --------------------------------------------------------
+    # Handle numeric values
+    #
+    # Example:
+    #
+    # 37.21999999999999
+    # 37.22
+    #
+    # --------------------------------------------------------
 
-            })
+    numeric_equal = np.isclose(
+        source_numeric,
+        target_numeric,
+        atol=NUMERIC_TOLERANCE,
+        rtol=0,
+        equal_nan=False
+    )
+
+    equal = (
+        equal
+        | (
+            both_numeric
+            & numeric_equal
+        )
+    )
+
+    # --------------------------------------------------------
+    # Handle text case
+    # --------------------------------------------------------
+
+    if IGNORE_TEXT_CASE:
+
+        source_text = (
+            source_values
+            .astype("string")
+            .str.lower()
+        )
+
+        target_text = (
+            target_values
+            .astype("string")
+            .str.lower()
+        )
+
+        text_equal = (
+            source_text.eq(target_text)
+        )
+
+        equal = (
+            equal
+            | text_equal
+        )
+
+    # --------------------------------------------------------
+    # Both empty = equal
+    # --------------------------------------------------------
+
+    both_empty = (
+        source_values.isna()
+        & target_values.isna()
+    )
+
+    equal = (
+        equal
+        | both_empty
+    )
+
+    # --------------------------------------------------------
+    # Find mismatches
+    # --------------------------------------------------------
+
+    mismatch_mask = ~equal
+
+    mismatch_count = (
+        mismatch_mask.sum()
+    )
+
+    column_mismatch_counts.append({
+        "Column": column,
+        "Mismatch_Count": int(
+            mismatch_count
+        )
+    })
+
+    # --------------------------------------------------------
+    # Only create rows for actual mismatches
+    # --------------------------------------------------------
+
+    if mismatch_count > 0:
+
+        mismatch_data = pd.DataFrame({
+            UNIQUE_ID_COLUMN:
+                source_common.index[
+                    mismatch_mask
+                ],
+
+            "Column":
+                column,
+
+            "Source_Value":
+                source_values[
+                    mismatch_mask
+                ].values,
+
+            "Target_Value":
+                target_values[
+                    mismatch_mask
+                ].values
+        })
+
+        mismatch_frames.append(
+            mismatch_data
+        )
 
 
 # ============================================================
-# MISMATCH DATAFRAME
+# COMBINE MISMATCHES
 # ============================================================
 
-if mismatch_records:
+print("\nBuilding mismatch report...")
 
-    mismatches = pd.DataFrame(
-        mismatch_records
+if mismatch_frames:
+
+    mismatches = pd.concat(
+        mismatch_frames,
+        ignore_index=True
     )
 
 else:
@@ -553,19 +525,23 @@ else:
 
 
 # ============================================================
-# MISMATCH IDS
+# RECORD LEVEL RESULTS
 # ============================================================
 
-mismatched_ids = set(
-    mismatches[UNIQUE_ID_COLUMN]
-)
+if len(mismatches) > 0:
 
-both_ids = set(
-    both["_COMPARE_ID"]
-)
+    mismatched_ids = set(
+        mismatches[UNIQUE_ID_COLUMN]
+    )
 
-exact_match_ids = (
-    both_ids - mismatched_ids
+else:
+
+    mismatched_ids = set()
+
+
+exact_match_count = (
+    len(common_ids)
+    - len(mismatched_ids)
 )
 
 
@@ -574,38 +550,55 @@ exact_match_ids = (
 # ============================================================
 
 all_results = pd.DataFrame({
+
     UNIQUE_ID_COLUMN:
-        list(both_ids)
+        list(common_ids)
+
 })
 
-all_results["Result"] = (
-    all_results[
-        UNIQUE_ID_COLUMN
-    ].apply(
-        lambda x:
-        "MISMATCH"
-        if x in mismatched_ids
-        else "MATCH"
+all_results["Result"] = np.where(
+    all_results[UNIQUE_ID_COLUMN]
+    .isin(mismatched_ids),
+
+    "MISMATCH",
+
+    "MATCH"
+)
+
+
+# ============================================================
+# MISSING / EXTRA REPORT
+# ============================================================
+
+missing_output = pd.DataFrame({
+
+    UNIQUE_ID_COLUMN:
+        list(missing_ids)
+
+})
+
+extra_output = pd.DataFrame({
+
+    UNIQUE_ID_COLUMN:
+        list(extra_ids)
+
+})
+
+
+# ============================================================
+# COLUMN SUMMARY
+# ============================================================
+
+column_summary = pd.DataFrame(
+    column_mismatch_counts
+)
+
+column_summary = (
+    column_summary
+    .sort_values(
+        "Mismatch_Count",
+        ascending=False
     )
-)
-
-
-# ============================================================
-# MISSING / EXTRA
-# ============================================================
-
-missing_output = (
-    missing_in_target[
-        [UNIQUE_ID_COLUMN]
-    ]
-    .copy()
-)
-
-extra_output = (
-    extra_in_target[
-        [UNIQUE_ID_COLUMN]
-    ]
-    .copy()
 )
 
 
@@ -641,15 +634,15 @@ summary = pd.DataFrame({
 
         len(target),
 
-        len(both),
+        len(common_ids),
 
-        len(exact_match_ids),
+        exact_match_count,
 
         len(mismatched_ids),
 
-        len(missing_in_target),
+        len(missing_ids),
 
-        len(extra_in_target),
+        len(extra_ids),
 
         len(compare_columns)
 
@@ -659,41 +652,10 @@ summary = pd.DataFrame({
 
 
 # ============================================================
-# COLUMN SUMMARY
-# ============================================================
-
-column_summary = pd.DataFrame({
-
-    "Column":
-        compare_columns,
-
-    "Mismatch_Count": [
-
-        (
-            mismatches["Column"] == column
-        ).sum()
-
-        for column in compare_columns
-
-    ]
-
-})
-
-column_summary = (
-    column_summary
-    .sort_values(
-        "Mismatch_Count",
-        ascending=False
-    )
-)
-
-
-# ============================================================
 # WRITE REPORT
 # ============================================================
 
-print()
-print("Creating reconciliation report...")
+print("\nCreating Excel report...")
 
 with pd.ExcelWriter(
     OUTPUT_FILE,
@@ -738,7 +700,7 @@ with pd.ExcelWriter(
 
 
 # ============================================================
-# FINAL SUMMARY
+# FINAL OUTPUT
 # ============================================================
 
 execution_time = (
@@ -746,9 +708,9 @@ execution_time = (
 )
 
 print()
-print("==============================================")
+print("=" * 60)
 print("       RECONCILIATION COMPLETED")
-print("==============================================")
+print("=" * 60)
 
 print(
     f"Source records        : "
@@ -762,12 +724,12 @@ print(
 
 print(
     f"Records present in both: "
-    f"{len(both):,}"
+    f"{len(common_ids):,}"
 )
 
 print(
     f"Exact matches         : "
-    f"{len(exact_match_ids):,}"
+    f"{exact_match_count:,}"
 )
 
 print(
@@ -777,12 +739,12 @@ print(
 
 print(
     f"Missing in target     : "
-    f"{len(missing_in_target):,}"
+    f"{len(missing_ids):,}"
 )
 
 print(
     f"Extra in target       : "
-    f"{len(extra_in_target):,}"
+    f"{len(extra_ids):,}"
 )
 
 print(
@@ -797,5 +759,5 @@ print(
 
 print()
 print(
-    f"Report: {OUTPUT_FILE}"
+    f"Report generated: {OUTPUT_FILE}"
 )
