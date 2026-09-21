@@ -1,61 +1,48 @@
-Since you mentioned SQL Developer, I'll assume Oracle DB. Here's each Database Health point explained simply, with a practical query for it.
+-- ============================================================
+-- SCHEMA-LEVEL HEALTH CHECK
+-- Works with standard CONNECT/RESOURCE privileges (no SELECT_CATALOG_ROLE needed)
+-- Run as a script (F5) in SQL Developer to see all result sets
+-- ============================================================
 
-## 1. Database availability
-**What it means:** Is the database up and accepting connections?
-```sql
-SELECT status, database_status FROM v$instance;
-```
-- `status = OPEN` and `database_status = ACTIVE` = healthy.
+-- 1. Connectivity & session context
+SELECT SYS_CONTEXT('USERENV','DB_NAME')        AS db_name,
+       SYS_CONTEXT('USERENV','INSTANCE_NAME')  AS instance_name,
+       SYS_CONTEXT('USERENV','SERVER_HOST')    AS host,
+       SYS_CONTEXT('USERENV','SESSION_USER')   AS logged_in_as,
+       SYSDATE                                  AS server_time
+FROM dual;
 
-## 2. Connection pool utilisation
-**What it means:** How many DB connections/sessions are in use vs the max allowed. High usage = risk of "too many connections" errors.
-```sql
-SELECT COUNT(*) AS current_sessions,
-       (SELECT value FROM v$parameter WHERE name = 'sessions') AS max_sessions
-FROM v$session;
-```
-- If current is close to max (e.g. 90%+), that's a red flag.
+-- 2. Invalid objects in your own schema (broken views/procedures/triggers)
+SELECT object_name, object_type, status, last_ddl_time
+FROM user_objects
+WHERE status != 'VALID'
+ORDER BY last_ddl_time DESC;
 
-## 3. Tablespace usage
-**What it means:** How full each tablespace (storage bucket for data) is. If it hits 100%, inserts/updates start failing.
-```sql
+-- 3. Compile errors on your PL/SQL objects (if any invalid objects found above)
+SELECT name, type, line, position, text
+FROM user_errors
+ORDER BY name, sequence;
+
+-- 4. Table stats freshness (stale/missing stats can cause bad query plans)
+SELECT table_name, num_rows, last_analyzed, status
+FROM user_tables
+ORDER BY last_analyzed NULLS FIRST;
+
+-- 5. Schema space usage vs quota
 SELECT tablespace_name,
-       ROUND(used_space*8/1024,2) AS used_mb,
-       ROUND(tablespace_size*8/1024,2) AS total_mb,
-       ROUND(used_percent,2) AS pct_used
-FROM dba_tablespace_usage_metrics
-ORDER BY used_percent DESC;
-```
-- Flag anything above ~85%.
+       ROUND(bytes/1024/1024, 2)     AS used_mb,
+       ROUND(max_bytes/1024/1024, 2) AS quota_mb
+FROM user_ts_quotas;
 
-## 4. Blocking sessions
-**What it means:** One session is holding a lock that other sessions are waiting on — like someone holding a door shut. Causes slowness/hangs.
-```sql
-SELECT blocking_session, sid, serial#, wait_class, seconds_in_wait
-FROM v$session
-WHERE blocking_session IS NOT NULL;
-```
-- Any rows returned = active blocking happening right now.
+-- 6. Scheduled jobs owned by this schema (batch loads, file transfers, etc.)
+SELECT job_name, enabled, state, last_start_date, next_run_date
+FROM user_scheduler_jobs;
 
-## 5. Long-running queries
-**What it means:** Queries running far longer than normal — could indicate a stuck process, missing index, or runaway job.
-```sql
-SELECT sid, serial#, username, sql_id, elapsed_seconds, status
-FROM v$session
-JOIN v$sql USING (sql_id)
-WHERE status = 'ACTIVE'
-  AND elapsed_seconds > 300  -- longer than 5 minutes
-ORDER BY elapsed_seconds DESC;
-```
-
-## Running these in SQL Developer
-- Open a worksheet connected to the target schema/instance.
-- Run each query, eyeball the output against a threshold (I gave rough ones above — you should confirm your org's actual thresholds).
-
-## Automating it
-Once you're comfortable with the manual queries, the usual pattern is:
-1. A script (Python with `cx_Oracle`/`oracledb`, or a shell script with `sqlplus`) runs these queries on a schedule.
-2. Results get compared against thresholds.
-3. Anything breaching threshold triggers an alert (email/Slack/Teams) or gets logged to a dashboard.
-
-Want me to write a starter Python script that runs all five checks and prints a pass/fail summary? That'd be a good first step before adding scheduling/alerting.
+-- 7. DB-wide invalid object count by owner
+--    Requires SELECT ANY TABLE (works on TI_DEV1; will return only your own
+--    schema's rows, or fail, on accounts without that privilege such as TI_SIT)
+SELECT owner, COUNT(*) AS invalid_count
+FROM all_objects
+WHERE status != 'VALID'
+GROUP BY owner
+ORDER BY invalid_count DESC;
