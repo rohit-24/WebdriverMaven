@@ -1,56 +1,39 @@
-That confirms it — your columns are `TIMESTAMP(6)`, not `DATE`. In Oracle, `SYSDATE` (a DATE) minus a `TIMESTAMP` column returns an `INTERVAL DAY TO SECOND`, not a number — so `* 24 * 60` fails. `DATE - DATE` gives a number of days; `TIMESTAMP - DATE` doesn't.
+This is great progress — you're in. Let's break down exactly what just happened and what you can do from here.
 
-**Fix: cast the timestamp to DATE before subtracting.**
+**What these screenshots confirm**
 
-```sql
-SELECT JOB_ID, NAME, STREAM_ID, STATUS, SUBMITTED, STATUS_CHANGED,
-       ROUND((SYSDATE - CAST(SUBMITTED AS DATE)) * 24 * 60, 1) AS MINS_SINCE_SUBMIT
-FROM JOBCONTROL
-WHERE STATUS NOT IN ('C','F')
-  AND CAST(SUBMITTED AS DATE) < SYSDATE - (30/1440)
-ORDER BY SUBMITTED;
+1. **Image 2**: You accessed `tipluser` account on `wcsduv0a40` through CyberArk's PSM — Safe name `UX-N-X-TRADE_FINANCE` confirms this is the sanctioned trade finance credential vault, and you connected via the **Connect** button (PSM session), exactly the flow I described earlier
+2. **Image 1**: You landed inside an actual Linux shell as `tipluser@wcsduv0a40` — no SSH timeout, no username guessing, CyberArk handled all of that. You even ran `df -h` successfully and can see WebSphere-related mount points (`/usr/websphere9/ihs90DT_1880eee1f6d_op`, etc.)
+
+**This solves your earlier SSH blocker completely** — you now have a legitimate, working path into the server.
+
+**Now — yes, you can absolutely do middleware checks from here.** Since you're already in a shell, run:
+
+**1. Confirm WAS profile location (you have a hint from `df -h` already)**
+```bash
+find / -name "serverStatus.sh" 2>/dev/null
 ```
 
-Note I also swapped `INTERVAL '30' MINUTE` for `(30/1440)` — that INTERVAL literal only combines cleanly with DATE arithmetic in specific contexts, and mixing it with a CAST(...AS DATE) comparison can throw the same datatype error. `30/1440` is just "30 minutes as a fraction of a day," which plays safe with plain DATE math.
+**2. Once found, check your JVM status directly**
+```bash
+cd /usr/websphere9/ihs90DT_1880eee1f6d_op/AppServer/profiles/<profile_name>/bin
+./serverStatus.sh TIPlus28AsyncZone01ServerDevtst01_JVM1
+```
+(Adjust the path once `find` shows you the real one — your `df -h` output shows `ihs90DT_1880eee1f6d_op` which looks like your WAS profile identifier)
 
-**Query 2 — stale (no status movement) — same fix:**
-```sql
-SELECT JOB_ID, NAME, STREAM_ID, STATUS, STATUS_CHANGED,
-       ROUND((SYSDATE - CAST(STATUS_CHANGED AS DATE)) * 24 * 60, 1) AS MINS_SINCE_LAST_CHANGE
-FROM JOBCONTROL
-WHERE STATUS NOT IN ('C','F')
-  AND CAST(STATUS_CHANGED AS DATE) < SYSDATE - (30/1440)
-ORDER BY STATUS_CHANGED;
+**3. Check all servers at once (often faster than checking one by one)**
+```bash
+./serverStatus.sh -all
 ```
 
-**Query 3 — heartbeat:**
-```sql
-SELECT MAX(SUBMITTED) AS LAST_SUBMITTED,
-       ROUND((SYSDATE - CAST(MAX(SUBMITTED) AS DATE)) * 24 * 60, 1) AS MINS_SINCE_LAST_JOB
-FROM JOBCONTROL;
+**4. Process-level check as a quick sanity check**
+```bash
+ps -ef | grep java | grep TIPlus28
 ```
 
-**Query 4 — snapshot dashboard:**
-```sql
-SELECT STATUS,
-       COUNT(*) AS CNT,
-       MIN(SUBMITTED) AS OLDEST_SUBMITTED,
-       ROUND((SYSDATE - CAST(MIN(SUBMITTED) AS DATE)) * 24 * 60, 1) AS OLDEST_AGE_MINS
-FROM JOBCONTROL
-WHERE STATUS <> 'C'
-GROUP BY STATUS
-ORDER BY STATUS;
-```
+**5. Basic disk health, since you already have `df -h` open**
+Your output shows `/dev/mapper/rootvg-rootlv` at **64% used** — worth noting if this climbs, since a full disk can silently break WAS (it can't write logs/temp files) even when the JVM otherwise looks "STARTED."
 
-**Query 5 — must-complete stuck jobs:**
-```sql
-SELECT JOB_ID, NAME, STATUS, CAN_RETRY, MUST_COMPLETE, PRIORITY,
-       ROUND((SYSDATE - CAST(STATUS_CHANGED AS DATE)) * 24 * 60, 1) AS MINS_STALE
-FROM JOBCONTROL
-WHERE STATUS NOT IN ('C','F')
-  AND CAST(STATUS_CHANGED AS DATE) < SYSDATE - (30/1440)
-  AND MUST_COMPLETE = 'Y'
-ORDER BY PRIORITY, MINS_STALE DESC;
-```
+---
 
-One more thing to check from your JOBCONTROL columns list: `STATUS` is `CHAR(1)`, so it's padded/fixed-width — comparisons like `STATUS = 'C'` should still work fine in Oracle (it does blank-padded comparison), but if you ever see mismatches, try `TRIM(STATUS) = 'C'` to rule out padding weirdness.the
+**Run step 1 and 2 first, and send me the output** (screenshot or text) — once we confirm `serverStatus.sh` returns STARTED/STOPPED, we can turn this exact sequence into your first real, working health-check script, run through this same CyberArk PSM-connected session.
