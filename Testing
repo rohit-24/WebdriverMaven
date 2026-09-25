@@ -1,45 +1,106 @@
+async overrideAllWarnings() {
+  const overrideButton = this.page.getByRole('button', {
+    name: 'Override All',
+    exact: true
+  });
 
-@SG
-Feature: Client Search
+  // All warning rows, including TIRow_Status_Warning
+  // and TIRowAlt_Status_Warning
+  const overriddenCells = this.page.locator(
+    'tbody tr[class*="Status_Warning"] td.last span.text-default'
+  );
 
-  Scenario Outline: Search client in <CIN>
-    When I search with CIN <CIN>
-    And I search with Passport <PassportNo>
-    Then I validate profile for CIN <CIN>
+  const maxAttempts = 3;
 
-    Examples:
-      | placeholder |
+  // Helper to get current values
+  const getOverrideValues = async () => {
+    return (await overriddenCells.allTextContents())
+      .map(value => value.trim());
+  };
 
+  // Helper to check whether all warning rows are Y
+  const areAllOverridden = async () => {
+    const values = await getOverrideValues();
 
+    console.log('Current Override values:', values);
 
- function generateFeatureForMarket(market) {
-  const featurePath = path.resolve(`cypress/e2e/features/search_${market}.feature`);
+    return values.length > 0 &&
+           values.every(value => value === 'Y');
+  };
 
-  if (!fs.existsSync(featurePath)) {
-    console.warn(`⚠️ Feature template not found for ${market}: ${featurePath}`);
-    return;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+
+    // First check - maybe everything is already Y
+    if (await areAllOverridden()) {
+      console.log(
+        `All warnings are already overridden. No click required.`
+      );
+      return;
+    }
+
+    console.log(`Override All attempt ${attempt}`);
+
+    await overrideButton.click();
+
+    // Wait until the application finishes updating the flags.
+    // Poll instead of blindly waiting 3 seconds.
+    try {
+      await expect.poll(
+        async () => await areAllOverridden(),
+        {
+          timeout: 5000,
+          intervals: [500, 1000, 1500]
+        }
+      ).toBe(true);
+
+      console.log(
+        `All warnings successfully overridden on attempt ${attempt}`
+      );
+
+      return;
+
+    } catch {
+      const values = await getOverrideValues();
+
+      console.log(
+        `Attempt ${attempt} completed but some warnings are still not overridden:`,
+        values
+      );
+
+      // If this was the final attempt, fail
+      if (attempt === maxAttempts) {
+        const failedRows = [];
+
+        const warningRows = this.page.locator(
+          'tbody tr[class*="Status_Warning"]'
+        );
+
+        const rowCount = await warningRows.count();
+
+        for (let i = 0; i < rowCount; i++) {
+          const row = warningRows.nth(i);
+          const value = (
+            await row.locator('td.last span.text-default').textContent()
+          )?.trim();
+
+          if (value !== 'Y') {
+            const rowNumber = await row.getAttribute('data-row');
+
+            failedRows.push(
+              `Row ${rowNumber ?? i + 1} = ${value}`
+            );
+          }
+        }
+
+        throw new Error(
+          `Override All failed after ${maxAttempts} attempts. ` +
+          `Warnings still not overridden: ${failedRows.join(', ')}`
+        );
+      }
+
+      console.log(
+        `Retrying Override All... (${maxAttempts - attempt} attempt(s) remaining)`
+      );
+    }
   }
-
-  let featureContent = fs.readFileSync(featurePath, "utf8");
-  const jsonData = readExcelSheet("TestData/LV_Data.xlsx", market);
-
-  if (!jsonData.length) {
-    console.warn(`⚠️ No data found for market ${market}, skipping...`);
-    return;
-  }
-
-  // Build Examples dynamically
-  const headers = Object.keys(jsonData[0]);
-  const headerRow = `      | ${headers.join(" | ")} |`;
-  const dataRows = jsonData
-    .map(r => `      | ${headers.map(h => r[h]).join(" | ")} |`)
-    .join("\n");
-
-  // Replace placeholder row
-  featureContent = featureContent.replace(/\|.*placeholder.*\|/, `${headerRow}\n${dataRows}`);
-
-  // Overwrite same feature file
-  fs.writeFileSync(featurePath, featureContent, "utf8");
-
-  console.log(`✅ Updated ${featurePath} with ${jsonData.length} rows`);
 }
