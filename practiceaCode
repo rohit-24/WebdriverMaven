@@ -1,77 +1,465 @@
-async isTransactionVisible(transactionId: string) {
-  if (!transactionId) {
-    throw new Error('transactionId is required');
-  }
+Absolutely. For OneNote, I would keep it much simpler than the infographic—something your lead can scan in 1–2 minutes and immediately understand what we are checking, why, and what comes later.
 
-  const maxAttempts = 3;
-  const retryInterval = 30000; // 30 seconds
+You can copy-paste the below directly into OneNote.
 
-  await this.page.getByText('Trade Finance', { exact: true }).click();
+⸻
 
-  // Open Import Letter of Credit
-  await this.page.locator('#N001_LC').click();
+🟦 WebSphere Health Check Automation – Phase-wise Plan
 
-  const searchBox = this.page.locator('#searchBox');
+🎯 Objective
 
-  await expect(searchBox).toBeVisible({
-    timeout: 30000
-  });
+Use Playwright + WebSphere Admin Console to perform automated health checks of critical WebSphere components and identify issues early — before they impact applications/users.
 
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    console.log(
-      `Searching for transaction ${transactionId} - Attempt ${attempt}/${maxAttempts}`
-    );
+⸻
 
-    // Clear previous search
-    await searchBox.fill('');
+🏗️ WebSphere – Simple Architecture
 
-    // Enter transaction ID
-    await searchBox.fill(transactionId);
+                 👤 USER
+                   │
+                   ▼
+            🌐 WEB SERVER / IHS
+                   │
+                   ▼
+          ⚙️ WEBSPHERE CELL
+                   │
+            ┌──────┴──────┐
+            │             │
+          NODE 1         NODE 2
+            │
+       ┌────┴────┐
+       │         │
+     JVM 1     JVM 2
+       │         │
+       ▼         ▼
+   Application Application
+       │
+       ├──────────────► 🗄️ Database
+       │
+       └──────────────► 📨 MQ / Other Systems
 
-    try {
-      // Look specifically for the transaction row
-      const transactionRow = this.page.locator(
-        `tr#rowdata:has-text("${transactionId}")`
-      );
+🧠 Simple understanding
 
-      // Wait for transaction to appear
-      await expect(transactionRow).toBeVisible({
-        timeout: retryInterval
-      });
+JVM/Server → Runs the Java application
+Application → Actual business functionality
+Cluster → Group of servers/JVMs working together
+Node → Environment/machine containing WebSphere servers
+Web Server/IHS → Front door for user requests
+Database/MQ → External systems the application depends on
 
-      // Verify transaction ID
-      await expect(transactionRow).toContainText(transactionId);
+⸻
 
-      // Verify transaction type
-      await expect(transactionRow).toContainText('RTB_QA_ILC');
+🟢 PHASE 1 — Critical Health Checks
 
-      console.log(
-        `Transaction ${transactionId} verified successfully in LOTS on attempt ${attempt}`
-      );
+🎯 Focus
 
-      // Found successfully - stop retrying
-      return true;
+First make sure WebSphere is UP and the important components are available.
 
-    } catch (error) {
-      console.log(
-        `Transaction ${transactionId} not found on attempt ${attempt}/${maxAttempts}`
-      );
+These are the checks we should automate first because a failure here can directly affect application availability.
 
-      // If this was the final attempt, fail
-      if (attempt === maxAttempts) {
-        throw new Error(
-          `Transaction ${transactionId} was not found in LOTS after ${maxAttempts} attempts`
-        );
-      }
+⸻
 
-      // Wait before next search
-      console.log(
-        `Waiting ${retryInterval / 1000} seconds before retrying...`
-      );
+1️⃣ WebSphere Admin Console Login
 
-      await this.page.waitForTimeout(retryInterval);
-    }
-  }
+📍 Navigation
 
-  return false;
-}
+WebSphere Admin Console → Login
+
+🔍 What are we checking?
+
+Can we successfully access the WebSphere environment?
+
+💡 Why important?
+
+If the console/environment itself is unavailable, support teams cannot manage or investigate WebSphere.
+
+✅ PASS → Login successful
+❌ FAIL → Login/access failure
+
+⸻
+
+2️⃣ WebSphere Application Server / JVM Status ⭐
+
+📍 Navigation
+
+Servers → Server Types → WebSphere application servers
+
+🔍 What are we checking?
+
+Are all expected WebSphere servers/JVMs in Started state?
+
+Example:
+
+JVM 1 → 🟢 Started
+JVM 2 → 🟢 Started
+JVM 3 → 🟢 Started
+
+💡 Why important?
+
+If a JVM is stopped, applications running on that JVM may not be available.
+
+🚨 This is your current check.
+
+✅ PASS → Expected server = Started
+❌ FAIL → Expected server = Stopped
+
+⸻
+
+3️⃣ Web Server / IHS Status
+
+📍 Navigation
+
+Servers → Server Types → Web servers
+
+🔍 What are we checking?
+
+Is the Web Server running?
+
+💡 Why important?
+
+The Web Server is often the front door through which users reach the application.
+
+User
+ ↓
+Web Server
+ ↓
+WebSphere
+ ↓
+Application
+
+WebSphere JVM can be UP while the Web Server is down.
+
+✅ PASS → Started
+❌ FAIL → Stopped
+
+⸻
+
+4️⃣ Node / Node Agent Status
+
+📍 Navigation
+
+System Administration → Nodes
+
+🔍 What are we checking?
+
+Is the Node available and its Node Agent running?
+
+💡 Why important?
+
+The Node Agent helps the Deployment Manager manage servers on that node.
+
+If the node/agent has a problem, management of the servers on that node can be affected.
+
+✅ PASS → Node/Agent available
+❌ FAIL → Node/Agent unavailable
+
+⸻
+
+5️⃣ Cluster Status
+
+📍 Navigation
+
+Servers → Clusters → WebSphere application server clusters
+
+🔍 What are we checking?
+
+Are expected clusters available/running?
+
+Example:
+
+Trade Cluster
+ ├── JVM 1 🟢
+ ├── JVM 2 🟢
+ └── JVM 3 🟢
+
+💡 Why important?
+
+A cluster represents a group of application servers working together.
+
+A missing/stopped cluster member can affect application availability or capacity.
+
+✅ PASS → Cluster running + expected members available
+❌ FAIL → Cluster stopped / expected member missing
+
+⸻
+
+6️⃣ Application Status ⭐
+
+📍 Navigation
+
+Applications → Application Types → WebSphere enterprise applications
+
+🔍 What are we checking?
+
+Are critical applications in Started state?
+
+Example:
+
+Trade Application       🟢 Started
+Message Processor       🟢 Started
+Trade Adapter           🟢 Started
+
+💡 Why important?
+
+A JVM being UP does not guarantee that the application is running.
+
+JVM       → 🟢 UP
+Application → 🔴 STOPPED
+Result → Application unavailable
+
+✅ PASS → Application Started
+❌ FAIL → Application Stopped
+
+⸻
+
+7️⃣ Application Deployment / Mapping ⭐
+
+📍 Navigation
+
+Applications → Application → Modules → Server/Cluster mapping
+
+🔍 What are we checking?
+
+Is the application deployed/mapped to the expected server or cluster?
+
+💡 Why important?
+
+An application can be started but deployed to an incorrect server/cluster because of a configuration/deployment issue.
+
+✅ PASS → Expected mapping
+❌ FAIL → Incorrect/missing mapping
+
+⸻
+
+🟢 PHASE 1 — Summary
+
+                    PHASE 1
+                       │
+       ┌───────────────┼────────────────┐
+       ▼               ▼                ▼
+   WebSphere         Servers         Applications
+   Access              │                 │
+                       ▼                 ▼
+                  JVM Status        App Status
+                  Node Status       App Mapping
+                  Cluster Status
+                  Web Server
+
+🎯 Phase 1 Outcome
+
+“Is the WebSphere environment available and are the critical components required by the application running?”
+
+⸻
+
+🔵 PHASE 2 — Extended Health Checks
+
+Once Phase 1 is stable, we go deeper.
+
+🎯 Focus
+
+Not just “Is it UP?” but “Is it behaving normally?”
+
+⸻
+
+1️⃣ JVM Runtime Health
+
+📍 Monitoring and tuning → Performance Viewer
+
+Check:
+
+* JVM memory/heap
+* Memory utilization
+* Garbage collection indicators
+
+💡 Helps identify:
+Potential memory problems or abnormal JVM behaviour before the JVM crashes.
+
+⸻
+
+2️⃣ Thread Pool Health
+
+📍 Monitoring and tuning → Performance Viewer → Thread Pools
+
+Check:
+
+* Active threads
+* Pool utilization
+* Hung threads
+
+💡 Helps identify:
+
+Too many requests
+      ↓
+Threads getting occupied
+      ↓
+Requests waiting
+      ↓
+Application becomes slow
+
+⸻
+
+3️⃣ JDBC / Database Connection Pool
+
+📍 Resources → JDBC → Data sources
+
+Check:
+
+* Connection availability
+* Connections in use
+* Pool utilization
+
+💡 Helps identify:
+
+Application unable to obtain database connections / DB connectivity issues.
+
+⸻
+
+4️⃣ Application Response / Runtime Behaviour
+
+📍 Monitoring and tuning / Performance Viewer
+
+Check:
+
+* Request activity
+* Response time
+* Error indicators
+
+💡 Helps identify:
+
+Application is technically UP but becoming slow or unhealthy.
+
+⸻
+
+5️⃣ Logs / Error Check
+
+📍 Troubleshooting → Logs and trace
+
+Check for:
+
+* ERROR
+* Exception
+* FFDC
+* Important warnings
+
+💡 Helps identify:
+
+Application/server issues that may not be visible from the server status alone.
+
+⸻
+
+6️⃣ Server Configuration Checks
+
+📍 Servers → Server → Configuration
+
+Check important configuration such as:
+
+* Ports
+* Server configuration
+* JVM settings
+* Expected environment parameters
+
+💡 Helps identify:
+
+Unexpected configuration changes or configuration drift.
+
+⸻
+
+7️⃣ SSL Certificate Check
+
+📍 Security → SSL certificate and key management
+
+Check:
+
+* Certificate validity
+* Expiry date
+
+💡 Helps identify:
+
+Certificate expiry that could cause sudden connectivity/application issues.
+
+⸻
+
+8️⃣ External Dependency Checks
+
+Where exposed through the WebSphere UI, check connectivity/status of:
+
+WebSphere
+   │
+   ├── 🗄️ Database
+   ├── 📨 MQ
+   └── 🔗 Other systems
+
+💡 Helps identify:
+
+Application may be running, but unable to communicate with a required downstream system.
+
+⸻
+
+📊 Phase 1 vs Phase 2
+
+	🟢 Phase 1	🔵 Phase 2
+Main question	Is it UP?	Is it healthy?
+Server/JVM	✅	
+Web Server	✅	
+Node	✅	
+Cluster	✅	
+Application	✅	
+Application mapping	✅	
+JVM memory		✅
+Threads		✅
+JDBC pool		✅
+Response time		✅
+Logs/errors		✅
+Configuration		✅
+SSL		✅
+Dependencies		✅
+
+⸻
+
+🚦 Proposed Automation Approach
+
+Phase 1 — Start Simple
+
+             Playwright
+                 │
+                 ▼
+       WebSphere Admin Console
+                 │
+       ┌─────────┼──────────┐
+       ▼         ▼          ▼
+    Servers   Clusters   Applications
+       │         │          │
+       ▼         ▼          ▼
+    Status     Status      Status
+
+Output
+
+╔══════════════════════════════════════╗
+║     WebSphere Health Check           ║
+╠══════════════════════════════════════╣
+║ JVM 1              🟢 PASS           ║
+║ JVM 2              🟢 PASS           ║
+║ JVM 3              🟢 PASS           ║
+║ Web Server         🟢 PASS           ║
+║ Node                🟢 PASS           ║
+║ Cluster             🟢 PASS           ║
+║ Application         🟢 PASS           ║
+║ Application Mapping 🟢 PASS           ║
+╠══════════════════════════════════════╣
+║ Overall Status      🟢 HEALTHY        ║
+╚══════════════════════════════════════╝
+
+⸻
+
+🎯 One-line explanation for your Lead
+
+You can explain the approach like this:
+
+“For Phase 1, I propose using Playwright against the WebSphere Admin Console to validate critical availability — WebSphere servers/JVMs, Web Server, Nodes, Clusters, critical Applications and their deployment mapping. The objective is to quickly identify basic availability or deployment issues before they impact testing or users. Once Phase 1 is stable, Phase 2 can extend into JVM runtime, thread pools, JDBC, response time, logs, configuration and dependency health checks.”
+
+💡 The key philosophy
+
+Phase 1 = “Is everything required UP?”
+
+Phase 2 = “Is everything UP and behaving normally?”
+
+That distinction will make your proposal very easy for your lead to understand.
