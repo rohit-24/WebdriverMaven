@@ -1,39 +1,77 @@
-This is great progress — you're in. Let's break down exactly what just happened and what you can do from here.
+async isTransactionVisible(transactionId: string) {
+  if (!transactionId) {
+    throw new Error('transactionId is required');
+  }
 
-**What these screenshots confirm**
+  const maxAttempts = 3;
+  const retryInterval = 30000; // 30 seconds
 
-1. **Image 2**: You accessed `tipluser` account on `wcsduv0a40` through CyberArk's PSM — Safe name `UX-N-X-TRADE_FINANCE` confirms this is the sanctioned trade finance credential vault, and you connected via the **Connect** button (PSM session), exactly the flow I described earlier
-2. **Image 1**: You landed inside an actual Linux shell as `tipluser@wcsduv0a40` — no SSH timeout, no username guessing, CyberArk handled all of that. You even ran `df -h` successfully and can see WebSphere-related mount points (`/usr/websphere9/ihs90DT_1880eee1f6d_op`, etc.)
+  await this.page.getByText('Trade Finance', { exact: true }).click();
 
-**This solves your earlier SSH blocker completely** — you now have a legitimate, working path into the server.
+  // Open Import Letter of Credit
+  await this.page.locator('#N001_LC').click();
 
-**Now — yes, you can absolutely do middleware checks from here.** Since you're already in a shell, run:
+  const searchBox = this.page.locator('#searchBox');
 
-**1. Confirm WAS profile location (you have a hint from `df -h` already)**
-```bash
-find / -name "serverStatus.sh" 2>/dev/null
-```
+  await expect(searchBox).toBeVisible({
+    timeout: 30000
+  });
 
-**2. Once found, check your JVM status directly**
-```bash
-cd /usr/websphere9/ihs90DT_1880eee1f6d_op/AppServer/profiles/<profile_name>/bin
-./serverStatus.sh TIPlus28AsyncZone01ServerDevtst01_JVM1
-```
-(Adjust the path once `find` shows you the real one — your `df -h` output shows `ihs90DT_1880eee1f6d_op` which looks like your WAS profile identifier)
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    console.log(
+      `Searching for transaction ${transactionId} - Attempt ${attempt}/${maxAttempts}`
+    );
 
-**3. Check all servers at once (often faster than checking one by one)**
-```bash
-./serverStatus.sh -all
-```
+    // Clear previous search
+    await searchBox.fill('');
 
-**4. Process-level check as a quick sanity check**
-```bash
-ps -ef | grep java | grep TIPlus28
-```
+    // Enter transaction ID
+    await searchBox.fill(transactionId);
 
-**5. Basic disk health, since you already have `df -h` open**
-Your output shows `/dev/mapper/rootvg-rootlv` at **64% used** — worth noting if this climbs, since a full disk can silently break WAS (it can't write logs/temp files) even when the JVM otherwise looks "STARTED."
+    try {
+      // Look specifically for the transaction row
+      const transactionRow = this.page.locator(
+        `tr#rowdata:has-text("${transactionId}")`
+      );
 
----
+      // Wait for transaction to appear
+      await expect(transactionRow).toBeVisible({
+        timeout: retryInterval
+      });
 
-**Run step 1 and 2 first, and send me the output** (screenshot or text) — once we confirm `serverStatus.sh` returns STARTED/STOPPED, we can turn this exact sequence into your first real, working health-check script, run through this same CyberArk PSM-connected session.
+      // Verify transaction ID
+      await expect(transactionRow).toContainText(transactionId);
+
+      // Verify transaction type
+      await expect(transactionRow).toContainText('RTB_QA_ILC');
+
+      console.log(
+        `Transaction ${transactionId} verified successfully in LOTS on attempt ${attempt}`
+      );
+
+      // Found successfully - stop retrying
+      return true;
+
+    } catch (error) {
+      console.log(
+        `Transaction ${transactionId} not found on attempt ${attempt}/${maxAttempts}`
+      );
+
+      // If this was the final attempt, fail
+      if (attempt === maxAttempts) {
+        throw new Error(
+          `Transaction ${transactionId} was not found in LOTS after ${maxAttempts} attempts`
+        );
+      }
+
+      // Wait before next search
+      console.log(
+        `Waiting ${retryInterval / 1000} seconds before retrying...`
+      );
+
+      await this.page.waitForTimeout(retryInterval);
+    }
+  }
+
+  return false;
+}
