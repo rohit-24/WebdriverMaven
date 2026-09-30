@@ -1,465 +1,179 @@
-Absolutely. For OneNote, I would keep it much simpler than the infographic—something your lead can scan in 1–2 minutes and immediately understand what we are checking, why, and what comes later.
-
-You can copy-paste the below directly into OneNote.
-
-⸻
-
-🟦 WebSphere Health Check Automation – Phase-wise Plan
-
-🎯 Objective
-
-Use Playwright + WebSphere Admin Console to perform automated health checks of critical WebSphere components and identify issues early — before they impact applications/users.
-
-⸻
-
-🏗️ WebSphere – Simple Architecture
-
-                 👤 USER
-                   │
-                   ▼
-            🌐 WEB SERVER / IHS
-                   │
-                   ▼
-          ⚙️ WEBSPHERE CELL
-                   │
-            ┌──────┴──────┐
-            │             │
-          NODE 1         NODE 2
-            │
-       ┌────┴────┐
-       │         │
-     JVM 1     JVM 2
-       │         │
-       ▼         ▼
-   Application Application
-       │
-       ├──────────────► 🗄️ Database
-       │
-       └──────────────► 📨 MQ / Other Systems
-
-🧠 Simple understanding
-
-JVM/Server → Runs the Java application
-Application → Actual business functionality
-Cluster → Group of servers/JVMs working together
-Node → Environment/machine containing WebSphere servers
-Web Server/IHS → Front door for user requests
-Database/MQ → External systems the application depends on
-
-⸻
-
-🟢 PHASE 1 — Critical Health Checks
-
-🎯 Focus
-
-First make sure WebSphere is UP and the important components are available.
-
-These are the checks we should automate first because a failure here can directly affect application availability.
-
-⸻
-
-1️⃣ WebSphere Admin Console Login
-
-📍 Navigation
-
-WebSphere Admin Console → Login
-
-🔍 What are we checking?
-
-Can we successfully access the WebSphere environment?
-
-💡 Why important?
-
-If the console/environment itself is unavailable, support teams cannot manage or investigate WebSphere.
-
-✅ PASS → Login successful
-❌ FAIL → Login/access failure
-
-⸻
-
-2️⃣ WebSphere Application Server / JVM Status ⭐
-
-📍 Navigation
-
-Servers → Server Types → WebSphere application servers
-
-🔍 What are we checking?
-
-Are all expected WebSphere servers/JVMs in Started state?
-
-Example:
-
-JVM 1 → 🟢 Started
-JVM 2 → 🟢 Started
-JVM 3 → 🟢 Started
-
-💡 Why important?
-
-If a JVM is stopped, applications running on that JVM may not be available.
-
-🚨 This is your current check.
-
-✅ PASS → Expected server = Started
-❌ FAIL → Expected server = Stopped
-
-⸻
-
-3️⃣ Web Server / IHS Status
-
-📍 Navigation
-
-Servers → Server Types → Web servers
-
-🔍 What are we checking?
-
-Is the Web Server running?
-
-💡 Why important?
-
-The Web Server is often the front door through which users reach the application.
-
-User
- ↓
-Web Server
- ↓
-WebSphere
- ↓
-Application
-
-WebSphere JVM can be UP while the Web Server is down.
-
-✅ PASS → Started
-❌ FAIL → Stopped
-
-⸻
-
-4️⃣ Node / Node Agent Status
-
-📍 Navigation
-
-System Administration → Nodes
-
-🔍 What are we checking?
-
-Is the Node available and its Node Agent running?
-
-💡 Why important?
-
-The Node Agent helps the Deployment Manager manage servers on that node.
-
-If the node/agent has a problem, management of the servers on that node can be affected.
-
-✅ PASS → Node/Agent available
-❌ FAIL → Node/Agent unavailable
-
-⸻
-
-5️⃣ Cluster Status
-
-📍 Navigation
-
-Servers → Clusters → WebSphere application server clusters
-
-🔍 What are we checking?
-
-Are expected clusters available/running?
-
-Example:
-
-Trade Cluster
- ├── JVM 1 🟢
- ├── JVM 2 🟢
- └── JVM 3 🟢
-
-💡 Why important?
-
-A cluster represents a group of application servers working together.
-
-A missing/stopped cluster member can affect application availability or capacity.
-
-✅ PASS → Cluster running + expected members available
-❌ FAIL → Cluster stopped / expected member missing
-
-⸻
-
-6️⃣ Application Status ⭐
-
-📍 Navigation
-
-Applications → Application Types → WebSphere enterprise applications
-
-🔍 What are we checking?
-
-Are critical applications in Started state?
-
-Example:
-
-Trade Application       🟢 Started
-Message Processor       🟢 Started
-Trade Adapter           🟢 Started
-
-💡 Why important?
-
-A JVM being UP does not guarantee that the application is running.
-
-JVM       → 🟢 UP
-Application → 🔴 STOPPED
-Result → Application unavailable
-
-✅ PASS → Application Started
-❌ FAIL → Application Stopped
-
-⸻
-
-7️⃣ Application Deployment / Mapping ⭐
-
-📍 Navigation
-
-Applications → Application → Modules → Server/Cluster mapping
-
-🔍 What are we checking?
-
-Is the application deployed/mapped to the expected server or cluster?
-
-💡 Why important?
-
-An application can be started but deployed to an incorrect server/cluster because of a configuration/deployment issue.
-
-✅ PASS → Expected mapping
-❌ FAIL → Incorrect/missing mapping
-
-⸻
-
-🟢 PHASE 1 — Summary
-
-                    PHASE 1
-                       │
-       ┌───────────────┼────────────────┐
-       ▼               ▼                ▼
-   WebSphere         Servers         Applications
-   Access              │                 │
-                       ▼                 ▼
-                  JVM Status        App Status
-                  Node Status       App Mapping
-                  Cluster Status
-                  Web Server
-
-🎯 Phase 1 Outcome
-
-“Is the WebSphere environment available and are the critical components required by the application running?”
-
-⸻
-
-🔵 PHASE 2 — Extended Health Checks
-
-Once Phase 1 is stable, we go deeper.
-
-🎯 Focus
-
-Not just “Is it UP?” but “Is it behaving normally?”
-
-⸻
-
-1️⃣ JVM Runtime Health
-
-📍 Monitoring and tuning → Performance Viewer
-
-Check:
-
-* JVM memory/heap
-* Memory utilization
-* Garbage collection indicators
-
-💡 Helps identify:
-Potential memory problems or abnormal JVM behaviour before the JVM crashes.
-
-⸻
-
-2️⃣ Thread Pool Health
-
-📍 Monitoring and tuning → Performance Viewer → Thread Pools
-
-Check:
-
-* Active threads
-* Pool utilization
-* Hung threads
-
-💡 Helps identify:
-
-Too many requests
-      ↓
-Threads getting occupied
-      ↓
-Requests waiting
-      ↓
-Application becomes slow
-
-⸻
-
-3️⃣ JDBC / Database Connection Pool
-
-📍 Resources → JDBC → Data sources
-
-Check:
-
-* Connection availability
-* Connections in use
-* Pool utilization
-
-💡 Helps identify:
-
-Application unable to obtain database connections / DB connectivity issues.
-
-⸻
-
-4️⃣ Application Response / Runtime Behaviour
-
-📍 Monitoring and tuning / Performance Viewer
-
-Check:
-
-* Request activity
-* Response time
-* Error indicators
-
-💡 Helps identify:
-
-Application is technically UP but becoming slow or unhealthy.
-
-⸻
-
-5️⃣ Logs / Error Check
-
-📍 Troubleshooting → Logs and trace
-
-Check for:
-
-* ERROR
-* Exception
-* FFDC
-* Important warnings
-
-💡 Helps identify:
-
-Application/server issues that may not be visible from the server status alone.
-
-⸻
-
-6️⃣ Server Configuration Checks
-
-📍 Servers → Server → Configuration
-
-Check important configuration such as:
-
-* Ports
-* Server configuration
-* JVM settings
-* Expected environment parameters
-
-💡 Helps identify:
-
-Unexpected configuration changes or configuration drift.
-
-⸻
-
-7️⃣ SSL Certificate Check
-
-📍 Security → SSL certificate and key management
-
-Check:
-
-* Certificate validity
-* Expiry date
-
-💡 Helps identify:
-
-Certificate expiry that could cause sudden connectivity/application issues.
-
-⸻
-
-8️⃣ External Dependency Checks
-
-Where exposed through the WebSphere UI, check connectivity/status of:
-
-WebSphere
-   │
-   ├── 🗄️ Database
-   ├── 📨 MQ
-   └── 🔗 Other systems
-
-💡 Helps identify:
-
-Application may be running, but unable to communicate with a required downstream system.
-
-⸻
-
-📊 Phase 1 vs Phase 2
-
-	🟢 Phase 1	🔵 Phase 2
-Main question	Is it UP?	Is it healthy?
-Server/JVM	✅	
-Web Server	✅	
-Node	✅	
-Cluster	✅	
-Application	✅	
-Application mapping	✅	
-JVM memory		✅
-Threads		✅
-JDBC pool		✅
-Response time		✅
-Logs/errors		✅
-Configuration		✅
-SSL		✅
-Dependencies		✅
-
-⸻
-
-🚦 Proposed Automation Approach
-
-Phase 1 — Start Simple
-
-             Playwright
-                 │
-                 ▼
-       WebSphere Admin Console
-                 │
-       ┌─────────┼──────────┐
-       ▼         ▼          ▼
-    Servers   Clusters   Applications
-       │         │          │
-       ▼         ▼          ▼
-    Status     Status      Status
-
-Output
-
-╔══════════════════════════════════════╗
-║     WebSphere Health Check           ║
-╠══════════════════════════════════════╣
-║ JVM 1              🟢 PASS           ║
-║ JVM 2              🟢 PASS           ║
-║ JVM 3              🟢 PASS           ║
-║ Web Server         🟢 PASS           ║
-║ Node                🟢 PASS           ║
-║ Cluster             🟢 PASS           ║
-║ Application         🟢 PASS           ║
-║ Application Mapping 🟢 PASS           ║
-╠══════════════════════════════════════╣
-║ Overall Status      🟢 HEALTHY        ║
-╚══════════════════════════════════════╝
-
-⸻
-
-🎯 One-line explanation for your Lead
-
-You can explain the approach like this:
-
-“For Phase 1, I propose using Playwright against the WebSphere Admin Console to validate critical availability — WebSphere servers/JVMs, Web Server, Nodes, Clusters, critical Applications and their deployment mapping. The objective is to quickly identify basic availability or deployment issues before they impact testing or users. Once Phase 1 is stable, Phase 2 can extend into JVM runtime, thread pools, JDBC, response time, logs, configuration and dependency health checks.”
-
-💡 The key philosophy
-
-Phase 1 = “Is everything required UP?”
-
-Phase 2 = “Is everything UP and behaving normally?”
-
-That distinction will make your proposal very easy for your lead to understand.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Control Sum Check</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f3f5f4;--panel:#fff;--ink:#14231f;--mute:#5d6b66;--line:#d5dcd9;--brand:#0b4a3c;--pass:#0f7a43;--passbg:#e0f2e8;--fail:#b3261e;--failbg:#fbe4e2;--warn:#8a5a00;--warnbg:#fdf0d2}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1714;--panel:#16221e;--ink:#e6eeeb;--mute:#93a39d;--line:#2a3b35;--brand:#5cc5a5;--pass:#5fd394;--passbg:#12301f;--fail:#ff8a80;--failbg:#3a1a18;--warn:#f0c060;--warnbg:#382c10}}
+:root[data-theme="dark"]{--bg:#0e1714;--panel:#16221e;--ink:#e6eeeb;--mute:#93a39d;--line:#2a3b35;--brand:#5cc5a5;--pass:#5fd394;--passbg:#12301f;--fail:#ff8a80;--failbg:#3a1a18;--warn:#f0c060;--warnbg:#382c10}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Source Sans 3",system-ui,Segoe UI,sans-serif}
+main{max-width:980px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:26px;margin:0 0 2px;color:var(--brand)}
+h2{font-size:17px;margin:0 0 10px}
+.sub{color:var(--mute);margin:0 0 18px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:14px}
+.drops{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.drops{grid-template-columns:1fr}}
+.drop{border:2px dashed var(--line);border-radius:6px;padding:22px 14px;text-align:center;cursor:pointer;display:block}
+.drop.over{border-color:var(--brand);background:var(--bg)}
+.drop strong{display:block;font-size:17px}
+.drop small{color:var(--mute)}
+.drop input{display:none}
+.files{margin:8px 0 0;font-size:14px;color:var(--mute);word-break:break-all}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-weight:600;color:var(--mute);font-size:14px}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.wrap{overflow-x:auto}
+.tag{display:inline-block;padding:2px 9px;border-radius:4px;font-weight:700;font-size:14px}
+.tag.pass{background:var(--passbg);color:var(--pass)}
+.tag.fail{background:var(--failbg);color:var(--fail)}
+.tag.warn{background:var(--warnbg);color:var(--warn)}
+button{font:inherit;font-weight:600;border:0;border-radius:6px;padding:11px 20px;cursor:pointer;background:var(--brand);color:#fff}
+:root:not([data-theme="light"]) button{color:#06201a}
+button.ghost{background:transparent;color:var(--brand);border:1px solid var(--brand)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,.drop:focus-within{outline:3px solid var(--brand);outline-offset:2px}
+.banner{display:flex;align-items:center;gap:14px;border-radius:6px;padding:16px 18px;margin-bottom:14px;font-weight:700;font-size:22px}
+.banner.pass{background:var(--passbg);color:var(--pass)}
+.banner.fail{background:var(--failbg);color:var(--fail)}
+.banner span{font-size:15px;font-weight:400;color:var(--ink)}
+.buyer{display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+.buyer:last-child{border:0}
+.buyer .nm{flex:1}
+.buyer .am{font-variant-numeric:tabular-nums;color:var(--mute);font-size:14px;text-align:right}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.note{color:var(--mute);font-size:14px;margin:8px 0 0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<h1>Control Sum Check</h1>
+<p class="sub">Compares the Excel total for each SCF buyer with the control sum in its payment XML. Files stay on this computer.</p>
+
+<div class="drops">
+  <label class="drop" id="dx"><input type="file" id="fx" accept=".xlsx,.xls,.xlsm,.csv"><strong>Excel extract</strong><small>Drop the file here or tap to choose</small><div class="files" id="lx"></div></label>
+  <label class="drop" id="dm"><input type="file" id="fm" accept=".xml" multiple><strong>Payment XML files</strong><small>Drop one or more files here or tap to choose</small><div class="files" id="lm"></div></label>
+</div>
+
+<div class="panel" id="buyers" hidden style="margin-top:14px">
+  <h2>Select the SCF buyers</h2>
+  <div id="blist"></div>
+  <p class="note">Ticked buyers are checked. Unticked buyers are listed as ignored. Buyers matching an XML debtor name are ticked for you.</p>
+</div>
+
+<div class="row" style="margin:14px 0">
+  <button id="go" disabled>Validate</button>
+  <button id="csv" class="ghost" hidden>Download CSV</button>
+</div>
+<div id="err" class="note" style="color:var(--fail)"></div>
+<div id="out"></div>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+let buyers={},xmls=[],xlsName="",rows=[];
+const fmt=p=>(p/100).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
+const pence=v=>Math.round(parseFloat(String(v).replace(/[^0-9.\-]/g,"")||0)*100);
+const norm=s=>String(s||"").toLowerCase().replace(/&/g," and ").replace(/\blimited\b/g,"ltd").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function wire(dz,inp,fn){
+  ["dragenter","dragover"].forEach(e=>dz.addEventListener(e,ev=>{ev.preventDefault();dz.classList.add("over")}));
+  ["dragleave","drop"].forEach(e=>dz.addEventListener(e,ev=>{ev.preventDefault();dz.classList.remove("over")}));
+  dz.addEventListener("drop",ev=>fn([...ev.dataTransfer.files]));
+  inp.addEventListener("change",()=>fn([...inp.files]));
+}
+wire($("dx"),$("fx"),f=>f[0]&&loadExcel(f[0]));
+wire($("dm"),$("fm"),loadXml);
+
+async function loadExcel(f){
+  $("err").textContent="";
+  try{
+    const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});
+    const ws=wb.Sheets["Export"]||wb.Sheets[wb.SheetNames[0]];
+    const data=XLSX.utils.sheet_to_json(ws,{defval:""});
+    if(!data.length)throw new Error("The sheet has no rows.");
+    const keys=Object.keys(data[0]);
+    const bk=keys.find(k=>/^buyer$/i.test(k.trim()));
+    const ak=keys.find(k=>/certified\s*amount/i.test(k));
+    if(!bk||!ak)throw new Error("Could not find the Buyer and Certified Amount columns.");
+    buyers={};
+    data.forEach(r=>{const b=String(r[bk]).trim();if(!b)return;
+      (buyers[b]=buyers[b]||{total:0,count:0});buyers[b].total+=pence(r[ak]);buyers[b].count++;});
+    xlsName=f.name;$("lx").textContent=f.name+" ("+data.length+" rows)";
+    renderBuyers();
+  }catch(e){$("err").textContent="Excel error: "+e.message;}
+}
+
+async function loadXml(files){
+  $("err").textContent="";xmls=[];
+  for(const f of files){
+    try{
+      const doc=new DOMParser().parseFromString(await f.text(),"application/xml");
+      if(doc.getElementsByTagName("parsererror").length)throw new Error("not valid XML");
+      const t=(el,n)=>{const x=el.getElementsByTagName(n)[0];return x?x.textContent.trim():""};
+      const txs=[...doc.getElementsByTagName("CdtTrfTxInf")];
+      const dbtr=doc.getElementsByTagName("Dbtr")[0];
+      xmls.push({name:f.name,debtor:dbtr?t(dbtr,"Nm"):"",
+        ctrl:pence(t(doc,"CtrlSum")),nb:parseInt(t(doc,"NbOfTxs")||"0",10),
+        sum:txs.reduce((a,x)=>a+pence(t(x,"InstdAmt")),0),cnt:txs.length});
+    }catch(e){$("err").textContent="XML error in "+f.name+": "+e.message;}
+  }
+  $("lm").innerHTML=xmls.map(x=>esc(x.name)).join("<br>");
+  renderBuyers();
+}
+
+function renderBuyers(){
+  const names=Object.keys(buyers).sort();
+  $("buyers").hidden=!names.length;
+  const prev={};document.querySelectorAll("#blist input").forEach(c=>prev[c.value]=c.checked);
+  const dn=xmls.map(x=>norm(x.debtor));
+  $("blist").innerHTML=names.map((b,i)=>{
+    const on=b in prev?prev[b]:dn.includes(norm(b));
+    return `<label class="buyer"><input type="checkbox" value="${esc(b)}" ${on?"checked":""}><span class="nm">${esc(b)}</span><span class="am">${buyers[b].count} rows<br>${fmt(buyers[b].total)}</span></label>`;}).join("");
+  $("go").disabled=!(names.length&&xmls.length);
+}
+
+$("go").onclick=()=>{
+  const sel=[...document.querySelectorAll("#blist input:checked")].map(c=>c.value);
+  const ign=Object.keys(buyers).filter(b=>!sel.includes(b));
+  const used=new Set();rows=[];
+  xmls.forEach(x=>{
+    const b=sel.find(s=>norm(s)===norm(x.debtor));
+    const hdrOk=x.ctrl===x.sum;
+    if(b){used.add(b);const ex=buyers[b].total,d=ex-x.ctrl;
+      rows.push({file:x.name,buyer:b,excel:ex,xml:x.ctrl,diff:d,hdr:hdrOk,calc:x.sum,ok:d===0&&hdrOk,note:d!==0?"Excel and XML control sum differ":(!hdrOk?"XML header does not equal its own transactions":"")});
+    }else{
+      rows.push({file:x.name,buyer:x.debtor||"(no debtor)",excel:null,xml:x.ctrl,diff:null,hdr:hdrOk,calc:x.sum,ok:false,note:"No ticked buyer matches this XML debtor"});
+    }
+  });
+  sel.filter(s=>!used.has(s)).forEach(s=>rows.push({file:"(none)",buyer:s,excel:buyers[s].total,xml:null,diff:null,hdr:true,calc:null,ok:false,note:"Selected buyer has no XML file"}));
+  const pass=rows.length&&rows.every(r=>r.ok);
+  const nf=rows.filter(r=>!r.ok).length;
+  $("out").innerHTML=`<div class="banner ${pass?"pass":"fail"}">${pass?"PASS":"FAIL"}<span>${pass?"All control sums agree.":nf+" of "+rows.length+" checks failed."} Checked ${new Date().toLocaleString("en-GB")}</span></div>
+  <div class="panel wrap"><h2>Control sum by buyer</h2><table><tr><th>Buyer</th><th>XML file</th><th class="n">Excel total</th><th class="n">XML control sum</th><th class="n">Difference</th><th>Result</th></tr>
+  ${rows.map(r=>`<tr><td>${esc(r.buyer)}</td><td>${esc(r.file)}</td><td class="n">${r.excel==null?"-":fmt(r.excel)}</td><td class="n">${r.xml==null?"-":fmt(r.xml)}</td><td class="n">${r.diff==null?"-":fmt(r.diff)}</td><td><span class="tag ${r.ok?"pass":"fail"}">${r.ok?"PASS":"FAIL"}</span>${r.note?"<br><small>"+esc(r.note)+"</small>":""}</td></tr>`).join("")}</table></div>
+  ${ign.length?`<div class="panel"><h2>Ignored buyers (not ticked)</h2>${ign.map(b=>`<div class="buyer"><span class="nm">${esc(b)}</span><span class="am">${fmt(buyers[b].total)}</span></div>`).join("")}</div>`:""}`;
+  $("csv").hidden=false;
+  $("out").scrollIntoView({behavior:"smooth"});
+};
+
+$("csv").onclick=()=>{
+  const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+  const lines=[["Buyer","XML file","Excel total","XML control sum","Difference","Result","Note"].map(q).join(",")]
+   .concat(rows.map(r=>[r.buyer,r.file,r.excel==null?"":fmt(r.excel).replace(/,/g,""),r.xml==null?"":fmt(r.xml).replace(/,/g,""),r.diff==null?"":fmt(r.diff).replace(/,/g,""),r.ok?"PASS":"FAIL",r.note].map(q).join(",")));
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/csv"}));
+  a.download="control-sum-check.csv";a.click();
+};
+</script>
+</body>
+</html>
