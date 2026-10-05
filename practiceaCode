@@ -32,4 +32,177 @@ input[type=search],select{border:1px solid var(--line);background:var(--panel);c
 .tag{display:inline-block;padding:1px 8px;border-radius:4px;font-weight:700;font-size:13px;white-space:nowrap}
 .tag.pass{background:var(--passbg);color:var(--pass)}.tag.fail{background:var(--failbg);color:var(--fail)}
 .banner{display:flex;align-items:center;gap:14px;border-radius:6px;padding:14px 18px;margin-bottom:12px;font-weight:700;font-size:22px}
-.banner span{font-size:15px;font-weight:400;color:var(--ink)}.banner.pass{
+.banner span{font-size:15px;font-weight:400;color:var(--ink)}.banner.pass{background:var(--passbg);color:var(--pass)}.banner.fail{background:var(--failbg);color:var(--fail)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 14px;text-align:left;color:var(--ink)!important;font-weight:400}
+.card b{display:block;font-size:26px}.card.on{border:2px solid var(--brand)}
+.card.f b{color:var(--fail)}.card.p b{color:var(--pass)}
+details.b{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--pass);border-radius:6px;margin-bottom:8px}
+details.b.f{border-left-color:var(--fail)}
+summary{cursor:pointer;padding:10px 12px;list-style:none}summary::-webkit-details-marker{display:none}
+summary::before{content:"▸";display:inline-block;width:1.1em;color:var(--mute)}details[open]>summary::before{content:"▾"}
+.sm{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.sm .nm{font-weight:600;flex:1 1 220px}
+.bd{padding:4px 12px 12px}.wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:15px}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--mute);font-weight:600;font-size:14px}.n{text-align:right;font-variant-numeric:tabular-nums}
+td.bad{background:var(--failbg);color:var(--fail);font-weight:700}
+
+:root{--xl:#1b5fa6;--xlbg:#e2edf9;--xm:#7b3fa0;--xmbg:#efe4f6}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--xl:#8fc0f5;--xlbg:#16304a;--xm:#d3a8f0;--xmbg:#35214a}}
+:root[data-theme="dark"]{--xl:#8fc0f5;--xlbg:#16304a;--xm:#d3a8f0;--xmbg:#35214a}
+table.fx{table-layout:fixed;min-width:600px}
+table.fx .tag{white-space:normal}
+th.xl,.tag.xl{background:var(--xlbg);color:var(--xl)}th.xm,.tag.xm{background:var(--xmbg);color:var(--xm)}
+td.xlc{color:var(--xl);font-weight:600}td.xmc{color:var(--xm);font-weight:600}
+.cap{font-size:13px;color:var(--mute);font-weight:400}
+main button.lnk{background:transparent!important;color:var(--ink)!important;padding:0;border:0;font-weight:600;text-align:left;cursor:pointer;font-size:15px}
+button.lnk::before{content:"\25B8  "}button.lnk[aria-expanded=true]::before{content:"\25BE  "}
+.h2t{margin-top:18px}
+.ok-row{display:none}.showok .ok-row{display:table-row}
+.dt{display:none}.dt.open{display:table-row}.dt>td{background:var(--bg);padding:10px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:760px){.two{grid-template-columns:1fr}}
+.pn h3{margin:0;padding:6px 10px;font-size:14px;border-radius:4px 4px 0 0}
+.xlp h3{background:var(--xlbg);color:var(--xl)}.xmp h3{background:var(--xmbg);color:var(--xm)}
+.pn table{background:var(--panel)}tr.tot td{font-weight:700;border-top:2px solid var(--line)}
+[hidden]{display:none!important}
+</style></head><body><main>
+<h1>Maturity Payment Check</h1>
+<p class="sub">Compares the Excel extract with the payment XML files for each SCF buyer. Files stay on this computer.</p>
+<div class="drops">
+<label class="drop" id="dx"><input type="file" id="fx" accept=".xlsx,.xls,.xlsm,.csv"><strong>Excel extract</strong><small>Drop the file here or tap to choose</small><div class="files" id="lx"></div></label>
+<label class="drop" id="dm"><input type="file" id="fm" accept=".xml" multiple><strong>Payment XML files</strong><small>Drop one or more files here or tap to choose</small><div class="files" id="lm"></div></label>
+</div>
+<div class="panel" id="buyers" hidden style="margin-top:14px">
+<div class="row sp"><h2 style="margin:0">Select the SCF buyers <span class="note" id="bcount"></span></h2>
+<div class="row"><input type="search" id="bq" placeholder="Search buyers"><button class="ghost" id="ba">Tick all</button><button class="ghost" id="bn">Clear</button></div></div>
+<div id="blist"></div>
+<p class="note">Ticked buyers are checked; the rest are ignored. Buyers matching an XML debtor name are ticked for you.</p>
+</div>
+<div class="row" style="margin:14px 0">
+<button id="go" disabled>Validate</button>
+<label>Penny payment limit &pound; <input type="number" id="pl" value="1.00" step="0.01" min="0" style="width:90px"></label>
+<button id="csv" class="ghost" hidden>Download CSV</button></div>
+<div id="err" class="note" style="color:var(--fail)"></div>
+<div id="out"></div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let buyers={},xmls=[],res=[],filt="all",q="";
+const fmt=p=>(p/100).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
+const pence=v=>Math.round(parseFloat(String(v).replace(/[^0-9.\-]/g,"")||0)*100);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+//<core>
+const norm=s=>String(s||"").toLowerCase().replace(/&/g," and ").replace(/\blimited\b/g,"ltd").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+function reconcile(buyers,xmls,sel,lim){
+const out=[],used=new Set();
+xmls.forEach(x=>{
+const b=sel.find(s=>norm(s)===norm(x.debtor));
+if(!b){out.push({buyer:x.debtor||"(no debtor)",file:x.name,ok:false,kind:"x",note:"No ticked buyer matches this XML debtor",lines:[]});return;}
+used.add(b);const B=buyers[b],A={},soldRows=[];let soldTot=0;
+B.rows.forEach(r=>{
+if(/sold/i.test(r.st)){soldRows.push(r);soldTot+=r.amt;}
+else{const k=norm(r.sup);(A[k]=A[k]||{name:r.sup,kind:"Approved",ex:0,xm:0,er:[],xt:[]}).ex+=r.amt;A[k].er.push(r);}});
+const hasSold=soldTot!==0,txs=x.txs.slice(),soldTx=hasSold&&txs.length?txs.pop():null;
+txs.forEach(t=>{const k=norm(t.name);(A[k]=A[k]||{name:t.name,kind:"Approved",ex:0,xm:0,er:[],xt:[]}).xm+=t.amt;A[k].xt.push(t);});
+const lines=[];
+Object.values(A).forEach(s=>{s.st=!s.xt.length?(s.ex!==0?"missing":null):!s.er.length?"extra":s.ex===s.xm?"ok":"diff";if(s.st)lines.push(s);});
+const nApp=Object.values(A).filter(s=>s.er.length&&s.ex!==0).length;
+const rank={diff:0,missing:1,extra:2,ok:3};
+lines.sort((a,c)=>rank[a.st]-rank[c.st]||a.name.localeCompare(c.name));
+if(hasSold){const s={name:"Sold (all suppliers combined)",kind:"Sold",ex:soldTot,xm:soldTx?soldTx.amt:0,er:soldRows,xt:soldTx?[soldTx]:[]};
+s.st=!soldTx?"missing":s.ex===s.xm?"ok":"diff";lines.unshift(s);}
+const penny=x.txs.filter(t=>t.amt>0&&t.amt<lim);
+const nSold=hasSold?1:0,cntEx=nApp+nSold,d=B.total-x.ctrl,cntOk=cntEx===x.nb,bad=lines.filter(s=>s.st!=="ok").length;
+out.push({buyer:b,file:x.name,kind:"m",ex:B.total,xc:x.ctrl,d,lim,penny,pennyOk:!penny.length,nApp,nSold,cntEx,nb:x.nb,cntOk,lines,bad,ok:d===0&&cntOk&&bad===0&&!penny.length});});
+sel.filter(s=>!used.has(s)).forEach(s=>out.push({buyer:s,file:"(none)",ok:false,kind:"n",note:"Selected buyer has no XML file",ex:buyers[s].total,lines:[]}));
+return out.sort((a,b)=>a.ok-b.ok||a.buyer.localeCompare(b.buyer));}
+//</core>
+function wire(dz,inp,fn){["dragenter","dragover"].forEach(e=>dz.addEventListener(e,ev=>{ev.preventDefault();dz.classList.add("over")}));
+["dragleave","drop"].forEach(e=>dz.addEventListener(e,ev=>{ev.preventDefault();dz.classList.remove("over")}));
+dz.addEventListener("drop",ev=>fn([...ev.dataTransfer.files]));inp.addEventListener("change",()=>fn([...inp.files]));}
+wire($("dx"),$("fx"),f=>f[0]&&loadExcel(f[0]));wire($("dm"),$("fm"),loadXml);
+
+async function loadExcel(f){$("err").textContent="";
+try{const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});
+const data=XLSX.utils.sheet_to_json(wb.Sheets["Export"]||wb.Sheets[wb.SheetNames[0]],{defval:""});
+if(!data.length)throw new Error("The sheet has no rows.");
+const ks=Object.keys(data[0]),k=re=>ks.find(x=>re.test(x.trim()));
+const K={b:k(/^buyer$/i),a:k(/certified\s*amount/i),s:k(/^supplier$/i),i:k(/^invoice/i),p:k(/^payable/i),st:k(/approval\s*status|^status$/i)};
+if(!K.b||!K.a||!K.s||!K.st)throw new Error("Need Buyer, Supplier, Certified Amount and Approval Status columns.");
+buyers={};data.forEach((r,n)=>{const b=String(r[K.b]).trim();if(!b)return;
+const B=buyers[b]=buyers[b]||{total:0,rows:[]},amt=pence(r[K.a]);B.total+=amt;
+B.rows.push({sup:String(r[K.s]).trim(),amt,inv:K.i?r[K.i]:"",pay:K.p?r[K.p]:"",st:String(r[K.st]).trim()});});
+$("lx").textContent=f.name+" ("+data.length+" rows)";renderBuyers();
+}catch(e){$("err").textContent="Excel error: "+e.message;}}
+
+async function loadXml(files){$("err").textContent="";xmls=[];
+for(const f of files){try{
+const doc=new DOMParser().parseFromString(await f.text(),"application/xml");
+if(doc.getElementsByTagName("parsererror").length)throw new Error("not valid XML");
+const t=(el,n)=>{const x=el.getElementsByTagName(n)[0];return x?x.textContent.trim():""};
+const txs=[...doc.getElementsByTagName("CdtTrfTxInf")].map(x=>{const c=x.getElementsByTagName("Cdtr")[0];
+return{name:c?t(c,"Nm"):"",amt:pence(t(x,"InstdAmt")),id:t(x,"EndToEndId")};});
+const d=doc.getElementsByTagName("Dbtr")[0];
+xmls.push({name:f.name,debtor:d?t(d,"Nm"):"",ctrl:pence(t(doc,"CtrlSum")),nb:parseInt(t(doc,"NbOfTxs")||"0",10),txs,sum:txs.reduce((a,x)=>a+x.amt,0)});
+}catch(e){$("err").textContent="XML error in "+f.name+": "+e.message;}}
+$("lm").innerHTML=xmls.map(x=>esc(x.name)).join("<br>");renderBuyers();}
+
+function renderBuyers(){
+const names=Object.keys(buyers).sort(),prev={};
+document.querySelectorAll("#blist input").forEach(c=>prev[c.value]=c.checked);
+const dn=xmls.map(x=>norm(x.debtor));$("buyers").hidden=!names.length;
+$("blist").innerHTML=names.map(b=>`<label class="bl" data-n="${esc(b.toLowerCase())}"><input type="checkbox" value="${esc(b)}" ${(b in prev?prev[b]:dn.includes(norm(b)))?"checked":""}><span class="nm">${esc(b)}</span><span class="am">${buyers[b].rows.length} rows<br>${fmt(buyers[b].total)}</span></label>`).join("");
+$("bcount").textContent="("+names.length+" in file)";$("go").disabled=!(names.length&&xmls.length);}
+$("bq").oninput=e=>document.querySelectorAll("#blist .bl").forEach(l=>l.hidden=!l.dataset.n.includes(e.target.value.toLowerCase()));
+const tickAll=v=>document.querySelectorAll("#blist .bl:not([hidden]) input").forEach(c=>c.checked=v);
+$("ba").onclick=()=>tickAll(true);$("bn").onclick=()=>tickAll(false);
+
+$("go").onclick=()=>{
+const sel=[...document.querySelectorAll("#blist input:checked")].map(c=>c.value);
+res=reconcile(buyers,xmls,sel,pence($("pl").value));filt="all";q="";draw();$("csv").hidden=false;$("out").scrollIntoView({behavior:"smooth"});};
+
+const L={ok:"Match",diff:"Amount differs",missing:"Missing in XML",extra:"Extra in XML"};
+function draw(){
+const f=res.filter(r=>r.ok).length,n=res.length,ign=Object.keys(buyers).length-res.filter(r=>r.kind!=="x").length;
+const list=res.filter(r=>(filt==="all"||(filt==="p")===r.ok)&&r.buyer.toLowerCase().includes(q));
+$("out").innerHTML=`<div class="banner ${f===n?"pass":"fail"}">${f===n?"PASS":"FAIL"}<span>${n-f} of ${n} checks failed. ${new Date().toLocaleString("en-GB")}</span></div>
+<div class="cards"><button class="card ${filt==="all"?"on":""}" data-f="all">All<b>${n}</b></button><button class="card f ${filt==="f"?"on":""}" data-f="f">Failed<b>${n-f}</b></button><button class="card p ${filt==="p"?"on":""}" data-f="p">Passed<b>${f}</b></button></div>
+<p class="note"><span class="tag xl">EXCEL</span> = trade platform extract &nbsp; <span class="tag xm">XML</span> = payment file</p><div class="row sp" style="margin-bottom:10px"><input type="search" id="rq" placeholder="Search buyer" value="${esc(q)}"><label><input type="checkbox" id="so" ${$("out").classList.contains("showok")?"checked":""}> Show matching transactions</label>
+<span><button class="ghost" id="ea">Expand all</button> <button class="ghost" id="ca">Collapse all</button></span></div>
+${list.map(item).join("")||'<p class="note">No buyers in this view.</p>'}
+${ign>0?`<p class="note">${ign} buyer(s) in the Excel were not ticked and are ignored.</p>`:""}`;
+document.querySelectorAll(".card").forEach(c=>c.onclick=()=>{filt=c.dataset.f;draw()});
+$("rq").oninput=e=>{q=e.target.value.toLowerCase();const p=e.target.selectionStart;draw();$("rq").focus();$("rq").setSelectionRange(p,p)};
+$("so").onchange=e=>$("out").classList.toggle("showok",e.target.checked);
+$("ea").onclick=()=>document.querySelectorAll("details.b").forEach(d=>d.open=true);
+$("ca").onclick=()=>document.querySelectorAll("details.b").forEach(d=>d.open=false);}
+
+function item(r){
+const T=(ok,t)=>`<span class="tag ${ok?"pass":"fail"}">${t}</span>`;
+if(r.kind!=="m")return`<details class="b f"><summary class="sm">${T(0,"FAIL")}<span class="nm">${esc(r.buyer)}</span><span class="note">${esc(r.note)}${r.ex!=null?" ("+fmt(r.ex)+")":""} - ${esc(r.file)}</span></summary></details>`;
+const cols='<colgroup><col style="width:34%"><col style="width:18%"><col style="width:18%"><col style="width:17%"><col style="width:13%"></colgroup>';
+const head=a=>`<tr><th>${a}</th><th class="n xl">EXCEL</th><th class="n xm">XML</th><th class="n">Difference</th><th>Result</th></tr>`;
+const none=n=>`<tr><td colspan="${n}" class="note">None</td></tr>`;
+const exP=s=>`<div class="pn xlp"><h3>EXCEL: ${s.er.length} invoice row(s)</h3><div class="wrap"><table><tr><th>Invoice</th><th>Payable</th><th>Supplier</th><th class="n">Amount</th></tr>${s.er.map(e=>`<tr><td>${esc(e.inv)}</td><td>${esc(e.pay)}</td><td>${esc(e.sup)}</td><td class="n">${fmt(e.amt)}</td></tr>`).join("")||none(4)}<tr class="tot"><td colspan="3">Total</td><td class="n">${fmt(s.ex)}</td></tr></table></div></div>`;
+const xmP=s=>`<div class="pn xmp"><h3>XML: ${s.xt.length} transaction(s)${s.kind==="Sold"?" (last one in file)":""}</h3><div class="wrap"><table><tr><th>End-to-end ID</th><th>Name in XML</th><th class="n">Amount</th></tr>${s.xt.map(t=>`<tr><td>${esc(t.id)}</td><td>${esc(t.name)}</td><td class="n">${fmt(t.amt)}</td></tr>`).join("")||none(3)}<tr class="tot"><td colspan="2">Total</td><td class="n">${fmt(s.xm)}</td></tr></table></div></div>`;
+const row=s=>{const sold=s.kind==="Sold",pen=s.xt.some(t=>t.amt>0&&t.amt<r.lim),k=s.st==="ok";
+return`<tr class="tr ${k&&!pen?"ok-row":""}"><td><button class="lnk" aria-expanded="false">${esc(sold?"Sold (combined)":s.name)}</button><div class="cap">${sold?"All Sold invoices = 1 XML transaction (the last one)":"Approved supplier"}${pen?` <span class="tag fail">Penny payment</span>`:""}</div></td><td class="n xlc">${fmt(s.ex)}</td><td class="n xmc">${fmt(s.xm)}</td><td class="n ${k?"":"bad"}">${fmt(s.ex-s.xm)}</td><td>${T(k,L[s.st])}</td></tr>
+<tr class="dt"><td colspan="5"><div class="two">${exP(s)}${xmP(s)}</div></td></tr>`;};
+return`<details class="b ${r.ok?"":"f"}"><summary class="sm">${T(r.ok,r.ok?"PASS":"FAIL")}<span class="nm">${esc(r.buyer)}</span>${T(r.d===0,r.d===0?"Sum OK":"Sum "+fmt(r.d))}${T(r.cntOk,"Count "+r.cntEx+(r.cntOk?"":" vs "+r.nb))}${T(!r.bad,r.bad?r.bad+" transaction issue"+(r.bad>1?"s":""):"Transactions OK")}${r.pennyOk?"":T(0,r.penny.length+" penny payment"+(r.penny.length>1?"s":""))}</summary>
+<div class="bd"><p class="note">XML file: ${esc(r.file)}</p>
+<div class="wrap"><table class="fx">${cols}${head("Check")}
+<tr><td>Control sum<div class="cap">Sum of Certified Amount vs CtrlSum</div></td><td class="n xlc">${fmt(r.ex)}</td><td class="n xmc">${fmt(r.xc)}</td><td class="n ${r.d?"bad":""}">${fmt(r.d)}</td><td>${T(!r.d,r.d?"FAIL":"PASS")}</td></tr>
+<tr><td>Transaction count<div class="cap">${r.nApp} approved supplier(s) + ${r.nSold} sold, vs NbOfTxs</div></td><td class="n xlc">${r.cntEx}</td><td class="n xmc">${r.nb}</td><td class="n ${r.cntOk?"":"bad"}">${r.cntEx-r.nb}</td><td>${T(r.cntOk,r.cntOk?"PASS":"FAIL")}</td></tr>
+<tr><td>Penny payments<div class="cap">${r.penny.length?esc(r.penny.map(t=>fmt(t.amt)+" ("+t.name+")").join(", ")):"Flags XML payments above 0.00 and below "+fmt(r.lim)}</div></td><td class="n xlc">-</td><td class="n xmc">${r.penny.length}</td><td class="n">-</td><td>${T(r.pennyOk,r.pennyOk?"PASS":"FAIL")}</td></tr></table></div>
+<h2 class="h2t">Transaction reconciliation</h2><p class="note">One row per XML transaction. Each Approved supplier is one transaction and all Sold invoices are combined into one. Click a name to see the invoices and the XML line.</p>
+<div class="wrap"><table class="fx">${cols}${head("Transaction")}${r.lines.map(row).join("")}</table></div></div></details>`;
+}
+$("out").onclick=e=>{const b=e.target.closest(".lnk");if(!b)return;const o=b.closest("tr").nextElementSibling.classList.toggle("open");b.setAttribute("aria-expanded",o);};
+$("csv").onclick=()=>{const c=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"',m=p=>p==null?"":(p/100).toFixed(2),o=[["Buyer","XML file","Level","Transaction","Excel","XML","Difference","Result"].map(c).join(",")];
+res.forEach(r=>{if(r.kind!=="m"){o.push([r.buyer,r.file,"Buyer","",m(r.ex),"","","FAIL: "+r.note].map(c).join(","));return}
+o.push([r.buyer,r.file,"Control sum","",m(r.ex),m(r.xc),m(r.d),r.d?"FAIL":"PASS"].map(c).join(","));
+o.push([r.buyer,r.file,"Count","",r.cntEx,r.nb,r.cntEx-r.nb,r.cntOk?"PASS":"FAIL"].map(c).join(","));
+o.push([r.buyer,r.file,"Penny payments",r.penny.map(t=>t.name+" "+m(t.amt)).join("; "),"",r.penny.length,"",r.pennyOk?"PASS":"FAIL"].map(c).join(","));
+r.lines.forEach(s=>o.push([r.buyer,r.file,s.kind,s.name,m(s.ex),m(s.xm),m(s.ex-s.xm),L[s.st]].map(c).join(",")));});
+const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([o.join("\n")],{type:"text/csv"}));a.download="maturity-check.csv";a.click();};
+</script></body></html>
