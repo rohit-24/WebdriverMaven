@@ -1,208 +1,164 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Maturity Payment Check</title>
+<title>Maturity Payment Check - Overview</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f3f5f4;--panel:#fff;--ink:#14231f;--mute:#5d6b66;--line:#d5dcd9;--brand:#0b4a3c;--pass:#0f7a43;--passbg:#e0f2e8;--fail:#b3261e;--failbg:#fbe4e2}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1714;--panel:#16221e;--ink:#e6eeeb;--mute:#93a39d;--line:#2a3b35;--brand:#5cc5a5;--pass:#5fd394;--passbg:#12301f;--fail:#ff8a80;--failbg:#3a1a18}}
-:root[data-theme="dark"]{--bg:#0e1714;--panel:#16221e;--ink:#e6eeeb;--mute:#93a39d;--line:#2a3b35;--brand:#5cc5a5;--pass:#5fd394;--passbg:#12301f;--fail:#ff8a80;--failbg:#3a1a18}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f3f5f4;--panel:#fff;--ink:#14231f;--mute:#5d6b66;--line:#d5dcd9;--brand:#0b4a3c;--pass:#0f7a43;--passbg:#e0f2e8;--fail:#b3261e;--failbg:#fbe4e2;--xl:#1b5fa6;--xlbg:#e2edf9;--xm:#7b3fa0;--xmbg:#efe4f6}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1714;--panel:#16221e;--ink:#e6eeeb;--mute:#93a39d;--line:#2a3b35;--brand:#5cc5a5;--pass:#5fd394;--passbg:#12301f;--fail:#ff8a80;--failbg:#3a1a18;--xl:#8fc0f5;--xlbg:#16304a;--xm:#d3a8f0;--xmbg:#35214a}}
+:root[data-theme="dark"]{--bg:#0e1714;--panel:#16221e;--ink:#e6eeeb;--mute:#93a39d;--line:#2a3b35;--brand:#5cc5a5;--pass:#5fd394;--passbg:#12301f;--fail:#ff8a80;--failbg:#3a1a18;--xl:#8fc0f5;--xlbg:#16304a;--xm:#d3a8f0;--xmbg:#35214a}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Source Sans 3",system-ui,Segoe UI,sans-serif}
-main{max-width:1040px;margin:0 auto;padding:20px 16px 48px}
-h1{font-size:26px;margin:0 0 2px;color:var(--brand)}h2{font-size:17px;margin:0 0 10px}
-.sub,.note{color:var(--mute)}.sub{margin:0 0 16px}.note{font-size:14px;margin:6px 0 0}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:14px}
-.drops{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:640px){.drops{grid-template-columns:1fr}}
-.drop{border:2px dashed var(--line);border-radius:6px;padding:20px 14px;text-align:center;cursor:pointer;display:block}
-.drop.over{border-color:var(--brand)}.drop strong{display:block;font-size:17px}.drop small{color:var(--mute)}.drop input{display:none}
-.files{margin-top:6px;font-size:14px;color:var(--mute);word-break:break-all}
-button,select,input[type=search]{font:inherit}
-button{font-weight:600;border:0;border-radius:6px;padding:10px 18px;cursor:pointer;background:var(--brand);color:#fff}
-:root:not([data-theme="light"]) button:not(.ghost){color:#06201a}
-button.ghost{background:transparent;color:var(--brand);border:1px solid var(--brand);padding:6px 12px;font-size:14px}
-button:disabled{opacity:.4;cursor:not-allowed}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 "Source Sans 3",system-ui,Segoe UI,sans-serif}
+header{padding:22px 16px 8px;max-width:900px;margin:0 auto}
+h1{margin:0;font-size:28px;color:var(--brand);line-height:1.2}header p{margin:4px 0 0;color:var(--mute)}
+nav{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;border-bottom:1px solid var(--line)}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 16px;max-width:900px;margin:0 auto}
+.tabs button{flex:0 0 auto;font:inherit;font-size:15px;font-weight:600;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:7px 14px;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--brand);color:#fff;border-color:var(--brand)}
+:root:not([data-theme="light"]) .tabs button[aria-selected=true]{color:#06201a}
 :focus-visible{outline:3px solid var(--brand);outline-offset:2px}
-input[type=search],select{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:7px 10px}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row.sp{justify-content:space-between}
-#blist{max-height:230px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;margin-top:8px}
-.bl{display:flex;gap:10px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--line)}.bl:last-child{border:0}
-.bl .nm{flex:1}.bl .am{font-size:14px;color:var(--mute);text-align:right;font-variant-numeric:tabular-nums}
-.tag{display:inline-block;padding:1px 8px;border-radius:4px;font-weight:700;font-size:13px;white-space:nowrap}
-.tag.pass{background:var(--passbg);color:var(--pass)}.tag.fail{background:var(--failbg);color:var(--fail)}
-.banner{display:flex;align-items:center;gap:14px;border-radius:6px;padding:14px 18px;margin-bottom:12px;font-weight:700;font-size:22px}
-.banner span{font-size:15px;font-weight:400;color:var(--ink)}.banner.pass{background:var(--passbg);color:var(--pass)}.banner.fail{background:var(--failbg);color:var(--fail)}
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 14px;text-align:left;color:var(--ink)!important;font-weight:400}
-.card b{display:block;font-size:26px}.card.on{border:2px solid var(--brand)}
-.card.f b{color:var(--fail)}.card.p b{color:var(--pass)}
-details.b{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--pass);border-radius:6px;margin-bottom:8px}
-details.b.f{border-left-color:var(--fail)}
-summary{cursor:pointer;padding:10px 12px;list-style:none}summary::-webkit-details-marker{display:none}
-summary::before{content:"▸";display:inline-block;width:1.1em;color:var(--mute)}details[open]>summary::before{content:"▾"}
-.sm{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.sm .nm{font-weight:600;flex:1 1 220px}
-.bd{padding:4px 12px 12px}.wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:15px}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
-th{color:var(--mute);font-weight:600;font-size:14px}.n{text-align:right;font-variant-numeric:tabular-nums}
-td.bad{background:var(--failbg);color:var(--fail);font-weight:700}
+main{max-width:900px;margin:0 auto;padding:16px 16px 56px}
+section{display:none}section.on{display:block}
+h2{font-size:22px;margin:0 0 6px}h3{font-size:17px;margin:0 0 4px}
+.lead{font-size:19px;margin:0 0 14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:12px}
+.grid .card{margin:0}.big{font-size:30px;font-weight:700;color:var(--brand);line-height:1.1}
+.mute{color:var(--mute)}.small{font-size:15px}
+.tag{display:inline-block;padding:1px 9px;border-radius:4px;font-weight:700;font-size:13px}
+.pass{background:var(--passbg);color:var(--pass)}.fail{background:var(--failbg);color:var(--fail)}.xl{background:var(--xlbg);color:var(--xl)}.xm{background:var(--xmbg);color:var(--xm)}
+.step{display:flex;gap:12px;align-items:flex-start}.num{flex:0 0 32px;height:32px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+:root:not([data-theme="light"]) .num{color:#06201a}
+ul{margin:6px 0 0;padding-left:20px}li{margin:3px 0}
+table{width:100%;border-collapse:collapse;font-size:15px}th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:var(--mute)}
+.wrap{overflow-x:auto}
+details{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin-bottom:8px}
+summary{cursor:pointer;padding:11px 14px;font-weight:600}details>div{padding:0 14px 12px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:640px){.two{grid-template-columns:1fr}}
+.tog{display:flex;gap:6px;margin-bottom:10px}.tog button{font:inherit;font-weight:600;padding:6px 14px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.tog button[aria-pressed=true]{background:var(--brand);color:#fff;border-color:var(--brand)}
+:root:not([data-theme="light"]) .tog button[aria-pressed=true]{color:#06201a}
+label.f{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}
+input[type=number]{font:inherit;width:150px;text-align:right;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink)}
+.banner{border-radius:8px;padding:12px 16px;font-weight:700;font-size:20px;margin:12px 0}
+.btn{font:inherit;font-weight:600;border:1px solid var(--brand);background:transparent;color:var(--brand);border-radius:6px;padding:7px 14px;cursor:pointer;margin-right:6px}
+.chk label{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.chk input:checked+span{color:var(--mute);text-decoration:line-through}
+</style></head><body>
+<header><h1>Maturity Payment Check</h1><p>A browser tool that checks the payment files against the trade platform data before money moves.</p></header>
+<nav><div class="tabs" role="tablist" id="tabs"></div></nav>
+<main>
 
-:root{--xl:#1b5fa6;--xlbg:#e2edf9;--xm:#7b3fa0;--xmbg:#efe4f6}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--xl:#8fc0f5;--xlbg:#16304a;--xm:#d3a8f0;--xmbg:#35214a}}
-:root[data-theme="dark"]{--xl:#8fc0f5;--xlbg:#16304a;--xm:#d3a8f0;--xmbg:#35214a}
-table.fx{table-layout:fixed;min-width:600px}
-table.fx .tag{white-space:normal}
-th.xl,.tag.xl{background:var(--xlbg);color:var(--xl)}th.xm,.tag.xm{background:var(--xmbg);color:var(--xm)}
-td.xlc{color:var(--xl);font-weight:600}td.xmc{color:var(--xm);font-weight:600}
-.cap{font-size:13px;color:var(--mute);font-weight:400}
-main button.lnk{background:transparent!important;color:var(--ink)!important;padding:0;border:0;font-weight:600;text-align:left;cursor:pointer;font-size:15px}
-button.lnk::before{content:"\25B8  "}button.lnk[aria-expanded=true]::before{content:"\25BE  "}
-.h2t{margin-top:18px}
-.ok-row{display:none}.showok .ok-row{display:table-row}
-.dt{display:none}.dt.open{display:table-row}.dt>td{background:var(--bg);padding:10px}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:760px){.two{grid-template-columns:1fr}}
-.pn h3{margin:0;padding:6px 10px;font-size:14px;border-radius:4px 4px 0 0}
-.xlp h3{background:var(--xlbg);color:var(--xl)}.xmp h3{background:var(--xmbg);color:var(--xm)}
-.pn table{background:var(--panel)}tr.tot td{font-weight:700;border-top:2px solid var(--line)}
-[hidden]{display:none!important}
-</style></head><body><main>
-<h1>Maturity Payment Check</h1>
-<p class="sub">Compares the Excel extract with the payment XML files for each SCF buyer. Files stay on this computer.</p>
-<div class="drops">
-<label class="drop" id="dx"><input type="file" id="fx" accept=".xlsx,.xls,.xlsm,.csv"><strong>Excel extract</strong><small>Drop the file here or tap to choose</small><div class="files" id="lx"></div></label>
-<label class="drop" id="dm"><input type="file" id="fm" accept=".xml" multiple><strong>Payment XML files</strong><small>Drop one or more files here or tap to choose</small><div class="files" id="lm"></div></label>
-</div>
-<div class="panel" id="buyers" hidden style="margin-top:14px">
-<div class="row sp"><h2 style="margin:0">Select the SCF buyers <span class="note" id="bcount"></span></h2>
-<div class="row"><input type="search" id="bq" placeholder="Search buyers"><button class="ghost" id="ba">Tick all</button><button class="ghost" id="bn">Clear</button></div></div>
-<div id="blist"></div>
-<p class="note">Ticked buyers are checked; the rest are ignored. Buyers matching an XML debtor name are ticked for you.</p>
-</div>
-<div class="row" style="margin:14px 0">
-<button id="go" disabled>Validate</button>
-<label>Penny payment limit &pound; <input type="number" id="pl" value="1.00" step="0.01" min="0" style="width:90px"></label>
-<button id="csv" class="ghost" hidden>Download CSV</button></div>
-<div id="err" class="note" style="color:var(--fail)"></div>
-<div id="out"></div>
+<section id="overview" data-t="Overview">
+<p class="lead">Before payments go out, this tool compares the Excel extract from the trade platform with the payment XML files, and shows PASS or FAIL for each buyer.</p>
+<div class="grid">
+<div class="card"><div class="big">1 + many</div>One Excel file and any number of XML payment files in</div>
+<div class="card"><div class="big">3 checks</div>Control sum, transaction count and transaction amounts for every buyer</div>
+<div class="card"><div class="big">0 uploads</div>Files are read inside the browser. Nothing leaves the machine.</div></div>
+<div class="card"><h3>Who uses it</h3>The operations user who checks maturity payments before they are executed.</div>
+<div class="card"><h3>What they get</h3>A dashboard with overall PASS/FAIL, a card for each buyer, and a drill-down from buyer to transaction to the exact invoices and XML line that explain a difference. Results can be downloaded as CSV.</div>
+</section>
+
+<section id="problem" data-t="The problem">
+<p class="lead">Today the comparison is done by hand, one buyer at a time.</p>
+<div class="tog" role="group" aria-label="View"><button aria-pressed="true" data-v="b">Today</button><button aria-pressed="false" data-v="a">With the utility</button></div>
+<div id="vb">
+<div class="card"><h3>Manual process</h3><ul><li>Build an Excel pivot for each buyer and read the totals.</li><li>Open each XML in a text editor and find the control sum, the transaction count and each amount.</li><li>Compare numbers by eye, supplier by supplier.</li></ul></div>
+<div class="card"><h3>Why it hurts</h3><ul><li>Easy to miss a small difference in a large number.</li><li>Slow, and it gets slower with 30-40 buyers.</li><li>No record of what was checked or how.</li><li>The cost of a miss is a wrong payment to a customer.</li></ul></div></div>
+<div id="va" hidden>
+<div class="card"><h3>With the utility</h3><ul><li>Upload the files, tick the SCF buyers, click Validate.</li><li>Every check is done the same way every time, to the penny.</li><li>Failed buyers are sorted to the top, with the difference highlighted.</li><li>Drill down to see why, instead of searching through files.</li></ul></div>
+<div class="card"><h3>Benefit</h3>Faster checks, fewer human errors, consistent results across the team, and a clear view of exceptions before payment.</div></div>
+</section>
+
+<section id="how" data-t="How it works">
+<div class="card step"><div class="num">1</div><div><h3>Upload</h3>Drop the Excel extract and the XML files (several at once).</div></div>
+<div class="card step"><div class="num">2</div><div><h3>Pick the SCF buyers</h3>The tool lists every Buyer in the Excel. Buyers whose name matches an XML debtor are pre-ticked. Unticked buyers are ignored and counted in a note.</div></div>
+<div class="card step"><div class="num">3</div><div><h3>Validate</h3>One click runs all checks for every ticked buyer.</div></div>
+<div class="card step"><div class="num">4</div><div><h3>Read the dashboard</h3>Overall PASS/FAIL, counts of passed and failed buyers, search, and filters.</div></div>
+<div class="card step"><div class="num">5</div><div><h3>Drill down</h3>Buyer, then transaction, then the Excel invoices side by side with the XML line. <span class="tag xl">EXCEL</span> is blue and <span class="tag xm">XML</span> is purple.</div></div>
+<h2 style="margin-top:20px">The three checks</h2>
+<div class="card"><h3>1. Control sum</h3>Total Certified Amount for the buyer in Excel must equal <code>CtrlSum</code> in the XML.</div>
+<div class="card"><h3>2. Transaction count</h3>Each Approved supplier with a non-zero total counts as 1 transaction. All Sold invoices together count as 1. The total must equal <code>NbOfTxs</code>.</div>
+<div class="card"><h3>3. Transaction amounts</h3>Each Approved supplier's total must equal its XML amount (matched by name). The combined Sold total must equal the last XML transaction, whatever name it carries.</div>
+<p class="small mute">A buyer passes only when all three checks pass. A ticked buyer with no XML, or an XML with no ticked buyer, fails.</p>
+</section>
+
+<section id="try" data-t="Try it">
+<p class="lead">A small example with the Affiliate Supply numbers. Change the XML values and watch the checks.</p>
+<div class="card"><h3><span class="tag xl">EXCEL</span> Trade platform data</h3>
+<div class="wrap"><table><tr><th>Status</th><th>Supplier</th><th style="text-align:right">Certified Amount</th></tr>
+<tr><td>Approved</td><td>Test Sup 2 (many invoices)</td><td style="text-align:right">5,512,000.00</td></tr>
+<tr><td>Sold</td><td>Supplier One</td><td style="text-align:right">2,000,000.00</td></tr>
+<tr><td>Sold</td><td>Test Sup 2</td><td style="text-align:right">1,000,000.00</td></tr></table></div>
+<p class="small mute" style="margin:6px 0 0">Total 8,512,000.00. Expected transactions: 1 approved supplier + 1 combined Sold = 2.</p></div>
+<div class="card"><h3><span class="tag xm">XML</span> Payment file (edit these)</h3>
+<label class="f">Control sum (CtrlSum)<input type="number" step="0.01" id="d0" value="8512000"></label>
+<label class="f">Number of transactions (NbOfTxs)<input type="number" step="1" id="d1" value="2"></label>
+<label class="f">Line 1: Test Sup 2<input type="number" step="0.01" id="d2" value="5512000"></label>
+<label class="f">Last line: Lloyds Demo Funder<input type="number" step="0.01" id="d3" value="3000000"></label></div>
+<button class="btn" id="r1">Reset</button><button class="btn" id="r2">Break the Sold amount by 1p</button><button class="btn" id="r3">Add a stray extra payment</button>
+<div class="banner" id="db"></div><div class="card" id="dr"></div>
+</section>
+
+<section id="tech" data-t="Tech stack">
+<p class="lead">A single HTML file. No server, no install, no database.</p>
+<div class="card wrap"><table><tr><th>Part</th><th>Choice</th><th>Why</th></tr>
+<tr><td>App</td><td>HTML, CSS and plain JavaScript</td><td>Opens in any browser; easy to share and review</td></tr>
+<tr><td>Excel reading</td><td>SheetJS 0.18.5 (loaded from cdnjs)</td><td>Reads .xlsx in the browser</td></tr>
+<tr><td>XML reading</td><td>Browser DOMParser</td><td>Built in; pain.001.001.03 fields read directly</td></tr>
+<tr><td>Money</td><td>Whole pence as integers</td><td>No floating-point rounding errors</td></tr>
+<tr><td>Export</td><td>CSV generated in the browser</td><td>No server needed</td></tr>
+<tr><td>Privacy</td><td>All processing local</td><td>Bank data never uploaded</td></tr></table></div>
+<div class="card"><h3>Quality so far</h3>The matching logic is a separate function, tested with scripts on sample data shaped like the ASDA, Affiliate Supply and Travis Perkins cases. It needs testing on a full real data set before reliance.</div>
+<div class="card"><h3>Production options</h3><ul><li>Keep it as a single file and embed the Excel library so it works offline.</li><li>Or package it as a desktop or internal web app (for example Python with FastAPI, or a React front end) if shared storage, login and approvals are needed.</li></ul></div>
+</section>
+
+<section id="assume" data-t="Assumptions">
+<p class="lead">Tap each group. These are the rules the tool follows today.</p>
+<details open><summary>Excel input</summary><div><ul><li>Data is on a sheet named <code>Export</code>, or the first sheet.</li><li>Columns: Buyer, Supplier, Certified Amount, Approval Status (Invoice # and Payable # are optional).</li><li>Buyer is the program. The user ticks SCF buyers; there is no automatic SCF/RP rule yet.</li><li>All rows are read, including rows hidden by an Excel filter.</li><li>Fee, Advanced Amount, currency and dates are ignored. Everything is assumed to be GBP.</li></ul></div></details>
+<details><summary>XML input</summary><div><ul><li>Files follow pain.001.001.03.</li><li>One XML covers one buyer, linked by the debtor name (<code>Dbtr/Nm</code>).</li><li>Names match after ignoring case, punctuation, "&" versus "and", and Ltd versus Limited. There is no fuzzy matching.</li></ul></div></details>
+<details><summary>Validation rules</summary><div><ul><li>Amounts must match exactly, with no tolerance.</li><li>Any status containing "Sold" is Sold. All other statuses are treated as Approved.</li><li>An Approved supplier whose total is zero is not in the XML and is not counted.</li><li>All Sold invoices combine into one XML transaction, and it is the last one in the file. The name on that line is ignored.</li></ul></div></details>
+<details><summary>Not covered yet</summary><div><ul><li>Duplicate records, payment date, currency and account number checks.</li><li>Fee handling (for example a small extra funder line).</li><li>Excel or PDF export, and a saved audit trail.</li></ul></div></details>
+</section>
+
+<section id="next" data-t="Next steps">
+<p class="lead">Ideas in a sensible order. Each one fits in the same single file.</p>
+<div class="card"><h3>Next</h3><ul><li>Embed the Excel library so it works fully offline.</li><li>Excel and PDF report with run ID, timestamp and file hashes (SHA-256).</li><li>Checker and approver name fields in the report.</li><li>One page listing all exceptions across buyers.</li></ul></div>
+<div class="card"><h3>Then</h3><ul><li>Duplicate, date and currency checks.</li><li>Suggested name matches for the user to confirm.</li><li>Saved SCF/RP choices and editable rules (tolerance, statuses).</li><li>Fee handling once the rule is confirmed.</li></ul></div>
+<div class="card"><h3>Later, if it becomes a shared control</h3><ul><li>Real login, maker-checker approval and a central audit log (needs a backend).</li><li>Automatic file pick-up and alerts when a check fails.</li><li>Support for other payment file formats.</li></ul></div>
+<div class="card"><h3>Limits of the single file</h3>No real user login, no central tamper-proof log, no automatic pick-up from systems. Anything saved in the browser can be cleared by the user.</div>
+</section>
+
+<section id="ask" data-t="To confirm">
+<p class="lead">Questions to settle with the team. Tick them off as you go.</p>
+<div class="card chk">
+<label><input type="checkbox"><span>How do we recognise an SCF buyer versus an RP buyer in the Excel?</span></label>
+<label><input type="checkbox"><span>Is the Sold payment always the last transaction in the XML?</span></label>
+<label><input type="checkbox"><span>Is the small extra funder line (for example 57.91 on Travis Perkins) a fee, and how should it be checked?</span></label>
+<label><input type="checkbox"><span>Is an exact match with zero tolerance acceptable?</span></label>
+<label><input type="checkbox"><span>Is one XML file always one buyer?</span></label>
+<label><input type="checkbox"><span>Should payment date and currency be checked?</span></label>
+<label><input type="checkbox"><span>What evidence is needed after each run (report, hashes, sign-off)?</span></label>
+<label><input type="checkbox"><span>Can the tool run from a local file on work laptops, or must it be hosted internally?</span></label></div>
+</section>
 </main>
 <script>
-const $=id=>document.getElementById(id);
-let buyers={},xmls=[],res=[],filt="all",q="";
-const fmt=p=>(p/100).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
-const pence=v=>Math.round(parseFloat(String(v).replace(/[^0-9.\-]/g,"")||0)*100);
-const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-//<core>
-const norm=s=>String(s||"").toLowerCase().replace(/&/g," and ").replace(/\blimited\b/g,"ltd").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
-function reconcile(buyers,xmls,sel,lim){
-const out=[],used=new Set();
-xmls.forEach(x=>{
-const b=sel.find(s=>norm(s)===norm(x.debtor));
-if(!b){out.push({buyer:x.debtor||"(no debtor)",file:x.name,ok:false,kind:"x",note:"No ticked buyer matches this XML debtor",lines:[]});return;}
-used.add(b);const B=buyers[b],A={},soldRows=[];let soldTot=0;
-B.rows.forEach(r=>{
-if(/sold/i.test(r.st)){soldRows.push(r);soldTot+=r.amt;}
-else{const k=norm(r.sup);(A[k]=A[k]||{name:r.sup,kind:"Approved",ex:0,xm:0,er:[],xt:[]}).ex+=r.amt;A[k].er.push(r);}});
-const hasSold=soldTot!==0,txs=x.txs.slice(),soldTx=hasSold&&txs.length?txs.pop():null;
-txs.forEach(t=>{const k=norm(t.name);(A[k]=A[k]||{name:t.name,kind:"Approved",ex:0,xm:0,er:[],xt:[]}).xm+=t.amt;A[k].xt.push(t);});
-const lines=[];
-Object.values(A).forEach(s=>{s.st=!s.xt.length?(s.ex!==0?"missing":null):!s.er.length?"extra":s.ex===s.xm?"ok":"diff";if(s.st)lines.push(s);});
-const nApp=Object.values(A).filter(s=>s.er.length&&s.ex!==0).length;
-const rank={diff:0,missing:1,extra:2,ok:3};
-lines.sort((a,c)=>rank[a.st]-rank[c.st]||a.name.localeCompare(c.name));
-if(hasSold){const s={name:"Sold (all suppliers combined)",kind:"Sold",ex:soldTot,xm:soldTx?soldTx.amt:0,er:soldRows,xt:soldTx?[soldTx]:[]};
-s.st=!soldTx?"missing":s.ex===s.xm?"ok":"diff";lines.unshift(s);}
-const penny=x.txs.filter(t=>t.amt>0&&t.amt<lim);
-const nSold=hasSold?1:0,cntEx=nApp+nSold,d=B.total-x.ctrl,cntOk=cntEx===x.nb,bad=lines.filter(s=>s.st!=="ok").length;
-out.push({buyer:b,file:x.name,kind:"m",ex:B.total,xc:x.ctrl,d,lim,penny,pennyOk:!penny.length,nApp,nSold,cntEx,nb:x.nb,cntOk,lines,bad,ok:d===0&&cntOk&&bad===0&&!penny.length});});
-sel.filter(s=>!used.has(s)).forEach(s=>out.push({buyer:s,file:"(none)",ok:false,kind:"n",note:"Selected buyer has no XML file",ex:buyers[s].total,lines:[]}));
-return out.sort((a,b)=>a.ok-b.ok||a.buyer.localeCompare(b.buyer));}
-//</core>
-function wire(dz,inp,fn){["dragenter","dragover"].forEach(e=>dz.addEventListener(e,ev=>{ev.preventDefault();dz.classList.add("over")}));
-["dragleave","drop"].forEach(e=>dz.addEventListener(e,ev=>{ev.preventDefault();dz.classList.remove("over")}));
-dz.addEventListener("drop",ev=>fn([...ev.dataTransfer.files]));inp.addEventListener("change",()=>fn([...inp.files]));}
-wire($("dx"),$("fx"),f=>f[0]&&loadExcel(f[0]));wire($("dm"),$("fm"),loadXml);
-
-async function loadExcel(f){$("err").textContent="";
-try{const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});
-const data=XLSX.utils.sheet_to_json(wb.Sheets["Export"]||wb.Sheets[wb.SheetNames[0]],{defval:""});
-if(!data.length)throw new Error("The sheet has no rows.");
-const ks=Object.keys(data[0]),k=re=>ks.find(x=>re.test(x.trim()));
-const K={b:k(/^buyer$/i),a:k(/certified\s*amount/i),s:k(/^supplier$/i),i:k(/^invoice/i),p:k(/^payable/i),st:k(/approval\s*status|^status$/i)};
-if(!K.b||!K.a||!K.s||!K.st)throw new Error("Need Buyer, Supplier, Certified Amount and Approval Status columns.");
-buyers={};data.forEach((r,n)=>{const b=String(r[K.b]).trim();if(!b)return;
-const B=buyers[b]=buyers[b]||{total:0,rows:[]},amt=pence(r[K.a]);B.total+=amt;
-B.rows.push({sup:String(r[K.s]).trim(),amt,inv:K.i?r[K.i]:"",pay:K.p?r[K.p]:"",st:String(r[K.st]).trim()});});
-$("lx").textContent=f.name+" ("+data.length+" rows)";renderBuyers();
-}catch(e){$("err").textContent="Excel error: "+e.message;}}
-
-async function loadXml(files){$("err").textContent="";xmls=[];
-for(const f of files){try{
-const doc=new DOMParser().parseFromString(await f.text(),"application/xml");
-if(doc.getElementsByTagName("parsererror").length)throw new Error("not valid XML");
-const t=(el,n)=>{const x=el.getElementsByTagName(n)[0];return x?x.textContent.trim():""};
-const txs=[...doc.getElementsByTagName("CdtTrfTxInf")].map(x=>{const c=x.getElementsByTagName("Cdtr")[0];
-return{name:c?t(c,"Nm"):"",amt:pence(t(x,"InstdAmt")),id:t(x,"EndToEndId")};});
-const d=doc.getElementsByTagName("Dbtr")[0];
-xmls.push({name:f.name,debtor:d?t(d,"Nm"):"",ctrl:pence(t(doc,"CtrlSum")),nb:parseInt(t(doc,"NbOfTxs")||"0",10),txs,sum:txs.reduce((a,x)=>a+x.amt,0)});
-}catch(e){$("err").textContent="XML error in "+f.name+": "+e.message;}}
-$("lm").innerHTML=xmls.map(x=>esc(x.name)).join("<br>");renderBuyers();}
-
-function renderBuyers(){
-const names=Object.keys(buyers).sort(),prev={};
-document.querySelectorAll("#blist input").forEach(c=>prev[c.value]=c.checked);
-const dn=xmls.map(x=>norm(x.debtor));$("buyers").hidden=!names.length;
-$("blist").innerHTML=names.map(b=>`<label class="bl" data-n="${esc(b.toLowerCase())}"><input type="checkbox" value="${esc(b)}" ${(b in prev?prev[b]:dn.includes(norm(b)))?"checked":""}><span class="nm">${esc(b)}</span><span class="am">${buyers[b].rows.length} rows<br>${fmt(buyers[b].total)}</span></label>`).join("");
-$("bcount").textContent="("+names.length+" in file)";$("go").disabled=!(names.length&&xmls.length);}
-$("bq").oninput=e=>document.querySelectorAll("#blist .bl").forEach(l=>l.hidden=!l.dataset.n.includes(e.target.value.toLowerCase()));
-const tickAll=v=>document.querySelectorAll("#blist .bl:not([hidden]) input").forEach(c=>c.checked=v);
-$("ba").onclick=()=>tickAll(true);$("bn").onclick=()=>tickAll(false);
-
-$("go").onclick=()=>{
-const sel=[...document.querySelectorAll("#blist input:checked")].map(c=>c.value);
-res=reconcile(buyers,xmls,sel,pence($("pl").value));filt="all";q="";draw();$("csv").hidden=false;$("out").scrollIntoView({behavior:"smooth"});};
-
-const L={ok:"Match",diff:"Amount differs",missing:"Missing in XML",extra:"Extra in XML"};
-function draw(){
-const f=res.filter(r=>r.ok).length,n=res.length,ign=Object.keys(buyers).length-res.filter(r=>r.kind!=="x").length;
-const list=res.filter(r=>(filt==="all"||(filt==="p")===r.ok)&&r.buyer.toLowerCase().includes(q));
-$("out").innerHTML=`<div class="banner ${f===n?"pass":"fail"}">${f===n?"PASS":"FAIL"}<span>${n-f} of ${n} checks failed. ${new Date().toLocaleString("en-GB")}</span></div>
-<div class="cards"><button class="card ${filt==="all"?"on":""}" data-f="all">All<b>${n}</b></button><button class="card f ${filt==="f"?"on":""}" data-f="f">Failed<b>${n-f}</b></button><button class="card p ${filt==="p"?"on":""}" data-f="p">Passed<b>${f}</b></button></div>
-<p class="note"><span class="tag xl">EXCEL</span> = trade platform extract &nbsp; <span class="tag xm">XML</span> = payment file</p><div class="row sp" style="margin-bottom:10px"><input type="search" id="rq" placeholder="Search buyer" value="${esc(q)}"><label><input type="checkbox" id="so" ${$("out").classList.contains("showok")?"checked":""}> Show matching transactions</label>
-<span><button class="ghost" id="ea">Expand all</button> <button class="ghost" id="ca">Collapse all</button></span></div>
-${list.map(item).join("")||'<p class="note">No buyers in this view.</p>'}
-${ign>0?`<p class="note">${ign} buyer(s) in the Excel were not ticked and are ignored.</p>`:""}`;
-document.querySelectorAll(".card").forEach(c=>c.onclick=()=>{filt=c.dataset.f;draw()});
-$("rq").oninput=e=>{q=e.target.value.toLowerCase();const p=e.target.selectionStart;draw();$("rq").focus();$("rq").setSelectionRange(p,p)};
-$("so").onchange=e=>$("out").classList.toggle("showok",e.target.checked);
-$("ea").onclick=()=>document.querySelectorAll("details.b").forEach(d=>d.open=true);
-$("ca").onclick=()=>document.querySelectorAll("details.b").forEach(d=>d.open=false);}
-
-function item(r){
-const T=(ok,t)=>`<span class="tag ${ok?"pass":"fail"}">${t}</span>`;
-if(r.kind!=="m")return`<details class="b f"><summary class="sm">${T(0,"FAIL")}<span class="nm">${esc(r.buyer)}</span><span class="note">${esc(r.note)}${r.ex!=null?" ("+fmt(r.ex)+")":""} - ${esc(r.file)}</span></summary></details>`;
-const cols='<colgroup><col style="width:34%"><col style="width:18%"><col style="width:18%"><col style="width:17%"><col style="width:13%"></colgroup>';
-const head=a=>`<tr><th>${a}</th><th class="n xl">EXCEL</th><th class="n xm">XML</th><th class="n">Difference</th><th>Result</th></tr>`;
-const none=n=>`<tr><td colspan="${n}" class="note">None</td></tr>`;
-const exP=s=>`<div class="pn xlp"><h3>EXCEL: ${s.er.length} invoice row(s)</h3><div class="wrap"><table><tr><th>Invoice</th><th>Payable</th><th>Supplier</th><th class="n">Amount</th></tr>${s.er.map(e=>`<tr><td>${esc(e.inv)}</td><td>${esc(e.pay)}</td><td>${esc(e.sup)}</td><td class="n">${fmt(e.amt)}</td></tr>`).join("")||none(4)}<tr class="tot"><td colspan="3">Total</td><td class="n">${fmt(s.ex)}</td></tr></table></div></div>`;
-const xmP=s=>`<div class="pn xmp"><h3>XML: ${s.xt.length} transaction(s)${s.kind==="Sold"?" (last one in file)":""}</h3><div class="wrap"><table><tr><th>End-to-end ID</th><th>Name in XML</th><th class="n">Amount</th></tr>${s.xt.map(t=>`<tr><td>${esc(t.id)}</td><td>${esc(t.name)}</td><td class="n">${fmt(t.amt)}</td></tr>`).join("")||none(3)}<tr class="tot"><td colspan="2">Total</td><td class="n">${fmt(s.xm)}</td></tr></table></div></div>`;
-const row=s=>{const sold=s.kind==="Sold",pen=s.xt.some(t=>t.amt>0&&t.amt<r.lim),k=s.st==="ok";
-return`<tr class="tr ${k&&!pen?"ok-row":""}"><td><button class="lnk" aria-expanded="false">${esc(sold?"Sold (combined)":s.name)}</button><div class="cap">${sold?"All Sold invoices = 1 XML transaction (the last one)":"Approved supplier"}${pen?` <span class="tag fail">Penny payment</span>`:""}</div></td><td class="n xlc">${fmt(s.ex)}</td><td class="n xmc">${fmt(s.xm)}</td><td class="n ${k?"":"bad"}">${fmt(s.ex-s.xm)}</td><td>${T(k,L[s.st])}</td></tr>
-<tr class="dt"><td colspan="5"><div class="two">${exP(s)}${xmP(s)}</div></td></tr>`;};
-return`<details class="b ${r.ok?"":"f"}"><summary class="sm">${T(r.ok,r.ok?"PASS":"FAIL")}<span class="nm">${esc(r.buyer)}</span>${T(r.d===0,r.d===0?"Sum OK":"Sum "+fmt(r.d))}${T(r.cntOk,"Count "+r.cntEx+(r.cntOk?"":" vs "+r.nb))}${T(!r.bad,r.bad?r.bad+" transaction issue"+(r.bad>1?"s":""):"Transactions OK")}${r.pennyOk?"":T(0,r.penny.length+" penny payment"+(r.penny.length>1?"s":""))}</summary>
-<div class="bd"><p class="note">XML file: ${esc(r.file)}</p>
-<div class="wrap"><table class="fx">${cols}${head("Check")}
-<tr><td>Control sum<div class="cap">Sum of Certified Amount vs CtrlSum</div></td><td class="n xlc">${fmt(r.ex)}</td><td class="n xmc">${fmt(r.xc)}</td><td class="n ${r.d?"bad":""}">${fmt(r.d)}</td><td>${T(!r.d,r.d?"FAIL":"PASS")}</td></tr>
-<tr><td>Transaction count<div class="cap">${r.nApp} approved supplier(s) + ${r.nSold} sold, vs NbOfTxs</div></td><td class="n xlc">${r.cntEx}</td><td class="n xmc">${r.nb}</td><td class="n ${r.cntOk?"":"bad"}">${r.cntEx-r.nb}</td><td>${T(r.cntOk,r.cntOk?"PASS":"FAIL")}</td></tr>
-<tr><td>Penny payments<div class="cap">${r.penny.length?esc(r.penny.map(t=>fmt(t.amt)+" ("+t.name+")").join(", ")):"Flags XML payments above 0.00 and below "+fmt(r.lim)}</div></td><td class="n xlc">-</td><td class="n xmc">${r.penny.length}</td><td class="n">-</td><td>${T(r.pennyOk,r.pennyOk?"PASS":"FAIL")}</td></tr></table></div>
-<h2 class="h2t">Transaction reconciliation</h2><p class="note">One row per XML transaction. Each Approved supplier is one transaction and all Sold invoices are combined into one. Click a name to see the invoices and the XML line.</p>
-<div class="wrap"><table class="fx">${cols}${head("Transaction")}${r.lines.map(row).join("")}</table></div></div></details>`;
-}
-$("out").onclick=e=>{const b=e.target.closest(".lnk");if(!b)return;const o=b.closest("tr").nextElementSibling.classList.toggle("open");b.setAttribute("aria-expanded",o);};
-$("csv").onclick=()=>{const c=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"',m=p=>p==null?"":(p/100).toFixed(2),o=[["Buyer","XML file","Level","Transaction","Excel","XML","Difference","Result"].map(c).join(",")];
-res.forEach(r=>{if(r.kind!=="m"){o.push([r.buyer,r.file,"Buyer","",m(r.ex),"","","FAIL: "+r.note].map(c).join(","));return}
-o.push([r.buyer,r.file,"Control sum","",m(r.ex),m(r.xc),m(r.d),r.d?"FAIL":"PASS"].map(c).join(","));
-o.push([r.buyer,r.file,"Count","",r.cntEx,r.nb,r.cntEx-r.nb,r.cntOk?"PASS":"FAIL"].map(c).join(","));
-o.push([r.buyer,r.file,"Penny payments",r.penny.map(t=>t.name+" "+m(t.amt)).join("; "),"",r.penny.length,"",r.pennyOk?"PASS":"FAIL"].map(c).join(","));
-r.lines.forEach(s=>o.push([r.buyer,r.file,s.kind,s.name,m(s.ex),m(s.xm),m(s.ex-s.xm),L[s.st]].map(c).join(",")));});
-const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([o.join("\n")],{type:"text/csv"}));a.download="maturity-check.csv";a.click();};
+const $=id=>document.getElementById(id),S=[...document.querySelectorAll("section")],tb=$("tabs");
+S.forEach((s,i)=>{const b=document.createElement("button");b.textContent=s.dataset.t;b.setAttribute("role","tab");b.onclick=()=>show(i);tb.appendChild(b)});
+function show(i){S.forEach((s,k)=>s.classList.toggle("on",k===i));[...tb.children].forEach((b,k)=>b.setAttribute("aria-selected",k===i));tb.children[i].scrollIntoView({inline:"center",block:"nearest"});window.scrollTo({top:0})}
+show(0);
+document.querySelectorAll(".tog button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tog button").forEach(x=>x.setAttribute("aria-pressed",x===b));$("vb").hidden=b.dataset.v!=="b";$("va").hidden=b.dataset.v!=="a"});
+const P=v=>Math.round((parseFloat(v)||0)*100),F=p=>(p/100).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
+const T=(ok)=>`<span class="tag ${ok?"pass":"fail"}">${ok?"PASS":"FAIL"}</span>`;
+function calc(){
+const x=[0,1,2,3].map(i=>$("d"+i).value),ctrl=P(x[0]),nb=parseInt(x[1])||0,l1=P(x[2]),l2=P(x[3]);
+const rows=[["Control sum",F(851200000),F(ctrl),ctrl===851200000],["Transaction count (1 approved + 1 sold)","2",String(nb),nb===2],["Approved: Test Sup 2",F(551200000),F(l1),l1===551200000],["Sold (combined) vs last XML line",F(300000000),F(l2),l2===300000000]];
+const all=rows.every(r=>r[3]);
+$("db").className="banner "+(all?"pass":"fail");$("db").textContent=all?"PASS: all checks agree":"FAIL: "+rows.filter(r=>!r[3]).length+" check(s) differ";
+$("dr").innerHTML='<div class="wrap"><table><tr><th>Check</th><th style="text-align:right"><span class="tag xl">EXCEL</span></th><th style="text-align:right"><span class="tag xm">XML</span></th><th>Result</th></tr>'+rows.map(r=>`<tr><td>${r[0]}</td><td style="text-align:right">${r[1]}</td><td style="text-align:right">${r[2]}</td><td>${T(r[3])}</td></tr>`).join("")+"</table></div>";}
+const set=a=>{a.forEach((v,i)=>$("d"+i).value=v);calc()};
+$("r1").onclick=()=>set([8512000,2,5512000,3000000]);
+$("r2").onclick=()=>set([8511999.99,2,5512000,2999999.99]);
+$("r3").onclick=()=>set([8512057.91,3,5512000,3000000]);
+[0,1,2,3].forEach(i=>$("d"+i).oninput=calc);calc();
 </script></body></html>
