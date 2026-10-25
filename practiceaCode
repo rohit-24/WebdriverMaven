@@ -1,164 +1,20 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Maturity Payment Check - Overview</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap">
-<style>
-:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f3f5f4;--panel:#fff;--ink:#14231f;--mute:#5d6b66;--line:#d5dcd9;--brand:#0b4a3c;--pass:#0f7a43;--passbg:#e0f2e8;--fail:#b3261e;--failbg:#fbe4e2;--xl:#1b5fa6;--xlbg:#e2edf9;--xm:#7b3fa0;--xmbg:#efe4f6}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1714;--panel:#16221e;--ink:#e6eeeb;--mute:#93a39d;--line:#2a3b35;--brand:#5cc5a5;--pass:#5fd394;--passbg:#12301f;--fail:#ff8a80;--failbg:#3a1a18;--xl:#8fc0f5;--xlbg:#16304a;--xm:#d3a8f0;--xmbg:#35214a}}
-:root[data-theme="dark"]{--bg:#0e1714;--panel:#16221e;--ink:#e6eeeb;--mute:#93a39d;--line:#2a3b35;--brand:#5cc5a5;--pass:#5fd394;--passbg:#12301f;--fail:#ff8a80;--failbg:#3a1a18;--xl:#8fc0f5;--xlbg:#16304a;--xm:#d3a8f0;--xmbg:#35214a}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 "Source Sans 3",system-ui,Segoe UI,sans-serif}
-header{padding:22px 16px 8px;max-width:900px;margin:0 auto}
-h1{margin:0;font-size:28px;color:var(--brand);line-height:1.2}header p{margin:4px 0 0;color:var(--mute)}
-nav{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;border-bottom:1px solid var(--line)}
-.tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 16px;max-width:900px;margin:0 auto}
-.tabs button{flex:0 0 auto;font:inherit;font-size:15px;font-weight:600;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:7px 14px;cursor:pointer}
-.tabs button[aria-selected=true]{background:var(--brand);color:#fff;border-color:var(--brand)}
-:root:not([data-theme="light"]) .tabs button[aria-selected=true]{color:#06201a}
-:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
-main{max-width:900px;margin:0 auto;padding:16px 16px 56px}
-section{display:none}section.on{display:block}
-h2{font-size:22px;margin:0 0 6px}h3{font-size:17px;margin:0 0 4px}
-.lead{font-size:19px;margin:0 0 14px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:12px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:12px}
-.grid .card{margin:0}.big{font-size:30px;font-weight:700;color:var(--brand);line-height:1.1}
-.mute{color:var(--mute)}.small{font-size:15px}
-.tag{display:inline-block;padding:1px 9px;border-radius:4px;font-weight:700;font-size:13px}
-.pass{background:var(--passbg);color:var(--pass)}.fail{background:var(--failbg);color:var(--fail)}.xl{background:var(--xlbg);color:var(--xl)}.xm{background:var(--xmbg);color:var(--xm)}
-.step{display:flex;gap:12px;align-items:flex-start}.num{flex:0 0 32px;height:32px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
-:root:not([data-theme="light"]) .num{color:#06201a}
-ul{margin:6px 0 0;padding-left:20px}li{margin:3px 0}
-table{width:100%;border-collapse:collapse;font-size:15px}th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:var(--mute)}
-.wrap{overflow-x:auto}
-details{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin-bottom:8px}
-summary{cursor:pointer;padding:11px 14px;font-weight:600}details>div{padding:0 14px 12px}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:640px){.two{grid-template-columns:1fr}}
-.tog{display:flex;gap:6px;margin-bottom:10px}.tog button{font:inherit;font-weight:600;padding:6px 14px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
-.tog button[aria-pressed=true]{background:var(--brand);color:#fff;border-color:var(--brand)}
-:root:not([data-theme="light"]) .tog button[aria-pressed=true]{color:#06201a}
-label.f{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}
-input[type=number]{font:inherit;width:150px;text-align:right;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink)}
-.banner{border-radius:8px;padding:12px 16px;font-weight:700;font-size:20px;margin:12px 0}
-.btn{font:inherit;font-weight:600;border:1px solid var(--brand);background:transparent;color:var(--brand);border-radius:6px;padding:7px 14px;cursor:pointer;margin-right:6px}
-.chk label{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--line);cursor:pointer}
-.chk input:checked+span{color:var(--mute);text-decoration:line-through}
-</style></head><body>
-<header><h1>Maturity Payment Check</h1><p>A browser tool that checks the payment files against the trade platform data before money moves.</p></header>
-<nav><div class="tabs" role="tablist" id="tabs"></div></nav>
-<main>
+You are the Prod Trade Support Problem Intelligence Agent. Your knowledge source is an export of ServiceNow problem records for ADM.SUPPORT.PAY-TRADE.
 
-<section id="overview" data-t="Overview">
-<p class="lead">Before payments go out, this tool compares the Excel extract from the trade platform with the payment XML files, and shows PASS or FAIL for each buyer.</p>
-<div class="grid">
-<div class="card"><div class="big">1 + many</div>One Excel file and any number of XML payment files in</div>
-<div class="card"><div class="big">3 checks</div>Control sum, transaction count and transaction amounts for every buyer</div>
-<div class="card"><div class="big">0 uploads</div>Files are read inside the browser. Nothing leaves the machine.</div></div>
-<div class="card"><h3>Who uses it</h3>The operations user who checks maturity payments before they are executed.</div>
-<div class="card"><h3>What they get</h3>A dashboard with overall PASS/FAIL, a card for each buyer, and a drill-down from buyer to transaction to the exact invoices and XML line that explain a difference. Results can be downloaded as CSV.</div>
-</section>
+Rules:
+1. Answer only from the Excel data. If the data doesn't contain the answer, say so. Never guess.
+2. Always cite problem numbers (PRB...) for every claim.
+3. For counts, totals or percentages, state the filter used and say if the figure is approximate. Suggest verifying in the Pivot sheet.
+4. Ignore records with Resolution code "Canceled" or "Duplicate" in trend and root cause analysis, unless asked.
+5. Calculate resolution time as Closed minus Opened, in days.
 
-<section id="problem" data-t="The problem">
-<p class="lead">Today the comparison is done by hand, one buyer at a time.</p>
-<div class="tog" role="group" aria-label="View"><button aria-pressed="true" data-v="b">Today</button><button aria-pressed="false" data-v="a">With the utility</button></div>
-<div id="vb">
-<div class="card"><h3>Manual process</h3><ul><li>Build an Excel pivot for each buyer and read the totals.</li><li>Open each XML in a text editor and find the control sum, the transaction count and each amount.</li><li>Compare numbers by eye, supplier by supplier.</li></ul></div>
-<div class="card"><h3>Why it hurts</h3><ul><li>Easy to miss a small difference in a large number.</li><li>Slow, and it gets slower with 30-40 buyers.</li><li>No record of what was checked or how.</li><li>The cost of a miss is a wrong payment to a customer.</li></ul></div></div>
-<div id="va" hidden>
-<div class="card"><h3>With the utility</h3><ul><li>Upload the files, tick the SCF buyers, click Validate.</li><li>Every check is done the same way every time, to the penny.</li><li>Failed buyers are sorted to the top, with the difference highlighted.</li><li>Drill down to see why, instead of searching through files.</li></ul></div>
-<div class="card"><h3>Benefit</h3>Faster checks, fewer human errors, consistent results across the team, and a clear view of exceptions before payment.</div></div>
-</section>
+Audiences:
+- Executives: lead with a 3-line summary, then top insights. Focus on business service, risk, trend and impact (Related Incidents). No technical jargon.
+- Engineering leads: focus on root cause code, repeat patterns, similar past problems and the fix applied (Resolution code, close notes).
+- QA: for any problem or release question, suggest regression or test scenarios that would have caught the issue.
 
-<section id="how" data-t="How it works">
-<div class="card step"><div class="num">1</div><div><h3>Upload</h3>Drop the Excel extract and the XML files (several at once).</div></div>
-<div class="card step"><div class="num">2</div><div><h3>Pick the SCF buyers</h3>The tool lists every Buyer in the Excel. Buyers whose name matches an XML debtor are pre-ticked. Unticked buyers are ignored and counted in a note.</div></div>
-<div class="card step"><div class="num">3</div><div><h3>Validate</h3>One click runs all checks for every ticked buyer.</div></div>
-<div class="card step"><div class="num">4</div><div><h3>Read the dashboard</h3>Overall PASS/FAIL, counts of passed and failed buyers, search, and filters.</div></div>
-<div class="card step"><div class="num">5</div><div><h3>Drill down</h3>Buyer, then transaction, then the Excel invoices side by side with the XML line. <span class="tag xl">EXCEL</span> is blue and <span class="tag xm">XML</span> is purple.</div></div>
-<h2 style="margin-top:20px">The three checks</h2>
-<div class="card"><h3>1. Control sum</h3>Total Certified Amount for the buyer in Excel must equal <code>CtrlSum</code> in the XML.</div>
-<div class="card"><h3>2. Transaction count</h3>Each Approved supplier with a non-zero total counts as 1 transaction. All Sold invoices together count as 1. The total must equal <code>NbOfTxs</code>.</div>
-<div class="card"><h3>3. Transaction amounts</h3>Each Approved supplier's total must equal its XML amount (matched by name). The combined Sold total must equal the last XML transaction, whatever name it carries.</div>
-<p class="small mute">A buyer passes only when all three checks pass. A ticked buyer with no XML, or an XML with no ticked buyer, fails.</p>
-</section>
+When a user pastes a new problem statement:
+- Find the 3 most similar past records.
+- Show their root cause, resolution and time to close.
+- Say whether this looks like a repeat issue.
 
-<section id="try" data-t="Try it">
-<p class="lead">A small example with the Affiliate Supply numbers. Change the XML values and watch the checks.</p>
-<div class="card"><h3><span class="tag xl">EXCEL</span> Trade platform data</h3>
-<div class="wrap"><table><tr><th>Status</th><th>Supplier</th><th style="text-align:right">Certified Amount</th></tr>
-<tr><td>Approved</td><td>Test Sup 2 (many invoices)</td><td style="text-align:right">5,512,000.00</td></tr>
-<tr><td>Sold</td><td>Supplier One</td><td style="text-align:right">2,000,000.00</td></tr>
-<tr><td>Sold</td><td>Test Sup 2</td><td style="text-align:right">1,000,000.00</td></tr></table></div>
-<p class="small mute" style="margin:6px 0 0">Total 8,512,000.00. Expected transactions: 1 approved supplier + 1 combined Sold = 2.</p></div>
-<div class="card"><h3><span class="tag xm">XML</span> Payment file (edit these)</h3>
-<label class="f">Control sum (CtrlSum)<input type="number" step="0.01" id="d0" value="8512000"></label>
-<label class="f">Number of transactions (NbOfTxs)<input type="number" step="1" id="d1" value="2"></label>
-<label class="f">Line 1: Test Sup 2<input type="number" step="0.01" id="d2" value="5512000"></label>
-<label class="f">Last line: Lloyds Demo Funder<input type="number" step="0.01" id="d3" value="3000000"></label></div>
-<button class="btn" id="r1">Reset</button><button class="btn" id="r2">Break the Sold amount by 1p</button><button class="btn" id="r3">Add a stray extra payment</button>
-<div class="banner" id="db"></div><div class="card" id="dr"></div>
-</section>
-
-<section id="tech" data-t="Tech stack">
-<p class="lead">A single HTML file. No server, no install, no database.</p>
-<div class="card wrap"><table><tr><th>Part</th><th>Choice</th><th>Why</th></tr>
-<tr><td>App</td><td>HTML, CSS and plain JavaScript</td><td>Opens in any browser; easy to share and review</td></tr>
-<tr><td>Excel reading</td><td>SheetJS 0.18.5 (loaded from cdnjs)</td><td>Reads .xlsx in the browser</td></tr>
-<tr><td>XML reading</td><td>Browser DOMParser</td><td>Built in; pain.001.001.03 fields read directly</td></tr>
-<tr><td>Money</td><td>Whole pence as integers</td><td>No floating-point rounding errors</td></tr>
-<tr><td>Export</td><td>CSV generated in the browser</td><td>No server needed</td></tr>
-<tr><td>Privacy</td><td>All processing local</td><td>Bank data never uploaded</td></tr></table></div>
-<div class="card"><h3>Quality so far</h3>The matching logic is a separate function, tested with scripts on sample data shaped like the ASDA, Affiliate Supply and Travis Perkins cases. It needs testing on a full real data set before reliance.</div>
-<div class="card"><h3>Production options</h3><ul><li>Keep it as a single file and embed the Excel library so it works offline.</li><li>Or package it as a desktop or internal web app (for example Python with FastAPI, or a React front end) if shared storage, login and approvals are needed.</li></ul></div>
-</section>
-
-<section id="assume" data-t="Assumptions">
-<p class="lead">Tap each group. These are the rules the tool follows today.</p>
-<details open><summary>Excel input</summary><div><ul><li>Data is on a sheet named <code>Export</code>, or the first sheet.</li><li>Columns: Buyer, Supplier, Certified Amount, Approval Status (Invoice # and Payable # are optional).</li><li>Buyer is the program. The user ticks SCF buyers; there is no automatic SCF/RP rule yet.</li><li>All rows are read, including rows hidden by an Excel filter.</li><li>Fee, Advanced Amount, currency and dates are ignored. Everything is assumed to be GBP.</li></ul></div></details>
-<details><summary>XML input</summary><div><ul><li>Files follow pain.001.001.03.</li><li>One XML covers one buyer, linked by the debtor name (<code>Dbtr/Nm</code>).</li><li>Names match after ignoring case, punctuation, "&" versus "and", and Ltd versus Limited. There is no fuzzy matching.</li></ul></div></details>
-<details><summary>Validation rules</summary><div><ul><li>Amounts must match exactly, with no tolerance.</li><li>Any status containing "Sold" is Sold. All other statuses are treated as Approved.</li><li>An Approved supplier whose total is zero is not in the XML and is not counted.</li><li>All Sold invoices combine into one XML transaction, and it is the last one in the file. The name on that line is ignored.</li></ul></div></details>
-<details><summary>Not covered yet</summary><div><ul><li>Duplicate records, payment date, currency and account number checks.</li><li>Fee handling (for example a small extra funder line).</li><li>Excel or PDF export, and a saved audit trail.</li></ul></div></details>
-</section>
-
-<section id="next" data-t="Next steps">
-<p class="lead">Ideas in a sensible order. Each one fits in the same single file.</p>
-<div class="card"><h3>Next</h3><ul><li>Embed the Excel library so it works fully offline.</li><li>Excel and PDF report with run ID, timestamp and file hashes (SHA-256).</li><li>Checker and approver name fields in the report.</li><li>One page listing all exceptions across buyers.</li></ul></div>
-<div class="card"><h3>Then</h3><ul><li>Duplicate, date and currency checks.</li><li>Suggested name matches for the user to confirm.</li><li>Saved SCF/RP choices and editable rules (tolerance, statuses).</li><li>Fee handling once the rule is confirmed.</li></ul></div>
-<div class="card"><h3>Later, if it becomes a shared control</h3><ul><li>Real login, maker-checker approval and a central audit log (needs a backend).</li><li>Automatic file pick-up and alerts when a check fails.</li><li>Support for other payment file formats.</li></ul></div>
-<div class="card"><h3>Limits of the single file</h3>No real user login, no central tamper-proof log, no automatic pick-up from systems. Anything saved in the browser can be cleared by the user.</div>
-</section>
-
-<section id="ask" data-t="To confirm">
-<p class="lead">Questions to settle with the team. Tick them off as you go.</p>
-<div class="card chk">
-<label><input type="checkbox"><span>How do we recognise an SCF buyer versus an RP buyer in the Excel?</span></label>
-<label><input type="checkbox"><span>Is the Sold payment always the last transaction in the XML?</span></label>
-<label><input type="checkbox"><span>Is the small extra funder line (for example 57.91 on Travis Perkins) a fee, and how should it be checked?</span></label>
-<label><input type="checkbox"><span>Is an exact match with zero tolerance acceptable?</span></label>
-<label><input type="checkbox"><span>Is one XML file always one buyer?</span></label>
-<label><input type="checkbox"><span>Should payment date and currency be checked?</span></label>
-<label><input type="checkbox"><span>What evidence is needed after each run (report, hashes, sign-off)?</span></label>
-<label><input type="checkbox"><span>Can the tool run from a local file on work laptops, or must it be hosted internally?</span></label></div>
-</section>
-</main>
-<script>
-const $=id=>document.getElementById(id),S=[...document.querySelectorAll("section")],tb=$("tabs");
-S.forEach((s,i)=>{const b=document.createElement("button");b.textContent=s.dataset.t;b.setAttribute("role","tab");b.onclick=()=>show(i);tb.appendChild(b)});
-function show(i){S.forEach((s,k)=>s.classList.toggle("on",k===i));[...tb.children].forEach((b,k)=>b.setAttribute("aria-selected",k===i));tb.children[i].scrollIntoView({inline:"center",block:"nearest"});window.scrollTo({top:0})}
-show(0);
-document.querySelectorAll(".tog button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tog button").forEach(x=>x.setAttribute("aria-pressed",x===b));$("vb").hidden=b.dataset.v!=="b";$("va").hidden=b.dataset.v!=="a"});
-const P=v=>Math.round((parseFloat(v)||0)*100),F=p=>(p/100).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
-const T=(ok)=>`<span class="tag ${ok?"pass":"fail"}">${ok?"PASS":"FAIL"}</span>`;
-function calc(){
-const x=[0,1,2,3].map(i=>$("d"+i).value),ctrl=P(x[0]),nb=parseInt(x[1])||0,l1=P(x[2]),l2=P(x[3]);
-const rows=[["Control sum",F(851200000),F(ctrl),ctrl===851200000],["Transaction count (1 approved + 1 sold)","2",String(nb),nb===2],["Approved: Test Sup 2",F(551200000),F(l1),l1===551200000],["Sold (combined) vs last XML line",F(300000000),F(l2),l2===300000000]];
-const all=rows.every(r=>r[3]);
-$("db").className="banner "+(all?"pass":"fail");$("db").textContent=all?"PASS: all checks agree":"FAIL: "+rows.filter(r=>!r[3]).length+" check(s) differ";
-$("dr").innerHTML='<div class="wrap"><table><tr><th>Check</th><th style="text-align:right"><span class="tag xl">EXCEL</span></th><th style="text-align:right"><span class="tag xm">XML</span></th><th>Result</th></tr>'+rows.map(r=>`<tr><td>${r[0]}</td><td style="text-align:right">${r[1]}</td><td style="text-align:right">${r[2]}</td><td>${T(r[3])}</td></tr>`).join("")+"</table></div>";}
-const set=a=>{a.forEach((v,i)=>$("d"+i).value=v);calc()};
-$("r1").onclick=()=>set([8512000,2,5512000,3000000]);
-$("r2").onclick=()=>set([8511999.99,2,5512000,2999999.99]);
-$("r3").onclick=()=>set([8512057.91,3,5512000,3000000]);
-[0,1,2,3].forEach(i=>$("d"+i).oninput=calc);calc();
-</script></body></html>
+Format: short answers, bullets, a small table when comparing. End with one suggested follow-up question.
