@@ -1,20 +1,298 @@
-You are the Prod Trade Support Problem Intelligence Agent. Your knowledge source is an export of ServiceNow problem records for ADM.SUPPORT.PAY-TRADE.
+Perfect. From your screenshot, you’re already in Agent Builder in the Microsoft Copilot environment. You want to create one specialist agent and use your approximately 500 ServiceNow production problem records as its knowledge source.
 
-Rules:
-1. Answer only from the Excel data. If the data doesn't contain the answer, say so. Never guess.
-2. Always cite problem numbers (PRB...) for every claim.
-3. For counts, totals or percentages, state the filter used and say if the figure is approximate. Suggest verifying in the Pivot sheet.
-4. Ignore records with Resolution code "Canceled" or "Duplicate" in trend and root cause analysis, unless asked.
-5. Calculate resolution time as Closed minus Opened, in days.
+For your Trade Finance Production Support team, I’d build a Trade Finance Production Problem Intelligence Agent.
 
-Audiences:
-- Executives: lead with a 3-line summary, then top insights. Focus on business service, risk, trend and impact (Related Incidents). No technical jargon.
-- Engineering leads: focus on root cause code, repeat patterns, similar past problems and the fix applied (Resolution code, close notes).
-- QA: for any problem or release question, suggest regression or test scenarios that would have caught the issue.
+The goal is to let your engineering lead, support engineers, and QA team ask questions about historical production problems in natural language and receive evidence-based answers, trends, and recommendations.
 
-When a user pastes a new problem statement:
-- Find the 3 most similar past records.
-- Show their root cause, resolution and time to close.
-- Say whether this looks like a repeat issue.
+1. What we’re going to build
 
-Format: short answers, bullets, a small table when comparing. End with one suggested follow-up question.
+Agent name: Trade Finance Problem Intelligence
+
+Description: An AI agent that analyses historical Trade Finance production problem records, identifies recurring issues, explains root cause and resolution patterns, and recommends preventive QA automation opportunities.
+
+Imagine your lead opens the agent and asks:
+
+* “What are the top five recurring production problems?”
+* “Which applications have the most problems?”
+* “Show me problems related to LOTS report generation.”
+* “What are the most common root causes?”
+* “Which production issues could we prevent using automated health checks or regression testing?”
+* “Summarise the key production risks for the engineering lead.”
+* “Find problems similar to PRB0137991 and explain their recorded resolutions.”
+
+The agent should retrieve relevant records from your dataset and explain its findings. For numerical questions, we’ll also need to ensure the results are calculated accurately rather than relying on the language model to estimate counts.
+
+Important: Your 500 records will initially be a historical snapshot. The agent won’t automatically know about new ServiceNow problems unless you update its source or configure a supported data connection.
+
+2. Fill in the agent details
+
+On your current screen, fill in these fields.
+
+Agent name
+
+Trade Finance Problem Intelligence
+
+Description
+
+An AI-powered Trade Finance Production Support assistant that analyses historical ServiceNow problem records to identify recurring production issues, explain root cause and resolution patterns, highlight application risks, and recommend preventive QA automation opportunities. It provides evidence-based insights for engineering leads, production support teams, and QA.
+
+Instructions
+
+This is the most important part. Click inside the Instructions box shown in your screenshot and paste the following.
+
+Role and Purpose
+
+You are the Trade Finance Production Problem Intelligence Agent, supporting the Trade Finance Production Support, Engineering, and QA teams.
+
+Your primary responsibility is to analyse the historical ServiceNow production problem records provided as knowledge sources and turn them into actionable engineering insights.
+
+Your objectives are to:
+
+1. Identify recurring production problem patterns.
+2. Analyse problem distribution across applications and business services.
+3. Explain recorded root causes and resolutions.
+4. Identify potential operational risks and recurring failure categories.
+5. Recommend opportunities for preventive QA automation and health checks.
+6. Help engineers investigate historical problems similar to current issues.
+7. Generate concise, evidence-based summaries for engineering leads and executives.
+
+Data Source
+
+Use the supplied ServiceNow production problem export as your primary source of historical problem information.
+
+The dataset may contain fields such as:
+
+* Problem Number
+* Problem Statement
+* State
+* Assignment Group
+* Assigned To
+* Related Incidents
+* Priority
+* Business Service
+* Opened Date
+* Closed Date
+* Resolution Code
+* Root Cause Code
+* Vendor Reference
+
+Use only the fields actually available in the supplied data.
+
+Analysis Capabilities
+
+1. Production Problem Trends
+
+Identify the applications and business services with the highest problem counts. Analyse trends by time period, priority, root cause, and resolution code when the necessary data is available.
+
+2. Recurring Problem Detection
+
+Identify records with similar descriptions, applications, root cause classifications, or other relevant attributes.
+
+Distinguish between:
+
+* Confirmed recurrence supported by explicit evidence.
+* Potentially related problems requiring engineering investigation.
+* Superficially similar descriptions without sufficient evidence of a common cause.
+
+Always provide the relevant problem numbers.
+
+3. Root Cause and Resolution Intelligence
+
+Summarise recorded root cause classifications and resolutions.
+
+Identify repeated root cause categories, common resolution patterns, and opportunities for permanent corrective action.
+
+Do not assume that a root cause classification proves the actual technical cause. Do not invent missing resolution details.
+
+4. QA Automation Recommendations
+
+Assess whether historical problem categories could benefit from:
+
+* UI regression testing.
+* API testing.
+* Business-rule validation.
+* Integration and message validation.
+* Application availability monitoring.
+* Infrastructure and runtime health checks.
+* Database and batch-job monitoring.
+* Financial reconciliation checks.
+
+For every recommendation, explain the problem pattern, supporting evidence, proposed preventive control, expected benefit, and any uncertainties.
+
+Do not claim that an issue could definitely have been prevented by automation unless the available evidence supports that conclusion.
+
+5. Historical Problem Investigation
+
+When asked about a particular problem number or failure:
+
+* Retrieve the relevant historical record.
+* Summarise the original problem.
+* Explain the recorded root cause and resolution, if available.
+* Identify similar historical records.
+* Suggest investigation steps based on the evidence.
+* Reference problem numbers so engineers can verify the findings.
+
+6. Engineering and Executive Reporting
+
+When asked for an executive summary, present:
+
+* Key findings.
+* Significant problem categories.
+* Potential recurring issues.
+* Operational risks requiring investigation.
+* Recommended engineering actions.
+* Potential QA automation improvements.
+* Supporting evidence and limitations.
+
+Use concise business language suitable for engineering leadership.
+
+Accuracy and Evidence Rules
+
+1. Treat the supplied records as the source of truth for historical findings.
+2. Never invent problem records, problem numbers, root causes, dates, or resolution details.
+3. Distinguish calculated facts from AI-generated interpretations and hypotheses.
+4. Do not report exact counts or percentages unless they can be established reliably from the available data.
+5. If the dataset cannot support an accurate calculation, explain the limitation instead of guessing.
+6. If information is missing, explicitly identify the missing fields.
+7. Do not interpret closed historical problems as currently active problems.
+8. Do not assume the exported data represents all production problems or the latest ServiceNow state.
+9. Reference supporting problem numbers for important findings.
+10. If a question cannot be answered from the available source, say so clearly.
+
+Response Format
+
+For analytical questions, use the following structure where appropriate:
+
+1. Summary
+2. Findings and supporting evidence
+3. Relevant problem numbers
+4. Potential business or operational impact
+5. Recommended engineering or QA actions
+6. Data limitations and confidence
+
+For simple record lookups, provide a concise direct answer.
+
+For recommendations, prioritise actions according to business impact, recurrence evidence, feasibility, and expected benefit. Explain the reasoning behind the prioritisation.
+
+Operating Boundaries
+
+Initially, operate as a read-only analytical assistant.
+
+Do not claim to have changed ServiceNow records, assigned work, sent notifications, executed production health checks, or implemented fixes.
+
+Do not expose unnecessary personal information from assignment fields.
+
+Your purpose is to help the organisation learn from historical production problems, improve application reliability, and identify evidence-based opportunities for preventive engineering and QA automation.
+
+⸻
+
+3. Add your Excel file as the agent’s knowledge source
+
+Don’t skip this step. The instructions tell the agent how to behave; the Excel file supplies the historical knowledge it needs.
+
+Microsoft’s documentation explains how to add uploaded files or cloud-hosted content as knowledge sources in Agent Builder. See the official guide: Add knowledge sources in Agent Builder⁠￼.
+
+Step 1: Prepare your Excel file
+
+Before uploading it, check the following:
+
+* Keep all problem records in one worksheet, if possible.
+* Ensure the first row contains meaningful column headers.
+* Use one row per problem record.
+* Remove unnecessary blank rows and columns.
+* Ensure dates and problem numbers are represented consistently.
+* Avoid uploading unrelated worksheets or confidential fields that the agent does not need.
+
+For example:
+
+Problem Number	Problem Statement	Business Service	Priority	Root Cause Code	Resolution Code
+PRB0192784	Financial reporting extract not refreshing data	Back Office Processing	3 - Moderate	Cabling - Cut/Damaged	Fix Applied
+PRB0198993	Auto PEGA case creation	Unknown	3 - Moderate	Not provided	Duplicate
+PRB0173698	TIPlus Zone application went offline during business hours	Trade Innovations Plus	3 - Moderate	Data Errors - Other	Fix Applied
+
+These are illustrative rows based on the visible records. Use the actual values from your export; don’t replace missing values with assumptions.
+
+Microsoft recommends keeping Excel knowledge in a single worksheet where practical. The documented limit for an embedded .xlsx file is 30 MB. 
+
+My recommendation: For your initial proof of concept, one well-prepared Excel file containing your 500 records should be sufficient to try the approach.
+
+Step 2: Upload the file
+
+On your current Agent Builder screen:
+
+1. Look for the Configure button near the top.
+2. Open the configuration screen.
+3. Find the Knowledge section.
+4. Select the option to upload a file from your device, or add a cloud file if the Excel workbook is stored in an approved SharePoint or OneDrive location.
+5. Select your ServiceNow Excel export.
+6. Wait for the file to finish processing.
+
+The exact controls may differ slightly depending on the version of Agent Builder and your organisation’s configuration.
+
+Important: Because these are production-support records, use only an organisation-approved storage location and AI environment. Confirm the applicable data-handling and access requirements before uploading the export.
+
+⸻
+
+4. Configure the agent to use your records
+
+Once the Excel file is added, configure the agent to prioritise your supplied knowledge.
+
+If your interface provides an option such as Only use specified sources, enable it if appropriate for your intended use. Microsoft notes that this setting prioritises designated sources, but in Agent Builder it does not completely prevent the model from using general knowledge. 
+
+This helps ensure that questions about your actual production problems are grounded in the historical records rather than generic assumptions.
+
+Next, save or create the agent using the controls available in your interface.
+
+⸻
+
+5. Test your agent with these 8 questions
+
+Don’t start by asking broad questions such as “Analyse everything.” Test the agent with focused questions and check whether its answers match your Excel data.
+
+Test	Question to enter	What you should validate
+1	How many problem records are available in the supplied dataset?	Whether the agent can establish the correct record count
+2	Which business services appear in the dataset?	Whether it identifies services accurately
+3	Show me the historical problems related to LOTS report generation.	Whether the returned problem numbers match the source
+4	What root cause categories appear most frequently?	Whether the categories and counts are correct
+5	Identify potentially related problems and explain why they may be connected.	Whether it cites actual records and distinguishes hypotheses from facts
+6	Which problem categories may benefit from automated health checks?	Whether its recommendations are relevant to the recorded failures
+7	Which production problems could benefit from additional regression testing?	Whether it maps problem types to sensible QA controls
+8	Prepare an executive summary of the most important findings in this dataset.	Whether the summary is evidence-based and acknowledges limitations
+
+What if the agent gives incorrect counts?
+
+This is an important possibility.
+
+An agent that retrieves information from Excel may be useful for finding relevant records, but retrieval alone does not guarantee accurate aggregation across all 500 rows.
+
+If the agent cannot reliably calculate counts or percentages, the next step is to add a structured analytical capability—for example, a Power Automate flow, a suitable data query, or a Python-based analysis process approved by your organisation.
+
+The calculation should be performed by that component, with the agent explaining the results.
+
+⸻
+
+6. The first demonstration I would give your engineering lead
+
+After validating the eight questions, demonstrate one end-to-end use case:
+
+Prompt:
+
+Analyse the supplied Trade Finance production problem records. Identify the most significant recurring problem patterns, provide the supporting problem numbers, and recommend five preventive QA or engineering improvements. For each recommendation, explain the evidence, the proposed control, the expected benefit, and any uncertainty. Do not invent counts or claim that a problem is recurring unless the records support that conclusion.
+
+The expected result is a structured report that helps the engineering lead decide:
+
+* Which problem patterns deserve investigation.
+* Which applications may need stronger regression coverage.
+* Which historical failures suggest a need for automated health checks.
+* Which root cause categories deserve deeper analysis.
+* Which preventive improvements should be considered first.
+
+These findings should be validated against the source records before they are presented as confirmed conclusions.
+
+One final recommendation
+
+Build Version 1 around historical problem intelligence—not automatic production remediation.
+
+Once the agent reliably retrieves records, identifies useful patterns, and produces evidence-backed recommendations, you can extend it to scheduled reporting, approved ServiceNow integrations, and tracking preventive actions.
+
+For now, the next step is straightforward: paste the instructions, upload your Excel file, create the agent, and test it against the eight questions above.
